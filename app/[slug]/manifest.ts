@@ -32,6 +32,7 @@ export default async function manifest({
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
+
     icons: [
       {
         src: company?.logo_icon_192_url || '/icon-192.png',
