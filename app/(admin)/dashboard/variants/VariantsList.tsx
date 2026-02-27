@@ -3,11 +3,26 @@
 import { useState } from 'react'
 import VariantManager from './VariantManager'
 
+/* ---------------- TYPES ---------------- */
+
+type Product = {
+  id: string
+  name: string
+}
+
+interface VariantsListProps {
+  products: Product[]
+  companyId: string
+}
+
+/* ---------------- COMPONENT ---------------- */
+
 export default function VariantsList({
   products,
   companyId,
-}) {
-  const [selectedProduct, setSelectedProduct] = useState(null)
+}: VariantsListProps) {
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null)
 
   return (
     <div className="p-6">

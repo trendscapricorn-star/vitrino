@@ -3,10 +3,43 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function ProductTable({ products }) {
+/* ---------------- TYPES ---------------- */
+
+type ProductImage = {
+  id: string
+  image_url: string
+  sort_order: number
+}
+
+type Variant = {
+  id: string
+}
+
+type Category = {
+  id: string
+  name: string
+}
+
+type Product = {
+  id: string
+  name: string
+  base_price: number | null
+  product_images: ProductImage[] | null
+  variants: Variant[] | null
+  category: Category | null
+}
+
+interface ProductTableProps {
+  products: Product[]
+}
+
+/* ---------------- COMPONENT ---------------- */
+
+export default function ProductTable({
+  products,
+}: ProductTableProps) {
   return (
     <div className="border rounded bg-white overflow-hidden">
-
       <table className="w-full text-sm">
 
         {/* HEADER */}
@@ -25,7 +58,6 @@ export default function ProductTable({ products }) {
         {/* BODY */}
         <tbody>
           {products.map((product) => {
-
             const primaryImage =
               product.product_images?.find(
                 (img) => img.sort_order === 0
@@ -42,13 +74,13 @@ export default function ProductTable({ products }) {
                 key={product.id}
                 className="border-t hover:bg-gray-50"
               >
-                {/* THUMBNAIL */}
+                {/* IMAGE */}
                 <td className="p-3">
                   {primaryImage ? (
                     <div className="w-12 h-12 relative">
                       <Image
                         src={primaryImage}
-                        alt="Product"
+                        alt={product.name}
                         fill
                         className="object-cover rounded"
                       />
@@ -67,15 +99,15 @@ export default function ProductTable({ products }) {
 
                 {/* CATEGORY */}
                 <td className="p-3 text-gray-600">
-                  {product.category?.name}
+                  {product.category?.name || '-'}
                 </td>
 
                 {/* PRICE */}
                 <td className="p-3 text-right">
-                  ₹{product.base_price || 0}
+                  ₹ {product.base_price ?? 0}
                 </td>
 
-                {/* VARIANT COUNT */}
+                {/* VARIANTS */}
                 <td className="p-3 text-center">
                   {variantCount}
                 </td>
@@ -104,13 +136,12 @@ export default function ProductTable({ products }) {
                     Edit
                   </Link>
                 </td>
-
               </tr>
             )
           })}
         </tbody>
-      </table>
 
+      </table>
     </div>
   )
 }

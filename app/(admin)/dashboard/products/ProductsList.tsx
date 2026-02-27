@@ -4,24 +4,70 @@ import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import ProductForm from './ProductForm'
 
+/* ---------------- TYPES ---------------- */
+
+type ProductImage = {
+  id: string
+  image_url: string
+  sort_order: number
+}
+
+type Variant = {
+  id: string
+}
+
+type Product = {
+  id: string
+  name: string
+  base_price: number | null
+  is_active: boolean
+  product_images: ProductImage[] | null
+  variants: Variant[] | null
+}
+
+type Category = {
+  id: string
+  name: string
+}
+
+type Attribute = {
+  id: string
+  name: string
+  category_id: string
+}
+
+interface ProductsListProps {
+  products: Product[]
+  categories: Category[]
+  attributes: Attribute[]
+  companyId: string
+}
+
+/* ---------------- COMPONENT ---------------- */
+
 export default function ProductsList({
   products,
   categories,
   attributes,
   companyId,
-}) {
+}: ProductsListProps) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  // ✅ Local state for instant UI update
-  const [localProducts, setLocalProducts] = useState(products)
-  const [showForm, setShowForm] = useState(false)
-  const [editProduct, setEditProduct] = useState<any>(null)
+  /* Local state */
+  const [localProducts, setLocalProducts] =
+    useState<Product[]>(products)
 
-  // ✅ Toggle without reload
-  async function toggleProduct(product: any) {
+  const [showForm, setShowForm] =
+    useState<boolean>(false)
+
+  const [editProduct, setEditProduct] =
+    useState<Product | null>(null)
+
+  /* Toggle Active */
+  async function toggleProduct(product: Product) {
     const newStatus = !product.is_active
 
     await supabase
@@ -29,7 +75,7 @@ export default function ProductsList({
       .update({ is_active: newStatus })
       .eq('id', product.id)
 
-    setLocalProducts((prev: any[]) =>
+    setLocalProducts((prev) =>
       prev.map((p) =>
         p.id === product.id
           ? { ...p, is_active: newStatus }
@@ -43,7 +89,9 @@ export default function ProductsList({
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Products</h1>
+        <h1 className="text-2xl font-semibold">
+          Products
+        </h1>
 
         <button
           onClick={() => {
@@ -56,7 +104,7 @@ export default function ProductsList({
         </button>
       </div>
 
-      {/* ADD / EDIT FORM */}
+      {/* FORM */}
       {showForm && (
         <div className="mb-8">
           <ProductForm
@@ -72,12 +120,9 @@ export default function ProductsList({
         </div>
       )}
 
-      {/* PRODUCT TABLE */}
+      {/* TABLE */}
       <div className="border rounded bg-white overflow-hidden">
-
         <table className="w-full text-sm">
-
-          {/* HEADER */}
           <thead className="bg-gray-50 text-gray-600">
             <tr className="text-left">
               <th className="p-3 w-16">Img</th>
@@ -90,13 +135,11 @@ export default function ProductsList({
             </tr>
           </thead>
 
-          {/* BODY */}
           <tbody>
-            {localProducts.map((p: any) => {
-
+            {localProducts.map((p) => {
               const primaryImage =
                 p.product_images?.find(
-                  (img: any) => img.sort_order === 0
+                  (img) => img.sort_order === 0
                 )?.image_url
 
               const imageCount =
@@ -112,7 +155,7 @@ export default function ProductsList({
                     !p.is_active ? 'opacity-50' : ''
                   }`}
                 >
-                  {/* THUMBNAIL */}
+                  {/* IMAGE */}
                   <td className="p-3">
                     {primaryImage ? (
                       <img
@@ -156,12 +199,14 @@ export default function ProductsList({
                     </span>
                   </td>
 
-                  {/* ACTIVE TOGGLE SWITCH */}
+                  {/* ACTIVE SWITCH */}
                   <td className="p-3 text-center">
                     <button
                       onClick={() => toggleProduct(p)}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                        p.is_active ? 'bg-green-500' : 'bg-gray-300'
+                        p.is_active
+                          ? 'bg-green-500'
+                          : 'bg-gray-300'
                       }`}
                     >
                       <span
@@ -186,14 +231,11 @@ export default function ProductsList({
                       Edit
                     </button>
                   </td>
-
                 </tr>
               )
             })}
           </tbody>
-
         </table>
-
       </div>
 
     </div>

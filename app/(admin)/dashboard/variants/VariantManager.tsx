@@ -3,17 +3,40 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
+/* ---------------- TYPES ---------------- */
+
+type Product = {
+  id: string
+  name: string
+}
+
+type Variant = {
+  id: string
+  name: string
+  price: number | null
+  is_active: boolean
+  created_at: string
+}
+
+interface VariantManagerProps {
+  product: Product
+  companyId: string
+  onBack: () => void
+}
+
+/* ---------------- COMPONENT ---------------- */
+
 export default function VariantManager({
   product,
   companyId,
   onBack,
-}) {
+}: VariantManagerProps) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [variants, setVariants] = useState([])
+  const [variants, setVariants] = useState<Variant[]>([])
 
   async function loadVariants() {
     const { data } = await supabase
@@ -27,9 +50,13 @@ export default function VariantManager({
 
   useEffect(() => {
     loadVariants()
-  }, [])
+  }, [product.id])
 
-  async function updateVariant(id, field, value) {
+  async function updateVariant(
+    id: string,
+    field: keyof Pick<Variant, 'name' | 'price'>,
+    value: string | number | null
+  ) {
     await supabase
       .from('variants')
       .update({ [field]: value })
@@ -38,7 +65,7 @@ export default function VariantManager({
     loadVariants()
   }
 
-  async function toggleVariant(variant) {
+  async function toggleVariant(variant: Variant) {
     await supabase
       .from('variants')
       .update({ is_active: !variant.is_active })
@@ -99,14 +126,10 @@ export default function VariantManager({
             </div>
 
             <button
-              onClick={() =>
-                toggleVariant(v)
-              }
+              onClick={() => toggleVariant(v)}
               className="text-red-600 text-sm"
             >
-              {v.is_active
-                ? 'Disable'
-                : 'Enable'}
+              {v.is_active ? 'Disable' : 'Enable'}
             </button>
           </div>
         ))}

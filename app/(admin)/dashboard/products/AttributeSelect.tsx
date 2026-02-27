@@ -9,6 +9,11 @@ interface Props {
   onChange: (value: string) => void
 }
 
+type AttributeOption = {
+  id: string
+  value: string
+}
+
 export default function AttributeSelect({
   attributeId,
   value,
@@ -16,8 +21,8 @@ export default function AttributeSelect({
 }: Props) {
   const supabase = supabaseBrowser
 
-  const [options, setOptions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [options, setOptions] = useState<AttributeOption[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     async function loadOptions() {
@@ -48,7 +53,7 @@ export default function AttributeSelect({
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
       disabled={loading}
-      className="border px-2 py-1.5 w-full"
+      className="border px-2 py-1.5 w-full rounded"
     >
       <option value="">
         {loading ? 'Loading...' : 'Select'}
