@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: 'Vitrino',
   description: 'Vendor Catalog App',
 
-  manifest: '/manifest.webmanifest',
 
   icons: {
     icon: '/icon-192.png',
