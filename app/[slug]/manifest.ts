@@ -3,11 +3,9 @@ import { MetadataRoute } from 'next'
 
 export const dynamic = 'force-dynamic'
 
-export default async function manifest({
-  params,
-}: {
-  params: { slug: string }
-}): Promise<MetadataRoute.Manifest> {
+export default async function manifest(
+  { params }: { params: { slug: string } }
+): Promise<MetadataRoute.Manifest> {
 
   const supabase = await createSupabaseServerClient()
 
@@ -25,26 +23,23 @@ export default async function manifest({
 
   return {
     id: `/${params.slug}`,
-    name: name,
+    name,
     short_name: name,
     description: `${name} Digital Catalog`,
     start_url: `/${params.slug}`,
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
-
     icons: [
       {
         src: company?.logo_icon_192_url || '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'any',
       },
       {
         src: company?.logo_icon_512_url || '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any',
       },
     ],
   }
