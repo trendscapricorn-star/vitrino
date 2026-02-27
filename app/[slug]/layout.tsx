@@ -3,12 +3,19 @@ export const runtime = 'edge'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 
+/* 🔹 Inject dynamic manifest per vendor */
+export async function generateMetadata({ params }: any) {
+  return {
+    manifest: `/api/manifest?slug=${params.slug}`,
+  }
+}
+
 export default async function SlugLayout({
   children,
   params,
 }: any) {
   const supabase = await createSupabaseServerClient()
-  const { slug } = await params
+  const { slug } = params
 
   const { data: company } = await supabase
     .from('companies')
@@ -33,6 +40,7 @@ export default async function SlugLayout({
             {company.logo_url && (
               <img
                 src={company.logo_url}
+                alt={company.display_name}
                 className="h-8 object-contain"
               />
             )}
@@ -57,6 +65,7 @@ export default async function SlugLayout({
               <a
                 href={`https://wa.me/${company.whatsapp}`}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm border px-4 py-1.5 rounded hover:bg-gray-100"
               >
                 WhatsApp
@@ -71,7 +80,6 @@ export default async function SlugLayout({
             </a>
 
           </div>
-
         </div>
       </header>
 

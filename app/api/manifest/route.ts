@@ -1,17 +1,12 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { MetadataRoute } from 'next'
+import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
-export default async function manifest(
-  request: Request
-): Promise<MetadataRoute.Manifest> {
-
-  const url = new URL(request.url)
-  const slug = url.searchParams.get('slug')
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const slug = searchParams.get('slug')
 
   if (!slug) {
-    return {
+    return NextResponse.json({
       name: 'Vitrino',
       short_name: 'Vitrino',
       start_url: '/',
@@ -30,7 +25,7 @@ export default async function manifest(
           type: 'image/png',
         },
       ],
-    }
+    })
   }
 
   const supabase = await createSupabaseServerClient()
@@ -47,7 +42,7 @@ export default async function manifest(
 
   const name = company?.display_name || 'Catalog'
 
-  return {
+  return NextResponse.json({
     id: `/${slug}`,
     name,
     short_name: name,
@@ -68,5 +63,5 @@ export default async function manifest(
         type: 'image/png',
       },
     ],
-  }
+  })
 }
