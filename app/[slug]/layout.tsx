@@ -4,8 +4,10 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 
 export async function generateMetadata({ params }: any) {
+  const resolvedParams = await params
+
   return {
-    manifest: `/api/manifest?slug=${params.slug}`,
+    manifest: `/api/manifest?slug=${resolvedParams.slug}`,
   }
 }
 
@@ -15,7 +17,7 @@ export default async function SlugLayout({
 }: any) {
   const supabase = await createSupabaseServerClient()
 
-  const { slug } = params   // ✅ FIXED
+const { slug } = await params
 
   const { data: company } = await supabase
     .from('companies')

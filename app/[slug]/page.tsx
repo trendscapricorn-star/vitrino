@@ -5,20 +5,21 @@ import InstallButton from './components/InstallButton'
 
 const PAGE_SIZE = 12
 
-export default async function PublicCatalog({
-  params,
-  searchParams,
-}: {
-  params: { slug: string }
-  searchParams: {
-    category?: string
-    attr?: string
-    sort?: string
-    page?: string
-  }
-}) {
+export default async function PublicCatalog(props: any) {
+  // ✅ Next 15: unwrap params & searchParams
+  const params = await props.params
+  const searchParams = await props.searchParams
+
   const supabase = await createSupabaseServerClient()
   const slug = params.slug
+
+  if (!slug) {
+    return (
+      <div style={{ padding: 40 }}>
+        ❌ Slug is undefined
+      </div>
+    )
+  }
 
   /* 🔹 Company */
   const { data: company } = await supabase
@@ -34,7 +35,13 @@ export default async function PublicCatalog({
     .eq('slug', slug)
     .single()
 
-  if (!company) return notFound()
+  if (!company) {
+    return (
+      <div style={{ padding: 40 }}>
+        ❌ Company not found for slug: {slug}
+      </div>
+    )
+  }
 
   /* 🔹 Categories */
   const { data: categories } = await supabase
@@ -157,7 +164,6 @@ export default async function PublicCatalog({
 
         <div className="grid grid-cols-12 gap-8">
 
-          {/* Sidebar */}
           <div className="col-span-3">
             <FilterSidebar
               slug={slug}
@@ -170,9 +176,7 @@ export default async function PublicCatalog({
             />
           </div>
 
-          {/* Products */}
           <div className="col-span-9">
-
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
               {products && products.length > 0 ? (
@@ -224,14 +228,12 @@ export default async function PublicCatalog({
               )}
 
             </div>
-
           </div>
+
         </div>
       </div>
 
-      {/* PWA Install */}
       <InstallButton />
-
     </div>
   )
 }
