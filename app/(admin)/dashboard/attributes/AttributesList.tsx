@@ -5,24 +5,42 @@ import { createClient } from '@supabase/supabase-js'
 import AttributeForm from './AttributeForm'
 import AttributeOptionsManager from './AttributeOptionsManager'
 
+/* 🔹 Types */
+
+type Category = {
+  id: string
+  name: string
+}
+
+type Attribute = {
+  id: string
+  name: string
+  category_id: string
+  is_active: boolean
+}
+
+interface AttributesListProps {
+  categories: Category[]
+  attributes: Attribute[]
+}
+
 export default function AttributesList({
   categories,
   attributes,
-}) {
+}: AttributesListProps) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [editAttribute, setEditAttribute] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [editAttribute, setEditAttribute] = useState<Attribute | null>(null)
 
   const filteredAttributes = attributes.filter(
-    (a) =>
-      a.category_id === selectedCategory
+    (a) => a.category_id === selectedCategory
   )
 
-  async function toggleAttribute(attr) {
+  async function toggleAttribute(attr: Attribute) {
     await supabase
       .from('attributes')
       .update({ is_active: !attr.is_active })
@@ -42,7 +60,7 @@ export default function AttributesList({
         onChange={(e) =>
           setSelectedCategory(e.target.value)
         }
-        className="border px-3 py-2 mb-4"
+        className="border px-3 py-2 mb-4 rounded"
       >
         <option value="">Select Category</option>
         {categories.map((c) => (
@@ -65,9 +83,7 @@ export default function AttributesList({
               <div
                 key={attr.id}
                 className={`border p-4 rounded ${
-                  !attr.is_active
-                    ? 'opacity-50'
-                    : ''
+                  !attr.is_active ? 'opacity-50' : ''
                 }`}
               >
                 <div className="flex justify-between">
