@@ -3,7 +3,6 @@ export const runtime = 'edge'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 
-/* 🔹 Inject dynamic manifest per vendor */
 export async function generateMetadata({ params }: any) {
   return {
     manifest: `/api/manifest?slug=${params.slug}`,
@@ -15,7 +14,8 @@ export default async function SlugLayout({
   params,
 }: any) {
   const supabase = await createSupabaseServerClient()
-  const { slug } = params
+
+  const { slug } = params   // ✅ FIXED
 
   const { data: company } = await supabase
     .from('companies')
@@ -27,16 +27,9 @@ export default async function SlugLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* 🔹 Clean App Header */}
       <header className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-          {/* Left */}
-          <a
-            href={`/${slug}`}
-            className="flex items-center gap-3"
-          >
+          <a href={`/${slug}`} className="flex items-center gap-3">
             {company.logo_url && (
               <img
                 src={company.logo_url}
@@ -44,12 +37,10 @@ export default async function SlugLayout({
                 className="h-8 object-contain"
               />
             )}
-
             <div>
               <div className="font-semibold text-lg">
                 {company.display_name}
               </div>
-
               {company.address && (
                 <div className="text-xs text-gray-500">
                   {company.address}
@@ -58,9 +49,7 @@ export default async function SlugLayout({
             </div>
           </a>
 
-          {/* Right */}
           <div className="flex items-center gap-4">
-
             {company.whatsapp && (
               <a
                 href={`https://wa.me/${company.whatsapp}`}
@@ -78,14 +67,11 @@ export default async function SlugLayout({
             >
               Admin Login
             </a>
-
           </div>
         </div>
       </header>
 
-      {/* Page Content */}
       <main>{children}</main>
-
     </div>
   )
 }
