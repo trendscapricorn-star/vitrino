@@ -1,65 +1,118 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-zinc-50">
+
+      {/* 🔹 Header */}
+      <header className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="text-xl font-semibold">
+            Vitrino B2B
+          </div>
+
+          <div className="flex gap-4">
+            <Link
+              href="/login"
+              className="text-sm font-medium hover:underline"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Login
+            </Link>
+
+            <Link
+              href="/signup"
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm hover:opacity-90"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Get Started
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* 🔹 Hero Section */}
+      <section className="max-w-7xl mx-auto px-6 py-24 text-center">
+        <h1 className="text-4xl font-bold mb-6">
+          Build Your Own B2B Product Catalog
+        </h1>
+
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
+          Create your professional wholesale catalog with categories,
+          filters, attributes and branding — without building an e-commerce store.
+        </p>
+
+        <div className="flex justify-center gap-4">
+          <Link
+            href="/signup"
+            className="bg-black text-white px-6 py-3 rounded-lg hover:opacity-90"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Create Your Catalog
+          </Link>
+
+          <Link
+            href="/login"
+            className="border px-6 py-3 rounded-lg hover:bg-gray-100"
           >
-            Documentation
-          </a>
+            Vendor Login
+          </Link>
         </div>
-      </main>
+      </section>
+
+      {/* 🔹 Features Section */}
+      <section className="bg-white py-20 border-t">
+        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
+
+          <div>
+            <h3 className="text-lg font-semibold mb-3">
+              🎨 Custom Branding
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Upload your logo, banner, contact details and make the page look
+              completely yours.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-3">
+              🗂 Smart Filters
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Organize products by category and attribute-based filters
+              like fabric, size sets, sleeves and more.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-3">
+              📩 Centralized Inquiry
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Buyers send one inquiry request for the vendor —
+              no cart, no checkout complexity.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 🔹 CTA Section */}
+      <section className="py-20 text-center">
+        <h2 className="text-2xl font-semibold mb-4">
+          Ready to create your B2B catalog?
+        </h2>
+
+        <Link
+          href="/signup"
+          className="bg-black text-white px-8 py-3 rounded-lg hover:opacity-90"
+        >
+          Start Free
+        </Link>
+      </section>
+
+      {/* 🔹 Footer */}
+      <footer className="border-t bg-white py-6 text-center text-sm text-gray-500">
+        © {new Date().getFullYear()} Vitrino B2B. All rights reserved.
+      </footer>
+
     </div>
   );
 }
