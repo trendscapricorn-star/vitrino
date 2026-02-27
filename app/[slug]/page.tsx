@@ -5,11 +5,19 @@ import InstallButton from './components/InstallButton'
 
 const PAGE_SIZE = 12
 
-export default async function PublicCatalog(props: any) {
+export default async function PublicCatalog({
+  params,
+  searchParams,
+}: {
+  params: { slug: string }
+  searchParams: {
+    category?: string
+    attr?: string
+    sort?: string
+    page?: string
+  }
+}) {
   const supabase = await createSupabaseServerClient()
-
-  const params = await props.params
-  const searchParams = await props.searchParams
   const slug = params.slug
 
   /* 🔹 Company */
@@ -54,7 +62,10 @@ export default async function PublicCatalog(props: any) {
       ? searchParams.sort
       : 'default'
 
-  const page = Number(searchParams?.page || 1)
+  const page =
+    typeof searchParams?.page === 'string'
+      ? Number(searchParams.page)
+      : 1
 
   /* 🔹 Attributes */
   const { data: attributes } = await supabase
@@ -70,7 +81,7 @@ export default async function PublicCatalog(props: any) {
     .eq('category_id', selectedCategory)
     .order('sort_order', { ascending: true })
 
-  /* 🔹 Products */
+  /* 🔹 Products Query */
   let query = supabase
     .from('products')
     .select(
@@ -91,6 +102,7 @@ export default async function PublicCatalog(props: any) {
     .eq('category_id', selectedCategory)
     .eq('is_active', true)
 
+  /* 🔹 Filter by attribute options */
   if (selectedOptions.length > 0) {
     const { data: productIds } = await supabase
       .from('product_attribute_values')
@@ -108,6 +120,7 @@ export default async function PublicCatalog(props: any) {
     }
   }
 
+  /* 🔹 Sorting */
   if (sort === 'price_asc') {
     query = query.order('base_price', { ascending: true })
   } else if (sort === 'price_desc') {
@@ -120,16 +133,18 @@ export default async function PublicCatalog(props: any) {
     query = query.order('sort_order', { ascending: true })
   }
 
+  /* 🔹 Pagination */
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
   const { data: products, count } = await query.range(from, to)
+
   const totalPages = count
     ? Math.ceil(count / PAGE_SIZE)
     : 1
 
   const selectedCategoryName =
-    categories.find((c: any) => c.id === selectedCategory)?.name || ''
+    categories.find((c) => c.id === selectedCategory)?.name || ''
 
   return (
     <div className="bg-zinc-50">
@@ -142,6 +157,7 @@ export default async function PublicCatalog(props: any) {
 
         <div className="grid grid-cols-12 gap-8">
 
+          {/* Sidebar */}
           <div className="col-span-3">
             <FilterSidebar
               slug={slug}
@@ -154,6 +170,7 @@ export default async function PublicCatalog(props: any) {
             />
           </div>
 
+          {/* Products */}
           <div className="col-span-9">
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -174,6 +191,7 @@ export default async function PublicCatalog(props: any) {
                       {primaryImage ? (
                         <img
                           src={primaryImage}
+                          alt={p.name}
                           className="w-full h-64 object-cover"
                         />
                       ) : (
@@ -211,6 +229,7 @@ export default async function PublicCatalog(props: any) {
         </div>
       </div>
 
+      {/* PWA Install */}
       <InstallButton />
 
     </div>
