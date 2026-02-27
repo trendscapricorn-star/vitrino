@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Vitrino',
   description: 'Vendor Catalog App',
+
+  manifest: '/manifest.webmanifest',
+
   icons: {
     icon: '/icon-192.png',
     apple: '/icon-192.png',
@@ -23,6 +26,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
