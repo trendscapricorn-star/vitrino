@@ -1,12 +1,11 @@
-// app/manifest.ts
 import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Vitrino Catalog',
-    short_name: 'Catalog',
-    description: 'Vendor Catalog App',
-    start_url: '/',
+    name: 'Vitrino',
+    short_name: 'Vitrino',
+    description: 'Digital Catalog App',
+    start_url: '.',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
