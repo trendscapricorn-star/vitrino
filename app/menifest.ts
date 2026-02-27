@@ -1,22 +1,69 @@
-import type { MetadataRoute } from 'next'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { MetadataRoute } from 'next'
 
-export default function manifest(): MetadataRoute.Manifest {
+export const dynamic = 'force-dynamic'
+
+export default async function manifest(
+  request: Request
+): Promise<MetadataRoute.Manifest> {
+
+  const url = new URL(request.url)
+  const slug = url.searchParams.get('slug')
+
+  if (!slug) {
+    return {
+      name: 'Vitrino',
+      short_name: 'Vitrino',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#000000',
+      icons: [
+        {
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+    }
+  }
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: company } = await supabase
+    .from('companies')
+    .select(`
+      display_name,
+      logo_icon_192_url,
+      logo_icon_512_url
+    `)
+    .eq('slug', slug)
+    .single()
+
+  const name = company?.display_name || 'Catalog'
+
   return {
-    name: 'Vitrino',
-    short_name: 'Vitrino',
-    description: 'Digital Catalog App',
-    start_url: '.',
+    id: `/${slug}`,
+    name,
+    short_name: name,
+    description: `${name} Digital Catalog`,
+    start_url: `/${slug}`,
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
     icons: [
       {
-        src: '/icon-192.png',
+        src: company?.logo_icon_192_url || '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: '/icon-512.png',
+        src: company?.logo_icon_512_url || '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
       },
