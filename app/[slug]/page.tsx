@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import FilterSidebar from './components/FilterSidebar'
+import InstallButton from './components/InstallButton'
 
 const PAGE_SIZE = 12
 
@@ -38,7 +39,6 @@ export default async function PublicCatalog(props: any) {
     return <div className="p-10">No categories found.</div>
   }
 
-  /* 🔹 Selected State */
   const selectedCategory =
     typeof searchParams?.category === 'string'
       ? searchParams.category
@@ -134,17 +134,14 @@ export default async function PublicCatalog(props: any) {
   return (
     <div className="bg-zinc-50">
 
-      {/* 🔹 MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-6 py-8">
 
-        {/* Breadcrumb */}
         <div className="text-sm text-gray-500 mb-6">
           {company.display_name} / {selectedCategoryName}
         </div>
 
         <div className="grid grid-cols-12 gap-8">
 
-          {/* Sidebar */}
           <div className="col-span-3">
             <FilterSidebar
               slug={slug}
@@ -157,7 +154,6 @@ export default async function PublicCatalog(props: any) {
             />
           </div>
 
-          {/* Product Grid */}
           <div className="col-span-9">
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -211,51 +207,11 @@ export default async function PublicCatalog(props: any) {
 
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex gap-2 mt-8">
-                {Array.from({ length: totalPages }).map((_, i) => {
-                  const params = new URLSearchParams(searchParams)
-                  params.set('page', String(i + 1))
-
-                  return (
-                    <a
-                      key={i}
-                      href={`?${params.toString()}`}
-                      className={`px-3 py-1 border ${
-                        page === i + 1
-                          ? 'bg-black text-white'
-                          : ''
-                      }`}
-                    >
-                      {i + 1}
-                    </a>
-                  )
-                })}
-              </div>
-            )}
-
           </div>
         </div>
       </div>
 
-      {/* 🔹 FOOTER CONTACT */}
-      <div id="inquiry" className="bg-white border-t mt-16">
-        <div className="max-w-7xl mx-auto px-6 py-10 text-sm text-gray-600">
-
-          <div className="font-semibold text-lg mb-4">
-            Contact {company.display_name}
-          </div>
-
-          {company.phone && <div>📞 {company.phone}</div>}
-          {company.email && <div>✉️ {company.email}</div>}
-          {company.whatsapp && (
-            <div>💬 WhatsApp: {company.whatsapp}</div>
-          )}
-          {company.address && <div>📍 {company.address}</div>}
-
-        </div>
-      </div>
+      <InstallButton />
 
     </div>
   )
