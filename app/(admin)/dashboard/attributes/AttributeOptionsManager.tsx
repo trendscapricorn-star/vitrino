@@ -3,17 +3,31 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-export default function AttributeOptionsManager({ attributeId }) {
+type AttributeOption = {
+  id: string
+  attribute_id: string
+  value: string
+  is_active: boolean
+  sort_order: number | null
+}
+
+interface AttributeOptionsManagerProps {
+  attributeId: string
+}
+
+export default function AttributeOptionsManager({
+  attributeId,
+}: AttributeOptionsManagerProps) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [options, setOptions] = useState([])
-  const [newOption, setNewOption] = useState('')
-  const [editingId, setEditingId] = useState(null)
-  const [editValue, setEditValue] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [options, setOptions] = useState<AttributeOption[]>([])
+  const [newOption, setNewOption] = useState<string>('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
 
   async function loadOptions() {
     const { data } = await supabase
@@ -22,11 +36,13 @@ export default function AttributeOptionsManager({ attributeId }) {
       .eq('attribute_id', attributeId)
       .order('sort_order')
 
-    setOptions(data || [])
+    setOptions((data as AttributeOption[]) || [])
   }
 
   useEffect(() => {
-    loadOptions()
+    if (attributeId) {
+      loadOptions()
+    }
   }, [attributeId])
 
   async function addOption() {
@@ -44,7 +60,7 @@ export default function AttributeOptionsManager({ attributeId }) {
     loadOptions()
   }
 
-  async function updateOption(id) {
+  async function updateOption(id: string) {
     if (!editValue.trim()) return
 
     setLoading(true)
@@ -60,7 +76,7 @@ export default function AttributeOptionsManager({ attributeId }) {
     loadOptions()
   }
 
-  async function toggleOption(option) {
+  async function toggleOption(option: AttributeOption) {
     await supabase
       .from('attribute_options')
       .update({ is_active: !option.is_active })
@@ -78,12 +94,12 @@ export default function AttributeOptionsManager({ attributeId }) {
           value={newOption}
           onChange={(e) => setNewOption(e.target.value)}
           placeholder="Add option"
-          className="border px-2 py-1 text-sm flex-1"
+          className="border px-2 py-1 text-sm flex-1 rounded"
         />
         <button
           onClick={addOption}
           disabled={loading}
-          className="bg-black text-white px-3 py-1 text-sm rounded"
+          className="bg-black text-white px-3 py-1 text-sm rounded hover:opacity-90"
         >
           {loading ? 'Adding...' : 'Add'}
         </button>
@@ -105,7 +121,7 @@ export default function AttributeOptionsManager({ attributeId }) {
                   onChange={(e) =>
                     setEditValue(e.target.value)
                   }
-                  className="border px-2 py-1 text-sm flex-1"
+                  className="border px-2 py-1 text-sm flex-1 rounded"
                 />
                 <button
                   onClick={() => updateOption(opt.id)}
