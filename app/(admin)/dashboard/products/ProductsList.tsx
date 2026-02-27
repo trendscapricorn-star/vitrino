@@ -3,27 +3,9 @@
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import ProductForm from './ProductForm'
+import type { Product } from '@/types/product'
 
 /* ---------------- TYPES ---------------- */
-
-type ProductImage = {
-  id: string
-  image_url: string
-  sort_order: number
-}
-
-type Variant = {
-  id: string
-}
-
-type Product = {
-  id: string
-  name: string
-  base_price: number | null
-  is_active: boolean
-  product_images: ProductImage[] | null
-  variants: Variant[] | null
-}
 
 type Category = {
   id: string
@@ -56,7 +38,6 @@ export default function ProductsList({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  /* Local state */
   const [localProducts, setLocalProducts] =
     useState<Product[]>(products)
 
@@ -66,7 +47,6 @@ export default function ProductsList({
   const [editProduct, setEditProduct] =
     useState<Product | null>(null)
 
-  /* Toggle Active */
   async function toggleProduct(product: Product) {
     const newStatus = !product.is_active
 
@@ -155,7 +135,6 @@ export default function ProductsList({
                     !p.is_active ? 'opacity-50' : ''
                   }`}
                 >
-                  {/* IMAGE */}
                   <td className="p-3">
                     {primaryImage ? (
                       <img
@@ -169,22 +148,18 @@ export default function ProductsList({
                     )}
                   </td>
 
-                  {/* NAME */}
                   <td className="p-3 font-medium truncate max-w-[220px]">
                     {p.name}
                   </td>
 
-                  {/* PRICE */}
                   <td className="p-3 text-right">
                     ₹ {p.base_price ?? '-'}
                   </td>
 
-                  {/* VARIANTS */}
                   <td className="p-3 text-center">
                     {variantCount}
                   </td>
 
-                  {/* IMAGE COUNT */}
                   <td className="p-3 text-center">
                     <span
                       className={`px-2 py-1 rounded text-xs ${
@@ -199,7 +174,6 @@ export default function ProductsList({
                     </span>
                   </td>
 
-                  {/* ACTIVE SWITCH */}
                   <td className="p-3 text-center">
                     <button
                       onClick={() => toggleProduct(p)}
@@ -219,7 +193,6 @@ export default function ProductsList({
                     </button>
                   </td>
 
-                  {/* ACTIONS */}
                   <td className="p-3 text-right">
                     <button
                       onClick={() => {
@@ -231,6 +204,7 @@ export default function ProductsList({
                       Edit
                     </button>
                   </td>
+
                 </tr>
               )
             })}

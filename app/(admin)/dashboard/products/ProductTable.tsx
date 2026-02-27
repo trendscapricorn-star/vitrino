@@ -2,38 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-
-/* ---------------- TYPES ---------------- */
-
-type ProductImage = {
-  id: string
-  image_url: string
-  sort_order: number
-}
-
-type Variant = {
-  id: string
-}
-
-type Category = {
-  id: string
-  name: string
-}
-
-type Product = {
-  id: string
-  name: string
-  base_price: number | null
-  product_images: ProductImage[] | null
-  variants: Variant[] | null
-  category: Category | null
-}
+import type { Product } from '@/types/product'
 
 interface ProductTableProps {
   products: Product[]
 }
-
-/* ---------------- COMPONENT ---------------- */
 
 export default function ProductTable({
   products,
@@ -42,7 +15,6 @@ export default function ProductTable({
     <div className="border rounded bg-white overflow-hidden">
       <table className="w-full text-sm">
 
-        {/* HEADER */}
         <thead className="bg-gray-50 text-gray-600">
           <tr className="text-left">
             <th className="p-3 w-16">Img</th>
@@ -55,9 +27,9 @@ export default function ProductTable({
           </tr>
         </thead>
 
-        {/* BODY */}
         <tbody>
           {products.map((product) => {
+
             const primaryImage =
               product.product_images?.find(
                 (img) => img.sort_order === 0
@@ -74,7 +46,6 @@ export default function ProductTable({
                 key={product.id}
                 className="border-t hover:bg-gray-50"
               >
-                {/* IMAGE */}
                 <td className="p-3">
                   {primaryImage ? (
                     <div className="w-12 h-12 relative">
@@ -92,27 +63,22 @@ export default function ProductTable({
                   )}
                 </td>
 
-                {/* NAME */}
                 <td className="p-3 font-medium truncate max-w-[200px]">
                   {product.name}
                 </td>
 
-                {/* CATEGORY */}
                 <td className="p-3 text-gray-600">
                   {product.category?.name || '-'}
                 </td>
 
-                {/* PRICE */}
                 <td className="p-3 text-right">
                   ₹ {product.base_price ?? 0}
                 </td>
 
-                {/* VARIANTS */}
                 <td className="p-3 text-center">
                   {variantCount}
                 </td>
 
-                {/* IMAGE COUNT */}
                 <td className="p-3 text-center">
                   <span
                     className={`px-2 py-1 rounded text-xs ${
@@ -127,7 +93,6 @@ export default function ProductTable({
                   </span>
                 </td>
 
-                {/* ACTIONS */}
                 <td className="p-3 text-right">
                   <Link
                     href={`/dashboard/products/${product.id}/edit`}

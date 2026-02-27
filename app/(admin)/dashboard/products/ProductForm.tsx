@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import AttributeSelect from './AttributeSelect'
 import { uploadProductImage } from '@/lib/upload-image'
+import type { Product } from '@/types/product'
 
 /* ---------------- TYPES ---------------- */
 
@@ -16,14 +17,6 @@ type Attribute = {
   id: string
   name: string
   category_id: string
-}
-
-type Product = {
-  id: string
-  name: string
-  category_id: string
-  base_price: number | null
-  description: string | null
 }
 
 type ProductImage = {
@@ -55,19 +48,12 @@ export default function ProductForm({
 }: ProductFormProps) {
   const supabase = supabaseBrowser
 
-  const [activePreviewIndex, setActivePreviewIndex] = useState<number>(0)
   const [name, setName] = useState<string>('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [price, setPrice] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [attributeValues, setAttributeValues] =
     useState<AttributeValueMap>({})
-  const [imageSlots, setImageSlots] = useState<(File | null)[]>([
-    null,
-    null,
-    null,
-    null,
-  ])
   const [existingImages, setExistingImages] =
     useState<ProductImage[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -86,6 +72,13 @@ export default function ProductForm({
       setDescription(product.description || '')
       loadExistingAttributes(product.id)
       loadExistingImages(product.id)
+    } else {
+      setName('')
+      setCategoryId('')
+      setPrice('')
+      setDescription('')
+      setAttributeValues({})
+      setExistingImages([])
     }
   }, [product])
 
@@ -176,28 +169,6 @@ export default function ProductForm({
       })
     }
 
-    /* Upload images */
-    for (let i = 0; i < 4; i++) {
-      const file = imageSlots[i]
-      if (!file) continue
-
-      const imageUrl = await uploadProductImage({
-        file,
-        companyId,
-        productId,
-      })
-
-      await supabase.from('product_images').upsert(
-        {
-          product_id: productId,
-          image_url: imageUrl,
-          sort_order: i,
-          is_primary: i === 0,
-        },
-        { onConflict: 'product_id,sort_order' }
-      )
-    }
-
     setLoading(false)
     window.location.reload()
   }
@@ -207,9 +178,85 @@ export default function ProductForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="border p-6 rounded bg-white max-w-6xl mx-auto"
+      className="border p-6 rounded bg-white max-w-3xl"
     >
-      {/* UI trimmed here for brevity — your JSX remains the same */}
+      <div className="space-y-4">
+
+        <input
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Product name"
+          className="border px-3 py-2 w-full"
+        />
+
+        <select
+          required
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="border px-3 py-2 w-full"
+        >
+          <option value="">Select Category</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Base Price"
+          className="border px-3 py-2 w-full"
+        />
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Short description"
+          className="border px-3 py-2 w-full"
+        />
+
+        {categoryAttributes.map((attr) => (
+          <div key={attr.id}>
+            <label className="block mb-1 text-sm font-medium">
+              {attr.name}
+            </label>
+
+            <AttributeSelect
+              attributeId={attr.id}
+              value={attributeValues[attr.id] || ''}
+              onChange={(value) =>
+                setAttributeValues((prev) => ({
+                  ...prev,
+                  [attr.id]: value,
+                }))
+              }
+            />
+          </div>
+        ))}
+
+        <div className="flex gap-3 pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-black text-white px-5 py-2 rounded"
+          >
+            {loading ? 'Saving...' : product ? 'Update' : 'Save'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="border px-5 py-2 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+
+      </div>
     </form>
   )
 }
