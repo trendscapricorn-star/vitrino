@@ -1,20 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { createClient } from '@supabase/supabase-js'
+
+type Attribute = {
+  id: string
+  name: string
+} | null
+
+interface AttributeFormProps {
+  categoryId: string
+  attribute?: Attribute
+  onClose: () => void
+}
 
 export default function AttributeForm({
   categoryId,
-  attribute,
+  attribute = null,
   onClose,
-}) {
+}: AttributeFormProps) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [name, setName] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
 
   useEffect(() => {
     if (attribute) {
@@ -24,7 +35,7 @@ export default function AttributeForm({
     }
   }, [attribute])
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
 
@@ -48,22 +59,20 @@ export default function AttributeForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="border p-4 rounded mb-4"
+      className="border p-4 rounded mb-4 bg-white"
     >
       <input
         required
         value={name}
-        onChange={(e) =>
-          setName(e.target.value)
-        }
+        onChange={(e) => setName(e.target.value)}
         placeholder="Attribute name"
-        className="border px-3 py-2 w-full mb-3"
+        className="border px-3 py-2 w-full mb-3 rounded"
       />
 
       <div className="flex gap-3">
         <button
           type="submit"
-          className="bg-black text-white px-4 py-2 rounded"
+          className="bg-black text-white px-4 py-2 rounded hover:opacity-90"
           disabled={loading}
         >
           {loading
@@ -77,7 +86,7 @@ export default function AttributeForm({
           <button
             type="button"
             onClick={onClose}
-            className="border px-4 py-2 rounded"
+            className="border px-4 py-2 rounded hover:bg-gray-100"
           >
             Cancel
           </button>
