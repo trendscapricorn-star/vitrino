@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { adminApp } from '@/lib/firebase-admin'
+import { firebaseAdmin } from '@/lib/firebase-admin'
 import { getMessaging } from 'firebase-admin/messaging'
 
 export async function POST(req: Request) {
