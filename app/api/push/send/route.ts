@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { firebaseAdmin } from '@/lib/firebase-admin'
-import { getMessaging } from 'firebase-admin/messaging'
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +8,10 @@ export async function POST(req: Request) {
     const { companyId, title, body: messageBody, url } = body
 
     if (!companyId || !title || !messageBody) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing fields' },
+        { status: 400 }
+      )
     }
 
     const supabase = createClient(
@@ -18,7 +20,7 @@ export async function POST(req: Request) {
     )
 
     const { data: tokens } = await supabase
-      .from('fcm_tokens')
+      .from('fcm_tokens') // ⚠️ make sure this table name is correct
       .select('token')
       .eq('company_id', companyId)
 
@@ -26,10 +28,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, sent: 0 })
     }
 
-    const messaging = getMessaging(adminApp)
+    // ✅ Correct way to get messaging
+    const messaging = firebaseAdmin.messaging()
 
     const response = await messaging.sendEachForMulticast({
-      tokens: tokens.map(t => t.token),
+      tokens: tokens.map((t: any) => t.token),
       notification: {
         title,
         body: messageBody,
@@ -45,6 +48,9 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     console.error(err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500 }
+    )
   }
 }
