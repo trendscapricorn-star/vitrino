@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
+import SendNotification from './components/SendNotification'
 
-/* 🔹 Section Component (MOVED OUTSIDE to prevent focus loss) */
+/* 🔹 Section Component */
 function Section({
   title,
   id,
@@ -49,7 +50,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [message, setMessage] = useState('')
-
   const [openSection, setOpenSection] =
     useState<string | null>('logo')
 
@@ -82,81 +82,81 @@ export default function DashboardPage() {
     setSlug(company.slug || '')
     setInitialLoading(false)
   }
-async function resizeImage(file: File, size: number): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d")!
 
-    img.onload = () => {
-      canvas.width = size
-      canvas.height = size
+  async function resizeImage(file: File, size: number): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
 
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(0, 0, size, size)
+      img.onload = () => {
+        canvas.width = size
+        canvas.height = size
 
-      const ratio = Math.min(size / img.width, size / img.height)
-      const newWidth = img.width * ratio
-      const newHeight = img.height * ratio
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, size, size)
 
-      const x = (size - newWidth) / 2
-      const y = (size - newHeight) / 2
+        const ratio = Math.min(size / img.width, size / img.height)
+        const newWidth = img.width * ratio
+        const newHeight = img.height * ratio
 
-      ctx.drawImage(img, x, y, newWidth, newHeight)
+        const x = (size - newWidth) / 2
+        const y = (size - newHeight) / 2
 
-      canvas.toBlob((blob) => {
-        resolve(blob!)
-      }, "image/png")
-    }
+        ctx.drawImage(img, x, y, newWidth, newHeight)
 
-    img.src = URL.createObjectURL(file)
-  })
-}
- async function handleLogoUpload(
-  e: React.ChangeEvent<HTMLInputElement>
-) {
-  const file = e.target.files?.[0]
-  if (!file || !companyId) return
+        canvas.toBlob((blob) => {
+          resolve(blob!)
+        }, 'image/png')
+      }
 
-  setLoading(true)
-
-  // Resize images
-  const blob512 = await resizeImage(file, 512)
-  const blob192 = await resizeImage(file, 192)
-
-  const path512 = `${companyId}/icon-512.png`
-  const path192 = `${companyId}/icon-192.png`
-
-  // Upload to storage
-  await supabase.storage
-    .from("company-logos")
-    .upload(path512, blob512, { upsert: true })
-
-  await supabase.storage
-    .from("company-logos")
-    .upload(path192, blob192, { upsert: true })
-
-  const { data: url512 } = supabase.storage
-    .from("company-logos")
-    .getPublicUrl(path512)
-
-  const { data: url192 } = supabase.storage
-    .from("company-logos")
-    .getPublicUrl(path192)
-
-  // Save URLs in DB
-  await supabase
-    .from("companies")
-    .update({
-      logo_url: url512.publicUrl,
-      logo_icon_512_url: url512.publicUrl,
-      logo_icon_192_url: url192.publicUrl,
+      img.src = URL.createObjectURL(file)
     })
-    .eq("id", companyId)
+  }
 
-  setLogoUrl(url512.publicUrl)
-  setLoading(false)
-}
+  async function handleLogoUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0]
+    if (!file || !companyId) return
+
+    setLoading(true)
+
+    const blob512 = await resizeImage(file, 512)
+    const blob192 = await resizeImage(file, 192)
+
+    const path512 = `${companyId}/icon-512.png`
+    const path192 = `${companyId}/icon-192.png`
+
+    await supabase.storage
+      .from('company-logos')
+      .upload(path512, blob512, { upsert: true })
+
+    await supabase.storage
+      .from('company-logos')
+      .upload(path192, blob192, { upsert: true })
+
+    const { data: url512 } = supabase.storage
+      .from('company-logos')
+      .getPublicUrl(path512)
+
+    const { data: url192 } = supabase.storage
+      .from('company-logos')
+      .getPublicUrl(path192)
+
+    await supabase
+      .from('companies')
+      .update({
+        logo_url: url512.publicUrl,
+        logo_icon_512_url: url512.publicUrl,
+        logo_icon_192_url: url192.publicUrl,
+      })
+      .eq('id', companyId)
+
+    setLogoUrl(url512.publicUrl)
+    setLoading(false)
+  }
+
   async function handleSave() {
     if (!companyId) return
 
@@ -304,6 +304,18 @@ async function resizeImage(file: File, size: number): Promise<Blob> {
           />
         </div>
       </Section>
+
+      {/* 🔔 Manual Campaign Section */}
+      {companyId && (
+        <Section
+          title="Send Notification"
+          id="notification"
+          openSection={openSection}
+          setOpenSection={setOpenSection}
+        >
+          <SendNotification companyId={companyId} />
+        </Section>
+      )}
 
       {/* 🔹 Save Button */}
       <div className="pt-4">

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import AttributeSelect from './AttributeSelect'
-import { uploadProductImage } from '@/lib/upload-image'
 import type { Product } from '@/types/product'
 
 /* ---------------- TYPES ---------------- */
@@ -54,8 +53,6 @@ export default function ProductForm({
   const [description, setDescription] = useState<string>('')
   const [attributeValues, setAttributeValues] =
     useState<AttributeValueMap>({})
-  const [existingImages, setExistingImages] =
-    useState<ProductImage[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   const categoryAttributes = attributes.filter(
@@ -71,14 +68,12 @@ export default function ProductForm({
       setPrice(product.base_price?.toString() || '')
       setDescription(product.description || '')
       loadExistingAttributes(product.id)
-      loadExistingImages(product.id)
     } else {
       setName('')
       setCategoryId('')
       setPrice('')
       setDescription('')
       setAttributeValues({})
-      setExistingImages([])
     }
   }, [product])
 
@@ -97,16 +92,6 @@ export default function ProductForm({
     setAttributeValues(map)
   }
 
-  async function loadExistingImages(productId: string) {
-    const { data } = await supabase
-      .from('product_images')
-      .select('id, image_url, sort_order')
-      .eq('product_id', productId)
-      .order('sort_order')
-
-    setExistingImages(data || [])
-  }
-
   /* ---------------- SUBMIT ---------------- */
 
   async function handleSubmit(
@@ -116,6 +101,7 @@ export default function ProductForm({
     setLoading(true)
 
     let productId: string
+    let generatedSlug = ''
 
     if (product) {
       await supabase
@@ -135,12 +121,19 @@ export default function ProductForm({
         .delete()
         .eq('product_id', productId)
     } else {
+      // 🔹 Generate slug
+      generatedSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+
       const { data: newProduct, error } = await supabase
         .from('products')
         .insert({
           company_id: companyId,
           category_id: categoryId,
           name,
+          slug: generatedSlug,
           base_price: price ? Number(price) : null,
           description,
           has_variants: false,
@@ -155,6 +148,18 @@ export default function ProductForm({
       }
 
       productId = newProduct.id
+
+      // 🔔 Non-blocking push trigger
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId,
+          title: 'New Product Added',
+          body: name,
+          url: `/${window.location.pathname.split('/')[1]}/${generatedSlug}`,
+        }),
+      }).catch(() => {})
     }
 
     /* Save attribute values */
@@ -181,7 +186,6 @@ export default function ProductForm({
       className="border p-6 rounded bg-white max-w-3xl"
     >
       <div className="space-y-4">
-
         <input
           required
           value={name}
@@ -255,7 +259,6 @@ export default function ProductForm({
             Cancel
           </button>
         </div>
-
       </div>
     </form>
   )

@@ -2,22 +2,73 @@ export const runtime = 'edge'
 
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
+import PushRegister from '@/components/PushRegister'
 
-export async function generateMetadata({ params }: any) {
-  const resolvedParams = await params
+/* =========================
+   Dynamic Metadata (Next 16 Safe)
+========================= */
+export async function generateMetadata(
+  props: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+
+  const { slug } = await props.params
+
+  const supabase = await createSupabaseServerClient()
+
+  const { data: company } = await supabase
+    .from('companies')
+    .select(`
+      display_name,
+      logo_icon_192_url,
+      logo_icon_512_url
+    `)
+    .eq('slug', slug)
+    .single()
+
+  const name = company?.display_name || 'Catalog'
 
   return {
-    manifest: `/api/manifest?slug=${resolvedParams.slug}`,
+    title: name,
+    description: `${name} Digital Catalog`,
+    manifest: `/api/manifest?slug=${slug}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: name,
+    },
+    icons: {
+      icon: company?.logo_icon_192_url || '/icon-192.png',
+      apple: company?.logo_icon_192_url || '/icon-192.png',
+    },
+    openGraph: {
+      title: name,
+      description: `${name} Digital Catalog`,
+      images: [
+        {
+          url: company?.logo_icon_512_url || '/icon-512.png',
+          width: 512,
+          height: 512,
+        },
+      ],
+    },
   }
 }
 
+/* =========================
+   Layout Component (Next 16 Safe)
+========================= */
 export default async function SlugLayout({
   children,
   params,
-}: any) {
-  const supabase = await createSupabaseServerClient()
+}: {
+  children: React.ReactNode
+  params: Promise<{ slug: string }>
+}) {
 
-const { slug } = await params
+  const { slug } = await params
+
+  const supabase = await createSupabaseServerClient()
 
   const { data: company } = await supabase
     .from('companies')
@@ -74,6 +125,9 @@ const { slug } = await params
       </header>
 
       <main>{children}</main>
+
+      {/* 🔔 Push Registration */}
+      <PushRegister companyId={company.id} />
     </div>
   )
 }
