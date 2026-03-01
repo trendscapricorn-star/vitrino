@@ -1,31 +1,21 @@
 import Razorpay from "razorpay"
 import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
 export async function POST(req: Request) {
   try {
-    const { planType } = await req.json()
+    const { planType, companyId } = await req.json()
 
-    if (!planType) {
+    if (!planType || !companyId) {
       return NextResponse.json(
-        { error: "Plan type missing" },
+        { error: "Missing planType or companyId" },
         { status: 400 }
       )
     }
 
-    // 🔥 HARD CHECK ENV
-    if (
-      !process.env.RAZORPAY_KEY_ID ||
-      !process.env.RAZORPAY_KEY_SECRET
-    ) {
-      return NextResponse.json(
-        { error: "Razorpay keys missing in env" },
-        { status: 500 }
-      )
-    }
-
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID.trim(),
-      key_secret: process.env.RAZORPAY_KEY_SECRET.trim(),
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
     })
 
     const planMap: Record<string, string | undefined> = {
@@ -38,15 +28,34 @@ export async function POST(req: Request) {
 
     if (!plan_id) {
       return NextResponse.json(
-        { error: "Invalid plan type or missing plan env" },
+        { error: "Invalid plan type" },
         { status: 400 }
       )
     }
 
     const subscription = await razorpay.subscriptions.create({
-      plan_id: plan_id.trim(),
+      plan_id,
       customer_notify: 1,
       total_count: 12,
+      notes: {
+        company_id: companyId,
+      },
+    })
+
+    // 🔥 Insert into Supabase
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    await supabase.from("subscriptions").insert({
+      company_id: companyId,
+      razorpay_subscription_id: subscription.id,
+      razorpay_plan_id: plan_id,
+      plan_type: planType,
+      status: "pending",
+      created_at: new Date(),
+      updated_at: new Date(),
     })
 
     return NextResponse.json({
@@ -55,13 +64,9 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error("RAZORPAY ERROR:", error)
-
+    console.error("CREATE SUB ERROR:", error)
     return NextResponse.json(
-      {
-        error: "Failed",
-        details: error?.error?.description || error?.message,
-      },
+      { error: error?.message || "Failed" },
       { status: 500 }
     )
   }

@@ -91,7 +91,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planType }),
+        body: JSON.stringify({ planType, companyId }),
       })
 
       const data = await res.json()
