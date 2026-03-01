@@ -38,26 +38,31 @@ export default function DashboardPage() {
   const supabase = supabaseBrowser
 
   const [companyId, setCompanyId] = useState('')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [address, setAddress] = useState('')
   const [slug, setSlug] = useState('')
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(false)
-  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
-  const [message, setMessage] = useState('')
   const [initialLoading, setInitialLoading] = useState(true)
-  const [openSection, setOpenSection] = useState<string | null>('logo')
+  const [message, setMessage] = useState('')
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+
+  const [openSection, setOpenSection] =
+    useState<string | null>('logo')
 
   useEffect(() => {
     loadCompany()
   }, [])
 
   async function loadCompany() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) return
 
     const { data: company } = await supabase
@@ -69,14 +74,13 @@ export default function DashboardPage() {
     if (!company) return
 
     setCompanyId(company.id)
+    setLogoUrl(company.logo_url || null)
     setDisplayName(company.display_name || '')
     setPhone(company.phone || '')
     setEmail(company.email || '')
     setWhatsapp(company.whatsapp || '')
     setAddress(company.address || '')
     setSlug(company.slug || '')
-    setLogoUrl(company.logo_url || null)
-
     setInitialLoading(false)
   }
 
@@ -119,10 +123,85 @@ export default function DashboardPage() {
     }
   }
 
+  async function resizeImage(file: File, size: number): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+
+      img.onload = () => {
+        canvas.width = size
+        canvas.height = size
+
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, size, size)
+
+        const ratio = Math.min(size / img.width, size / img.height)
+        const newWidth = img.width * ratio
+        const newHeight = img.height * ratio
+
+        const x = (size - newWidth) / 2
+        const y = (size - newHeight) / 2
+
+        ctx.drawImage(img, x, y, newWidth, newHeight)
+
+        canvas.toBlob((blob) => {
+          resolve(blob!)
+        }, 'image/png')
+      }
+
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  async function handleLogoUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0]
+    if (!file || !companyId) return
+
+    setLoading(true)
+
+    const blob512 = await resizeImage(file, 512)
+    const blob192 = await resizeImage(file, 192)
+
+    const path512 = `${companyId}/icon-512.png`
+    const path192 = `${companyId}/icon-192.png`
+
+    await supabase.storage
+      .from('company-logos')
+      .upload(path512, blob512, { upsert: true })
+
+    await supabase.storage
+      .from('company-logos')
+      .upload(path192, blob192, { upsert: true })
+
+    const { data: url512 } = supabase.storage
+      .from('company-logos')
+      .getPublicUrl(path512)
+
+    const { data: url192 } = supabase.storage
+      .from('company-logos')
+      .getPublicUrl(path192)
+
+    await supabase
+      .from('companies')
+      .update({
+        logo_url: url512.publicUrl,
+        logo_icon_512_url: url512.publicUrl,
+        logo_icon_192_url: url192.publicUrl,
+      })
+      .eq('id', companyId)
+
+    setLogoUrl(url512.publicUrl)
+    setLoading(false)
+  }
+
   async function handleSave() {
     if (!companyId) return
 
     setLoading(true)
+    setMessage('')
 
     await supabase
       .from('companies')
@@ -138,11 +217,17 @@ export default function DashboardPage() {
     setMessage('Changes saved successfully ✓')
     setLoading(false)
 
-    setTimeout(() => setMessage(''), 3000)
+    setTimeout(() => {
+      setMessage('')
+    }, 3000)
   }
 
   if (initialLoading) {
-    return <div className="p-10 text-gray-500">Loading...</div>
+    return (
+      <div className="p-10 text-gray-500">
+        Loading company settings...
+      </div>
+    )
   }
 
   return (
@@ -189,7 +274,40 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 🔹 Company Info Section */}
+      {/* 🔹 Logo Section */}
+      <Section
+        title="Company Logo"
+        id="logo"
+        openSection={openSection}
+        setOpenSection={setOpenSection}
+      >
+        <div className="flex items-center gap-6">
+          <div className="w-32 h-32 border rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                className="object-contain w-full h-full"
+              />
+            ) : (
+              <span className="text-gray-400 text-sm">
+                No Logo Uploaded
+              </span>
+            )}
+          </div>
+
+          <label className="cursor-pointer bg-black text-white px-5 py-2 rounded-lg hover:opacity-90 transition">
+            {loading ? 'Uploading...' : 'Change Logo'}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+      </Section>
+
+      {/* 🔹 Company Info */}
       <Section
         title="Company Information"
         id="company"
@@ -203,6 +321,7 @@ export default function DashboardPage() {
             placeholder="Company Name"
             className="border px-4 py-2 rounded"
           />
+
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -212,12 +331,55 @@ export default function DashboardPage() {
         </div>
       </Section>
 
+      {/* 🔹 Contact Info */}
+      <Section
+        title="Contact Details"
+        id="contact"
+        openSection={openSection}
+        setOpenSection={setOpenSection}
+      >
+        <div className="grid gap-4">
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Phone"
+            className="border px-4 py-2 rounded"
+          />
+
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="border px-4 py-2 rounded"
+          />
+
+          <input
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            placeholder="WhatsApp (with country code)"
+            className="border px-4 py-2 rounded"
+          />
+        </div>
+      </Section>
+
+      {/* 🔔 Manual Campaign Section */}
+      {companyId && (
+        <Section
+          title="Send Notification"
+          id="notification"
+          openSection={openSection}
+          setOpenSection={setOpenSection}
+        >
+          <SendNotification companyId={companyId} />
+        </Section>
+      )}
+
       {/* 🔹 Save Button */}
       <div className="pt-4">
         <button
           onClick={handleSave}
           disabled={loading}
-          className="bg-black text-white px-6 py-2 rounded-lg"
+          className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
         >
           {loading ? 'Saving...' : 'Save Changes'}
         </button>
