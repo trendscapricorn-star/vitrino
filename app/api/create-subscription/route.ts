@@ -4,14 +4,28 @@ import { createClient } from "@supabase/supabase-js"
 
 export async function POST(req: Request) {
   try {
-    const { planType, companyId } = await req.json()
+    console.log("---- CREATE SUBSCRIPTION START ----")
+
+    const body = await req.json()
+    console.log("Incoming body:", body)
+
+    const { planType, companyId } = body
 
     if (!planType || !companyId) {
+      console.log("Missing planType or companyId")
       return NextResponse.json(
         { error: "Missing planType or companyId" },
         { status: 400 }
       )
     }
+
+    console.log("PlanType:", planType)
+    console.log("CompanyId:", companyId)
+
+    console.log("ENV CHECK:")
+    console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID ? "OK" : "MISSING")
+    console.log("KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "OK" : "MISSING")
+    console.log("SERVICE_ROLE:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "OK" : "MISSING")
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
@@ -26,12 +40,17 @@ export async function POST(req: Request) {
 
     const plan_id = planMap[planType]
 
+    console.log("Resolved plan_id:", plan_id)
+
     if (!plan_id) {
+      console.log("Invalid plan type")
       return NextResponse.json(
         { error: "Invalid plan type" },
         { status: 400 }
       )
     }
+
+    console.log("Creating Razorpay subscription...")
 
     const subscription = await razorpay.subscriptions.create({
       plan_id,
@@ -42,21 +61,36 @@ export async function POST(req: Request) {
       },
     })
 
+    console.log("Razorpay subscription created:", subscription.id)
+
     // 🔥 Insert into Supabase
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    await supabase.from("subscriptions").insert({
-      company_id: companyId,
-      razorpay_subscription_id: subscription.id,
-      razorpay_plan_id: plan_id,
-      plan_type: planType,
-      status: "pending",
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
+    console.log("Inserting into subscriptions table...")
+
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .insert({
+        company_id: companyId,
+        razorpay_subscription_id: subscription.id,
+        razorpay_plan_id: plan_id,
+        plan_type: planType,
+        status: "pending",
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+      .select()
+
+    if (error) {
+      console.error("SUPABASE INSERT ERROR:", error)
+    } else {
+      console.log("Insert successful:", data)
+    }
+
+    console.log("---- CREATE SUBSCRIPTION END ----")
 
     return NextResponse.json({
       subscriptionId: subscription.id,
@@ -64,7 +98,7 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error("CREATE SUB ERROR:", error)
+    console.error("🔥 CREATE SUB ERROR:", error)
     return NextResponse.json(
       { error: error?.message || "Failed" },
       { status: 500 }
