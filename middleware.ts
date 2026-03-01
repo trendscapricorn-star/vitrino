@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 
 export async function middleware(req: any) {
   const res = NextResponse.next()
@@ -21,6 +20,7 @@ export async function middleware(req: any) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // If not logged in → allow (auth middleware should handle login separately)
   if (!user) return res
 
   const { data: company } = await supabase
@@ -51,77 +51,13 @@ export async function middleware(req: any) {
     subscription.current_period_end &&
     new Date(subscription.current_period_end) > now
 
-const pathname = req.nextUrl.pathname
+  const pathname = req.nextUrl.pathname
+  const isDashboardRoot = pathname === "/dashboard"
 
-const isDashboardRoot = pathname === "/dashboard"
-
-if (!isTrialValid && !isActiveValid && !isDashboardRoot) {
-  return NextResponse.redirect(new URL("/dashboard", req.url))
-}
-
-  return res
-}
-
-import { NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-
-export async function middleware(req: any) {
-  const res = NextResponse.next()
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name: string) => req.cookies.get(name)?.value,
-        set: () => {},
-        remove: () => {},
-      },
-    }
-  )
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return res
-
-  const { data: company } = await supabase
-    .from("companies")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .single()
-
-  if (!company) return res
-
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, trial_ends_at, current_period_end")
-    .eq("company_id", company.id)
-    .single()
-
-  if (!subscription) return res
-
-  const now = new Date()
-
-  const isTrialValid =
-    subscription.status === "trialing" &&
-    subscription.trial_ends_at &&
-    new Date(subscription.trial_ends_at) > now
-
-  const isActiveValid =
-    subscription.status === "active" &&
-    subscription.current_period_end &&
-    new Date(subscription.current_period_end) > now
-
-const pathname = req.nextUrl.pathname
-
-const isDashboardRoot = pathname === "/dashboard"
-
-if (!isTrialValid && !isActiveValid && !isDashboardRoot) {
-  return NextResponse.redirect(new URL("/dashboard", req.url))
-}
+  // Block access to dashboard subroutes if subscription invalid
+  if (!isTrialValid && !isActiveValid && !isDashboardRoot) {
+    return NextResponse.redirect(new URL("/dashboard", req.url))
+  }
 
   return res
 }
