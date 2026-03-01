@@ -18,9 +18,7 @@ function Section({
     <div className="border rounded-xl overflow-hidden">
       <button
         type="button"
-        onClick={() =>
-          setOpenSection(isOpen ? null : id)
-        }
+        onClick={() => setOpenSection(isOpen ? null : id)}
         className="w-full px-6 py-4 bg-gray-50 flex justify-between items-center font-medium"
       >
         {title}
@@ -40,28 +38,26 @@ export default function DashboardPage() {
   const supabase = supabaseBrowser
 
   const [companyId, setCompanyId] = useState('')
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [address, setAddress] = useState('')
   const [slug, setSlug] = useState('')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
   const [loading, setLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [openSection, setOpenSection] =
-    useState<string | null>('logo')
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [openSection, setOpenSection] = useState<string | null>('logo')
 
   useEffect(() => {
     loadCompany()
   }, [])
 
   async function loadCompany() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     const { data: company } = await supabase
@@ -73,95 +69,60 @@ export default function DashboardPage() {
     if (!company) return
 
     setCompanyId(company.id)
-    setLogoUrl(company.logo_url || null)
     setDisplayName(company.display_name || '')
     setPhone(company.phone || '')
     setEmail(company.email || '')
     setWhatsapp(company.whatsapp || '')
     setAddress(company.address || '')
     setSlug(company.slug || '')
+    setLogoUrl(company.logo_url || null)
+
     setInitialLoading(false)
   }
 
-  async function resizeImage(file: File, size: number): Promise<Blob> {
-    return new Promise((resolve) => {
-      const img = new Image()
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')!
+  async function handleSubscribe(planType: string) {
+    try {
+      setSubscriptionLoading(true)
 
-      img.onload = () => {
-        canvas.width = size
-        canvas.height = size
+      const res = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planType }),
+      })
 
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, size, size)
+      const data = await res.json()
 
-        const ratio = Math.min(size / img.width, size / img.height)
-        const newWidth = img.width * ratio
-        const newHeight = img.height * ratio
-
-        const x = (size - newWidth) / 2
-        const y = (size - newHeight) / 2
-
-        ctx.drawImage(img, x, y, newWidth, newHeight)
-
-        canvas.toBlob((blob) => {
-          resolve(blob!)
-        }, 'image/png')
+      if (!data.subscriptionId) {
+        alert(data.details || 'Subscription failed')
+        return
       }
 
-      img.src = URL.createObjectURL(file)
-    })
-  }
+      const options = {
+        key: data.key,
+        subscription_id: data.subscriptionId,
+        name: 'Vitrino',
+        description: 'Vitrino Subscription',
+        theme: { color: '#000000' },
+        handler: function () {
+          window.location.reload()
+        },
+      }
 
-  async function handleLogoUpload(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file = e.target.files?.[0]
-    if (!file || !companyId) return
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
 
-    setLoading(true)
-
-    const blob512 = await resizeImage(file, 512)
-    const blob192 = await resizeImage(file, 192)
-
-    const path512 = `${companyId}/icon-512.png`
-    const path192 = `${companyId}/icon-192.png`
-
-    await supabase.storage
-      .from('company-logos')
-      .upload(path512, blob512, { upsert: true })
-
-    await supabase.storage
-      .from('company-logos')
-      .upload(path192, blob192, { upsert: true })
-
-    const { data: url512 } = supabase.storage
-      .from('company-logos')
-      .getPublicUrl(path512)
-
-    const { data: url192 } = supabase.storage
-      .from('company-logos')
-      .getPublicUrl(path192)
-
-    await supabase
-      .from('companies')
-      .update({
-        logo_url: url512.publicUrl,
-        logo_icon_512_url: url512.publicUrl,
-        logo_icon_192_url: url192.publicUrl,
-      })
-      .eq('id', companyId)
-
-    setLogoUrl(url512.publicUrl)
-    setLoading(false)
+    } catch (error) {
+      console.error(error)
+      alert('Something went wrong')
+    } finally {
+      setSubscriptionLoading(false)
+    }
   }
 
   async function handleSave() {
     if (!companyId) return
 
     setLoading(true)
-    setMessage('')
 
     await supabase
       .from('companies')
@@ -177,17 +138,11 @@ export default function DashboardPage() {
     setMessage('Changes saved successfully ✓')
     setLoading(false)
 
-    setTimeout(() => {
-      setMessage('')
-    }, 3000)
+    setTimeout(() => setMessage(''), 3000)
   }
 
   if (initialLoading) {
-    return (
-      <div className="p-10 text-gray-500">
-        Loading company settings...
-      </div>
-    )
+    return <div className="p-10 text-gray-500">Loading...</div>
   }
 
   return (
@@ -197,50 +152,44 @@ export default function DashboardPage() {
         Branding & Company Settings
       </h1>
 
-      {/* 🔹 Logo Section */}
-      <Section
-        title="Company Logo"
-        id="logo"
-        openSection={openSection}
-        setOpenSection={setOpenSection}
-      >
-        <div className="flex items-center gap-6">
-          <div className="w-32 h-32 border rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                className="object-contain w-full h-full"
-              />
-            ) : (
-              <span className="text-gray-400 text-sm">
-                No Logo Uploaded
-              </span>
-            )}
-          </div>
+      {/* 🔥 Subscription Section */}
+      <div className="border rounded-xl p-6 bg-yellow-50 border-yellow-300">
+        <h2 className="text-lg font-semibold mb-2">
+          Upgrade Subscription
+        </h2>
 
-          <label className="cursor-pointer bg-black text-white px-5 py-2 rounded-lg hover:opacity-90 transition">
-            {loading ? 'Uploading...' : 'Change Logo'}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              className="hidden"
-            />
-          </label>
-        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Upgrade to continue uninterrupted access.
+        </p>
 
-        {slug && (
-          <a
-            href={`/${slug}`}
-            target="_blank"
-            className="block text-sm text-blue-600 mt-4 hover:underline"
+        <div className="flex gap-4 flex-wrap">
+          <button
+            onClick={() => handleSubscribe('monthly')}
+            disabled={subscriptionLoading}
+            className="bg-black text-white px-6 py-2 rounded-lg"
           >
-            See how your logo appears on website →
-          </a>
-        )}
-      </Section>
+            {subscriptionLoading ? 'Processing...' : 'Monthly ₹399'}
+          </button>
 
-      {/* 🔹 Company Info */}
+          <button
+            onClick={() => handleSubscribe('quarterly')}
+            disabled={subscriptionLoading}
+            className="bg-black text-white px-6 py-2 rounded-lg"
+          >
+            Quarterly ₹1099
+          </button>
+
+          <button
+            onClick={() => handleSubscribe('yearly')}
+            disabled={subscriptionLoading}
+            className="bg-black text-white px-6 py-2 rounded-lg"
+          >
+            Yearly ₹3999
+          </button>
+        </div>
+      </div>
+
+      {/* 🔹 Company Info Section */}
       <Section
         title="Company Information"
         id="company"
@@ -250,79 +199,25 @@ export default function DashboardPage() {
         <div className="grid gap-4">
           <input
             value={displayName}
-            onChange={(e) =>
-              setDisplayName(e.target.value)
-            }
+            onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Company Name"
             className="border px-4 py-2 rounded"
           />
-
           <textarea
             value={address}
-            onChange={(e) =>
-              setAddress(e.target.value)
-            }
+            onChange={(e) => setAddress(e.target.value)}
             placeholder="Address"
             className="border px-4 py-2 rounded"
           />
         </div>
       </Section>
 
-      {/* 🔹 Contact Info */}
-      <Section
-        title="Contact Details"
-        id="contact"
-        openSection={openSection}
-        setOpenSection={setOpenSection}
-      >
-        <div className="grid gap-4">
-          <input
-            value={phone}
-            onChange={(e) =>
-              setPhone(e.target.value)
-            }
-            placeholder="Phone"
-            className="border px-4 py-2 rounded"
-          />
-
-          <input
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            placeholder="Email"
-            className="border px-4 py-2 rounded"
-          />
-
-          <input
-            value={whatsapp}
-            onChange={(e) =>
-              setWhatsapp(e.target.value)
-            }
-            placeholder="WhatsApp (with country code)"
-            className="border px-4 py-2 rounded"
-          />
-        </div>
-      </Section>
-
-      {/* 🔔 Manual Campaign Section */}
-      {companyId && (
-        <Section
-          title="Send Notification"
-          id="notification"
-          openSection={openSection}
-          setOpenSection={setOpenSection}
-        >
-          <SendNotification companyId={companyId} />
-        </Section>
-      )}
-
       {/* 🔹 Save Button */}
       <div className="pt-4">
         <button
           onClick={handleSave}
           disabled={loading}
-          className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90"
+          className="bg-black text-white px-6 py-2 rounded-lg"
         >
           {loading ? 'Saving...' : 'Save Changes'}
         </button>
