@@ -19,14 +19,6 @@ export async function POST(req: Request) {
       )
     }
 
-    console.log("PlanType:", planType)
-    console.log("CompanyId:", companyId)
-
-    console.log("ENV CHECK:")
-    console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID ? "OK" : "MISSING")
-    console.log("KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "OK" : "MISSING")
-    console.log("SERVICE_ROLE:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "OK" : "MISSING")
-
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -40,10 +32,7 @@ export async function POST(req: Request) {
 
     const plan_id = planMap[planType]
 
-    console.log("Resolved plan_id:", plan_id)
-
     if (!plan_id) {
-      console.log("Invalid plan type")
       return NextResponse.json(
         { error: "Invalid plan type" },
         { status: 400 }
@@ -63,33 +52,35 @@ export async function POST(req: Request) {
 
     console.log("Razorpay subscription created:", subscription.id)
 
-    // 🔥 Insert into Supabase
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    console.log("Inserting into subscriptions table...")
+    console.log("Updating existing subscription row...")
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .insert({
-        company_id: companyId,
+      .update({
         razorpay_subscription_id: subscription.id,
         razorpay_plan_id: plan_id,
         plan_type: planType,
         status: "trialing",
-        created_at: new Date(),
         updated_at: new Date(),
       })
+      .eq("company_id", companyId)
+      .in("status", ["trialing", "expired"])
       .select()
 
     if (error) {
-      console.error("SUPABASE INSERT ERROR:", error)
-    } else {
-      console.log("Insert successful:", data)
+      console.error("SUPABASE UPDATE ERROR:", error)
+      return NextResponse.json(
+        { error: "Database update failed" },
+        { status: 500 }
+      )
     }
 
+    console.log("Update successful:", data)
     console.log("---- CREATE SUBSCRIPTION END ----")
 
     return NextResponse.json({
