@@ -78,7 +78,7 @@ export async function POST(req: Request) {
         razorpay_subscription_id: subscription.id,
         razorpay_plan_id: plan_id,
         plan_type: planType,
-        status: "pending",
+        status: "trailing",
         created_at: new Date(),
         updated_at: new Date(),
       })
