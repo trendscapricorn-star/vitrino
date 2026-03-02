@@ -18,60 +18,49 @@ export async function proxy(req: NextRequest) {
     }
   )
 
-  /* 🔹 Get Auth User */
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Not logged in → let auth layer handle
   if (!user) return res
 
-  /* 🔹 Get Company */
   const { data: company } = await supabase
     .from("companies")
     .select("id")
     .eq("auth_user_id", user.id)
-    .maybeSingle()
+    .single()
 
-  // No company yet (signup mid-flow) → allow
   if (!company) return res
 
-  /* 🔹 Get Subscription */
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("status, trial_ends_at, current_period_end")
     .eq("company_id", company.id)
-    .maybeSingle()
+    .single()
 
-  // No subscription yet → allow (user just created company)
+  const pathname = req.nextUrl.pathname
+
+  const isDashboardRoot = pathname === "/dashboard"
+  const isSetupPage = pathname === "/dashboard/setup"
+
+  // 🔥 Allow setup page always
+  if (isSetupPage) return res
+
   if (!subscription) return res
 
   const now = new Date()
 
-  /* 🔹 Trial Valid */
   const isTrialValid =
     subscription.status === "trialing" &&
     subscription.trial_ends_at &&
     new Date(subscription.trial_ends_at) > now
 
-  /* 🔹 Active Valid */
   const isActiveValid =
     subscription.status === "active" &&
     subscription.current_period_end &&
     new Date(subscription.current_period_end) > now
 
-  /*
-    🔒 IMPORTANT:
-    status === "created" (paid but not activated)
-    should NOT grant access
-  */
-
-  const hasValidAccess = isTrialValid || isActiveValid
-
-  const pathname = req.nextUrl.pathname
-  const isDashboardRoot = pathname === "/dashboard"
-
-  if (!hasValidAccess && !isDashboardRoot) {
+  if (!isTrialValid && !isActiveValid && !isDashboardRoot) {
     const url = req.nextUrl.clone()
     url.pathname = "/dashboard"
     url.searchParams.set("expired", "true")
