@@ -1,249 +1,170 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import { useState } from "react"
+import { supabaseBrowser } from "@/lib/supabase-browser"
+import { useRouter } from "next/navigation"
 
 export default function SignupForm() {
-  const supabase = supabaseBrowser;
+  const router = useRouter()
+  const supabase = supabaseBrowser
 
-  const [step, setStep] = useState<"form" | "otp" | "plan">("form");
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [password, setPassword] = useState("")
+  const [slug, setSlug] = useState("")
+  const [otp, setOtp] = useState("")
+  const [step, setStep] = useState<"form" | "otp">("form")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const [companyName, setCompanyName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [gst, setGst] = useState("");
-  const [address, setAddress] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
+  /* 🔹 Send OTP */
+  async function handleSendOtp() {
+    setError("")
+    setLoading(true)
 
-  function normalizeSlug(value: string) {
-    return value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+      },
+    })
 
-  async function handleSignup() {
-    try {
-      setLoading(true);
+    setLoading(false)
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      setStep("otp");
-
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message)
+      return
     }
+
+    setStep("otp")
   }
 
-  async function verifyOtp() {
-    try {
-      setLoading(true);
+  /* 🔹 Verify OTP */
+  async function handleVerifyOtp() {
+    setError("")
+    setLoading(true)
 
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: "email",
-      });
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "email",
+    })
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
-
-      // After verification, user is logged in
-      setStep("plan");
-
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
     }
-  }
 
-  async function insertCompany() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = data.user
+    if (!user) {
+      setError("Authentication failed")
+      setLoading(false)
+      return
+    }
 
-    if (!user) throw new Error("User not authenticated");
-
-    const normalizedSlug = normalizeSlug(slug);
-
-    const { data, error } = await supabase
+    /* 🔹 Create Company */
+    const { error: companyError } = await supabase
       .from("companies")
       .insert({
         auth_user_id: user.id,
-        display_name: companyName,
-        slug: normalizedSlug,
-        gst_number: gst || null,
-        address: address || null,
-        phone: phone || null,
-        email: email || null,
+        display_name: slug,
+        slug,
+        phone,
+        email,
       })
-      .select()
-      .single();
 
-    if (error) {
-      if (error.message.includes("duplicate")) {
-        throw new Error("Slug already taken");
-      }
-      throw error;
+    if (companyError) {
+      setError(companyError.message)
+      setLoading(false)
+      return
     }
 
-    return data;
+    /* 🔹 Create Trial Subscription */
+    const trialEnd = new Date()
+    trialEnd.setDate(trialEnd.getDate() + 7)
+
+    await supabase.from("subscriptions").insert({
+      company_id: user.id,
+      status: "trialing",
+      trial_ends_at: trialEnd,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    setLoading(false)
+
+    router.push("/dashboard")
   }
 
-  async function startTrial() {
-    try {
-      setLoading(true);
+  /* 🔹 UI */
+  return (
+    <div className="space-y-4">
 
-      const company = await insertCompany();
+      {step === "form" && (
+        <>
+          <input
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
-      const trialEnds = new Date();
-      trialEnds.setDate(trialEnds.getDate() + 7);
+          <input
+            placeholder="Phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
-      await supabase.from("subscriptions").insert({
-        company_id: company.id,
-        status: "trialing",
-        trial_ends_at: trialEnds,
-      });
+          <input
+            placeholder="Password (optional for now)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
-      window.location.href = "/dashboard";
+          <input
+            placeholder="Choose your slug (yourbrand)"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+          <button
+            onClick={handleSendOtp}
+            disabled={loading}
+            className="w-full bg-black text-white py-2 rounded"
+          >
+            {loading ? "Sending..." : "Send OTP"}
+          </button>
+        </>
+      )}
 
-  if (step === "form") {
-    return (
-      <>
-        <h2 className="text-xl font-semibold mb-6">
-          Create Your Business Account
-        </h2>
+      {step === "otp" && (
+        <>
+          <input
+            placeholder="Enter 6-digit OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            className="w-full border px-4 py-2 rounded text-center tracking-widest"
+          />
 
-        <input
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="Company Name"
-          value={companyName}
-          onChange={(e) => {
-            setCompanyName(e.target.value);
-            setSlug(normalizeSlug(e.target.value));
-          }}
-        />
+          <button
+            onClick={handleVerifyOtp}
+            disabled={loading}
+            className="w-full bg-black text-white py-2 rounded"
+          >
+            {loading ? "Verifying..." : "Verify & Continue"}
+          </button>
+        </>
+      )}
 
-        <input
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="Slug"
-          value={slug}
-          onChange={(e) => setSlug(normalizeSlug(e.target.value))}
-        />
-
-        <input
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="GST Number (optional)"
-          value={gst}
-          onChange={(e) => setGst(e.target.value)}
-        />
-
-        <textarea
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="Business Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-
-        <input
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          className="border w-full p-2 mb-3 rounded"
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-
-        <input
-          type="password"
-          className="border w-full p-2 mb-4 rounded"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={handleSignup}
-          disabled={loading}
-          className="w-full bg-black text-white p-2 rounded"
-        >
-          {loading ? "Processing..." : "Continue"}
-        </button>
-      </>
-    );
-  }
-
-  if (step === "otp") {
-    return (
-      <>
-        <h2 className="text-xl font-semibold mb-6">
-          Verify Email
-        </h2>
-
-        <input
-          className="border w-full p-2 mb-4 rounded"
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-        />
-
-        <button
-          onClick={verifyOtp}
-          disabled={loading}
-          className="w-full bg-black text-white p-2 rounded"
-        >
-          {loading ? "Verifying..." : "Verify"}
-        </button>
-      </>
-    );
-  }
-
-  if (step === "plan") {
-    return (
-      <>
-        <h2 className="text-xl font-semibold mb-6">
-          Choose Your Plan
-        </h2>
-
-        <button
-          onClick={startTrial}
-          className="w-full border p-3 rounded mb-3"
-        >
-          Start 7-Day Free Trial
-        </button>
-
-        <button
-          className="w-full bg-black text-white p-3 rounded"
-        >
-          Purchase Plan
-        </button>
-      </>
-    );
-  }
-
-  return null;
+      {error && (
+        <div className="text-red-600 text-sm text-center">
+          {error}
+        </div>
+      )}
+    </div>
+  )
 }
