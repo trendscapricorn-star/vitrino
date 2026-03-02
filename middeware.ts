@@ -24,28 +24,37 @@ export async function proxy(req: NextRequest) {
 
   if (!user) return res
 
+  const pathname = req.nextUrl.pathname
+  const isSetupPage = pathname === "/dashboard/setup"
+  const isDashboardRoot = pathname === "/dashboard"
+
+  /* ---------------- CHECK COMPANY ---------------- */
+
   const { data: company } = await supabase
     .from("companies")
     .select("id")
     .eq("auth_user_id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (!company) return res
+  // 🔥 If no company → force setup
+  if (!company) {
+    if (!isSetupPage) {
+      const url = req.nextUrl.clone()
+      url.pathname = "/dashboard/setup"
+      return NextResponse.redirect(url)
+    }
+    return res
+  }
+
+  /* ---------------- CHECK SUBSCRIPTION ---------------- */
 
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("status, trial_ends_at, current_period_end")
     .eq("company_id", company.id)
-    .single()
+    .maybeSingle()
 
-  const pathname = req.nextUrl.pathname
-
-  const isDashboardRoot = pathname === "/dashboard"
-  const isSetupPage = pathname === "/dashboard/setup"
-
-  // 🔥 Allow setup page always
-  if (isSetupPage) return res
-
+  // If no subscription → allow (trial from companies table)
   if (!subscription) return res
 
   const now = new Date()
