@@ -24,10 +24,12 @@ export default async function PublicCatalog(props: any) {
 
   if (!slug) notFound()
 
-  /* 🔹 Company (SECURE RPC) */
-  const { data: company } = await supabase
-    .rpc<Company>("get_company_by_slug", { p_slug: slug })
+  /* 🔹 Company (SECURE RPC — Supabase v2 safe) */
+  const { data: companyData } = await supabase
+    .rpc("get_company_by_slug", { p_slug: slug })
     .single()
+
+  const company = companyData as Company | null
 
   if (!company) notFound()
 
