@@ -20,7 +20,7 @@ export default function SignupForm() {
     setLoading(true)
     setError(null)
 
-    /* ---------------- CREATE USER ---------------- */
+    /* ---------- CREATE USER ---------- */
 
     const { data: authData, error: authError } =
       await supabase.auth.signUp({
@@ -36,7 +36,7 @@ export default function SignupForm() {
 
     const user = authData.user
 
-    /* ---------------- CREATE COMPANY ---------------- */
+    /* ---------- CREATE COMPANY ---------- */
 
     const { data: company, error: companyError } =
       await supabase
@@ -57,19 +57,23 @@ export default function SignupForm() {
       return
     }
 
-    /* ---------------- CREATE TRIAL SUBSCRIPTION ---------------- */
+    /* ---------- CALL SERVER TO CREATE TRIAL ---------- */
 
-    const trialEnd = new Date()
-    trialEnd.setDate(trialEnd.getDate() + 7)
-
-    await supabase.from("subscriptions").insert({
-      company_id: company.id,
-      plan_type: "trial",
-      status: "trialing",
-      trial_ends_at: trialEnd,
-      created_at: new Date(),
-      updated_at: new Date(),
+    const trialResponse = await fetch("/api/create-trial", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyId: company.id,
+      }),
     })
+
+    const trialData = await trialResponse.json()
+
+    if (!trialResponse.ok) {
+      setError(trialData.error || "Trial creation failed")
+      setLoading(false)
+      return
+    }
 
     setLoading(false)
 
