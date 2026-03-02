@@ -6,42 +6,22 @@ import InstallButton from './components/InstallButton'
 const PAGE_SIZE = 12
 
 export default async function PublicCatalog(props: any) {
-  // ✅ Next 15: unwrap params & searchParams
+
   const params = await props.params
   const searchParams = await props.searchParams
 
   const supabase = await createSupabaseServerClient()
   const slug = params.slug
 
-  if (!slug) {
-    return (
-      <div style={{ padding: 40 }}>
-        ❌ Slug is undefined
-      </div>
-    )
-  }
+  if (!slug) notFound()
 
-  /* 🔹 Company */
+  /* 🔹 Company (SECURE RPC) */
   const { data: company } = await supabase
-    .from('companies')
-    .select(`
-      id,
-      display_name,
-      phone,
-      email,
-      whatsapp,
-      address
-    `)
-    .eq('slug', slug)
+    .rpc('get_company_by_slug', { p_slug: slug })
     .single()
 
-  if (!company) {
-    return (
-      <div style={{ padding: 40 }}>
-        ❌ Company not found for slug: {slug}
-      </div>
-    )
-  }
+  if (!company) notFound()
+
   /* 🔹 Subscription Check */
   const { data: subscription } = await supabase
     .from('subscriptions')
@@ -76,6 +56,7 @@ export default async function PublicCatalog(props: any) {
       </div>
     )
   }
+
   /* 🔹 Categories */
   const { data: categories } = await supabase
     .from('categories')
@@ -124,8 +105,7 @@ export default async function PublicCatalog(props: any) {
   /* 🔹 Products Query */
   let query = supabase
     .from('products')
-    .select(
-      `
+    .select(`
       id,
       name,
       slug,
@@ -135,9 +115,7 @@ export default async function PublicCatalog(props: any) {
         image_url,
         sort_order
       )
-    `,
-      { count: 'exact' }
-    )
+    `, { count: 'exact' })
     .eq('company_id', company.id)
     .eq('category_id', selectedCategory)
     .eq('is_active', true)

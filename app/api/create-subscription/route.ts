@@ -7,8 +7,6 @@ export async function POST(req: Request) {
     console.log("---- CREATE SUBSCRIPTION START ----")
 
     const body = await req.json()
-    console.log("Incoming body:", body)
-
     const { planType, companyId } = body
 
     if (!planType || !companyId) {
@@ -18,6 +16,26 @@ export async function POST(req: Request) {
       )
     }
 
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    /* 🔒 Prevent duplicate subscription creation */
+    const { data: existing } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("company_id", companyId)
+      .maybeSingle()
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Subscription already exists" },
+        { status: 400 }
+      )
+    }
+
+    /* 🔹 Razorpay Init */
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -43,7 +61,6 @@ export async function POST(req: Request) {
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
-      total_count: 12,
       notes: {
         company_id: companyId,
       },
@@ -51,46 +68,34 @@ export async function POST(req: Request) {
 
     console.log("Razorpay subscription created:", subscription.id)
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    const trialEnd = new Date()
-    trialEnd.setDate(trialEnd.getDate() + 7)
-
-    console.log("Upserting subscription row...")
-
+    /* 🔹 Insert DB row with status = created */
     const { data, error } = await supabase
       .from("subscriptions")
-      .upsert(
-        {
-          company_id: companyId,
-          razorpay_subscription_id: subscription.id,
-          razorpay_plan_id: plan_id,
-          plan_type: planType,
-          status: "trialing",
-          trial_ends_at: trialEnd,
-          current_period_start: null,
-          current_period_end: null,
-          cancelled_at: null,
-          updated_at: new Date(),
-        },
-        {
-          onConflict: "company_id",
-        }
-      )
+      .insert({
+        company_id: companyId,
+        razorpay_subscription_id: subscription.id,
+        razorpay_plan_id: plan_id,
+        plan_type: planType,
+        status: "created", // 🔥 Important
+        trial_ends_at: null,
+        current_period_start: null,
+        current_period_end: null,
+        cancelled_at: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
       .select()
+      .single()
 
     if (error) {
-      console.error("SUPABASE UPSERT ERROR:", error)
+      console.error("SUPABASE INSERT ERROR:", error)
       return NextResponse.json(
-        { error: "Database upsert failed" },
+        { error: "Database insert failed" },
         { status: 500 }
       )
     }
 
-    console.log("Upsert successful:", data)
+    console.log("Subscription row inserted:", data.id)
     console.log("---- CREATE SUBSCRIPTION END ----")
 
     return NextResponse.json({
@@ -101,7 +106,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("🔥 CREATE SUB ERROR:", error)
     return NextResponse.json(
-      { error: error?.message || "Failed" },
+      { error: error?.message || "Failed to create subscription" },
       { status: 500 }
     )
   }
