@@ -16,8 +16,28 @@ export default async function PublicCatalog(props: any) {
   if (!slug) notFound()
 
   /* 🔹 Company (SECURE RPC) */
+type Company = {
+  id: string
+  display_name: string
+  phone: string | null
+  email: string | null
+  whatsapp: string | null
+  address: string | null
+}
+
+export default async function PublicCatalog(props: any) {
+
+  const params = await props.params
+  const searchParams = await props.searchParams
+
+  const supabase = await createSupabaseServerClient()
+  const slug = params.slug
+
+  if (!slug) notFound()
+
+  /* 🔹 Company (SECURE RPC) */
   const { data: company } = await supabase
-    .rpc('get_company_by_slug', { p_slug: slug })
+    .rpc<Company>('get_company_by_slug', { p_slug: slug })
     .single()
 
   if (!company) notFound()
