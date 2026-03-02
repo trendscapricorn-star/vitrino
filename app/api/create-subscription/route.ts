@@ -12,7 +12,6 @@ export async function POST(req: Request) {
     const { planType, companyId } = body
 
     if (!planType || !companyId) {
-      console.log("Missing planType or companyId")
       return NextResponse.json(
         { error: "Missing planType or companyId" },
         { status: 400 }
@@ -57,30 +56,41 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    console.log("Updating existing subscription row...")
+    const trialEnd = new Date()
+    trialEnd.setDate(trialEnd.getDate() + 7)
+
+    console.log("Upserting subscription row...")
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .update({
-        razorpay_subscription_id: subscription.id,
-        razorpay_plan_id: plan_id,
-        plan_type: planType,
-        status: "trialing",
-        updated_at: new Date(),
-      })
-      .eq("company_id", companyId)
-      .in("status", ["trialing", "expired"])
+      .upsert(
+        {
+          company_id: companyId,
+          razorpay_subscription_id: subscription.id,
+          razorpay_plan_id: plan_id,
+          plan_type: planType,
+          status: "trialing",
+          trial_ends_at: trialEnd,
+          current_period_start: null,
+          current_period_end: null,
+          cancelled_at: null,
+          updated_at: new Date(),
+        },
+        {
+          onConflict: "company_id",
+        }
+      )
       .select()
 
     if (error) {
-      console.error("SUPABASE UPDATE ERROR:", error)
+      console.error("SUPABASE UPSERT ERROR:", error)
       return NextResponse.json(
-        { error: "Database update failed" },
+        { error: "Database upsert failed" },
         { status: 500 }
       )
     }
 
-    console.log("Update successful:", data)
+    console.log("Upsert successful:", data)
     console.log("---- CREATE SUBSCRIPTION END ----")
 
     return NextResponse.json({
