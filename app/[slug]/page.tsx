@@ -42,7 +42,40 @@ export default async function PublicCatalog(props: any) {
       </div>
     )
   }
+  /* 🔹 Subscription Check */
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('status, trial_ends_at, current_period_end')
+    .eq('company_id', company.id)
+    .single()
 
+  const now = new Date()
+
+  const isTrialValid =
+    subscription?.status === 'trialing' &&
+    subscription.trial_ends_at &&
+    new Date(subscription.trial_ends_at) > now
+
+  const isActiveValid =
+    subscription?.status === 'active' &&
+    subscription.current_period_end &&
+    new Date(subscription.current_period_end) > now
+
+  if (!isTrialValid && !isActiveValid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="bg-white p-10 rounded-xl shadow text-center max-w-md">
+          <div className="text-xl font-semibold mb-4 text-red-600">
+            Account Suspended
+          </div>
+          <div className="text-gray-600 mb-6">
+            This vendor account is currently suspended.
+            Please renew the subscription to restore access.
+          </div>
+        </div>
+      </div>
+    )
+  }
   /* 🔹 Categories */
   const { data: categories } = await supabase
     .from('categories')
