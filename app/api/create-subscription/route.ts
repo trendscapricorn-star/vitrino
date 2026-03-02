@@ -61,6 +61,7 @@ export async function POST(req: Request) {
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
+      total_count: 12, // ✅ REQUIRED by Razorpay types
       notes: {
         company_id: companyId,
       },
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
         razorpay_subscription_id: subscription.id,
         razorpay_plan_id: plan_id,
         plan_type: planType,
-        status: "created", // 🔥 Important
+        status: "created", // 🔥 Not trialing
         trial_ends_at: null,
         current_period_start: null,
         current_period_end: null,
