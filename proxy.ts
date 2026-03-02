@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-export async function middleware(req: any) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
 
   const supabase = createServerClient(
@@ -20,7 +20,7 @@ export async function middleware(req: any) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // If not logged in → allow (auth middleware should handle login separately)
+  // Not logged in → allow (auth layer handles it)
   if (!user) return res
 
   const { data: company } = await supabase
@@ -54,9 +54,12 @@ export async function middleware(req: any) {
   const pathname = req.nextUrl.pathname
   const isDashboardRoot = pathname === "/dashboard"
 
-  // Block access to dashboard subroutes if subscription invalid
+  // If subscription invalid → redirect to dashboard root
   if (!isTrialValid && !isActiveValid && !isDashboardRoot) {
-    return NextResponse.redirect(new URL("/dashboard", req.url))
+    const url = req.nextUrl.clone()
+    url.pathname = "/dashboard"
+    url.searchParams.set("expired", "true")
+    return NextResponse.redirect(url)
   }
 
   return res
