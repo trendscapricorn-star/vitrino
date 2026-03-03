@@ -26,6 +26,7 @@ function extractJSON(text: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+
     const {
       mode,
       category,
@@ -35,6 +36,13 @@ export async function POST(req: Request) {
       description,
     } = body
 
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "Missing GEMINI_API_KEY" },
+        { status: 500 }
+      )
+    }
+
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
     })
@@ -42,7 +50,7 @@ export async function POST(req: Request) {
     let prompt = ""
 
     // =============================
-    // MODE 1: ATTRIBUTE SUGGESTION
+    // ATTRIBUTE SUGGESTION MODE
     // =============================
     if (mode === "attribute_suggestion") {
       prompt = `
@@ -63,7 +71,7 @@ Format:
 Rules:
 - Do not repeat existing attributes.
 - Suggest only highly relevant attributes.
-- Keep suggestions minimal and filter-friendly.
+- Keep suggestions minimal.
 
 Category: ${category}
 
@@ -80,7 +88,7 @@ ${JSON.stringify(existingAttributes, null, 2)}
     }
 
     // =============================
-    // MODE 2: PRODUCT AUTO FILL
+    // PRODUCT AUTO FILL MODE
     // =============================
     if (mode === "product_autofill") {
       if (!imageUrl) {
@@ -156,10 +164,14 @@ Description: ${description || ""}
       { error: "Invalid mode" },
       { status: 400 }
     )
-  } catch (err) {
-    console.error("AI Error:", err)
+  } catch (err: any) {
+    console.error("AI FULL ERROR:", err)
+
     return NextResponse.json(
-      { error: "AI failed" },
+      {
+        error: "AI failed",
+        message: err?.message || "Unknown server error"
+      },
       { status: 500 }
     )
   }
