@@ -23,7 +23,7 @@ export default async function ProductsPage() {
 
   if (!company) redirect('/dashboard/setup')
 
-  // 📦 Get products WITH images + variants
+  // 📦 Get products (WITHOUT variants)
   const { data: products } = await supabase
     .from('products')
     .select(`
@@ -33,9 +33,6 @@ export default async function ProductsPage() {
         id,
         image_url,
         sort_order
-      ),
-      variants (
-        id
       )
     `)
     .eq('company_id', company.id)
