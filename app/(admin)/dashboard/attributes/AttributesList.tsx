@@ -10,6 +10,7 @@ import AttributeOptionsManager from './AttributeOptionsManager'
 type Category = {
   id: string
   name: string
+  image_url?: string
 }
 
 type Attribute = {
@@ -33,11 +34,24 @@ export default function AttributesList({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [editAttribute, setEditAttribute] = useState<Attribute | null>(null)
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('')
+
+  const [editAttribute, setEditAttribute] =
+    useState<Attribute | null>(null)
+
+  const selectedCategoryData = categories.find(
+    (c) => c.id === selectedCategory
+  )
 
   const filteredAttributes = attributes.filter(
     (a) => a.category_id === selectedCategory
+  )
+
+  const existingAttributes = filteredAttributes.map(
+    (a) => ({
+      name: a.name,
+    })
   )
 
   async function toggleAttribute(attr: Attribute) {
@@ -55,6 +69,7 @@ export default function AttributesList({
         Attributes
       </h1>
 
+      {/* Category Selector */}
       <select
         value={selectedCategory}
         onChange={(e) =>
@@ -70,20 +85,27 @@ export default function AttributesList({
         ))}
       </select>
 
-      {selectedCategory && (
+      {selectedCategory && selectedCategoryData && (
         <>
+          {/* Attribute Form */}
           <AttributeForm
             categoryId={selectedCategory}
+            categoryName={selectedCategoryData.name}
+            categoryImageUrl={selectedCategoryData.image_url}
+            existingAttributes={existingAttributes}
             attribute={editAttribute}
             onClose={() => setEditAttribute(null)}
           />
 
+          {/* Attribute List */}
           <div className="space-y-3 mt-4">
             {filteredAttributes.map((attr) => (
               <div
                 key={attr.id}
                 className={`border p-4 rounded ${
-                  !attr.is_active ? 'opacity-50' : ''
+                  !attr.is_active
+                    ? 'opacity-50'
+                    : ''
                 }`}
               >
                 <div className="flex justify-between">
