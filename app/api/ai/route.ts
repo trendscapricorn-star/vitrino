@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { Buffer } from "buffer"
 
 function extractJSON(text: string) {
   try {
@@ -107,7 +108,7 @@ Description: ${description || ""}
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-002:generateContent`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-002:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -126,7 +127,7 @@ Description: ${description || ""}
     const result = await response.json()
 
     if (!response.ok) {
-      console.error("Gemini Error:", result)
+      console.error("Gemini Error FULL:", result)
       return NextResponse.json(
         { error: "Gemini failed", message: result },
         { status: 500 }
