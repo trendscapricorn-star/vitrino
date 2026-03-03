@@ -21,7 +21,6 @@ function extractJSON(text: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-
     const {
       mode,
       category,
@@ -40,9 +39,6 @@ export async function POST(req: Request) {
 
     let prompt = ""
 
-    // =============================
-    // ATTRIBUTE SUGGESTION
-    // =============================
     if (mode === "attribute_suggestion") {
       prompt = `
 You are a product taxonomy expert.
@@ -52,10 +48,7 @@ Return ONLY valid JSON.
 Format:
 {
   "suggested_attributes": [
-    {
-      "name": "",
-      "options": []
-    }
+    { "name": "", "options": [] }
   ]
 }
 
@@ -66,9 +59,6 @@ ${JSON.stringify(existingAttributes, null, 2)}
 `
     }
 
-    // =============================
-    // PRODUCT AUTO FILL
-    // =============================
     if (mode === "product_autofill") {
       prompt = `
 You are a strict product classification AI.
@@ -77,21 +67,12 @@ Return ONLY valid JSON.
 
 Format:
 {
-  "moderation": {
-    "allowed": true,
-    "reason": ""
-  },
+  "moderation": { "allowed": true, "reason": "" },
   "matched_attributes": [
-    {
-      "attribute_name": "",
-      "matched_option": ""
-    }
+    { "attribute_name": "", "matched_option": "" }
   ],
   "new_option_suggestions": [
-    {
-      "attribute_name": "",
-      "suggested_option": ""
-    }
+    { "attribute_name": "", "suggested_option": "" }
   ]
 }
 
@@ -132,7 +113,7 @@ Description: ${description || ""}
     if (!response.ok) {
       console.error("Gemini Error:", result)
       return NextResponse.json(
-        { error: "Gemini API failed", message: result },
+        { error: "Gemini failed", message: result },
         { status: 500 }
       )
     }
@@ -143,9 +124,7 @@ Description: ${description || ""}
     const parsed = extractJSON(text)
 
     if (mode === "attribute_suggestion") {
-      return NextResponse.json(
-        parsed || { suggested_attributes: [] }
-      )
+      return NextResponse.json(parsed || { suggested_attributes: [] })
     }
 
     return NextResponse.json(
