@@ -159,7 +159,94 @@ export default function ProductForm({
 
     loadImages(product.id)
   }
+async function handleAutoFill() {
+  if (!images.length) {
+    alert("Upload at least one image first")
+    return
+  }
 
+  if (!categoryId) {
+    alert("Select category first")
+    return
+  }
+
+  setLoading(true)
+
+  try {
+    const firstImage = images[0].image_url
+
+    // Build structured attribute list with options
+    const structuredAttributes = await Promise.all(
+      categoryAttributes.map(async (attr) => {
+        const { data: options } = await supabase
+          .from("attribute_options")
+          .select("id, value")
+          .eq("attribute_id", attr.id)
+
+        return {
+          id: attr.id,
+          name: attr.name,
+          options: options || [],
+        }
+      })
+    )
+
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode: "product_autofill",
+        category: categories.find(c => c.id === categoryId)?.name,
+        existingAttributes: structuredAttributes,
+        imageUrl: firstImage,
+        productName: name,
+        description,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!data.moderation?.allowed) {
+      alert("Image not allowed: " + data.moderation.reason)
+      setLoading(false)
+      return
+    }
+
+    // ✅ Apply matched attributes
+    const updatedValues: AttributeValueMap = { ...attributeValues }
+
+    for (const match of data.matched_attributes || []) {
+      const attr = structuredAttributes.find(
+        (a) => a.name === match.attribute_name
+      )
+
+      if (!attr) continue
+
+      const option = attr.options.find(
+        (o: any) => o.value === match.matched_option
+      )
+
+      if (option) {
+        updatedValues[attr.id] = option.id
+      }
+    }
+
+    setAttributeValues(updatedValues)
+
+    // ✅ Show new option suggestions (if any)
+    if (data.new_option_suggestions?.length) {
+      alert(
+        "AI found new option suggestions. Review them manually in attributes section."
+      )
+      console.log("New Option Suggestions:", data.new_option_suggestions)
+    }
+
+  } catch (err) {
+    console.error("Auto Fill Error:", err)
+  }
+
+  setLoading(false)
+}
   /* ---------------- SUBMIT ---------------- */
 
   async function handleSubmit(
@@ -350,7 +437,15 @@ export default function ProductForm({
             </p>
           )}
         </div>
-
+{product && images.length > 0 && (
+  <button
+    type="button"
+    onClick={handleAutoFill}
+    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    {loading ? "Processing..." : "Auto Fill Attributes"}
+  </button>
+)}
         {/* ---------------- BUTTONS ---------------- */}
 
         <div className="flex gap-3 pt-4">
