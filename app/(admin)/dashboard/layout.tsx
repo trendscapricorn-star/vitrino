@@ -12,7 +12,7 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createSupabaseServerClient()
 
-  // 🔐 Validate session
+  /* 🔐 Validate session */
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -21,7 +21,7 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // 🏢 Load company
+  /* 🏢 Load company */
   const { data: company } = await supabase
     .from('companies')
     .select('*')
@@ -30,6 +30,55 @@ export default async function DashboardLayout({
 
   if (!company) {
     redirect('/dashboard/setup')
+  }
+
+  /* 💳 Load subscription */
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('status, trial_ends_at, current_period_end, plan_type')
+    .eq('company_id', company.id)
+    .single()
+
+  let banner: React.ReactNode = null
+
+  if (subscription) {
+    const now = new Date()
+
+    const expiryDate =
+      subscription.status === 'trialing'
+        ? subscription.trial_ends_at
+        : subscription.status === 'active'
+        ? subscription.current_period_end
+        : null
+
+    if (expiryDate) {
+      const daysLeft = Math.ceil(
+        (new Date(expiryDate).getTime() - now.getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+
+      if (daysLeft <= 5 && daysLeft > 0) {
+        banner = (
+          <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 px-6 py-3 text-sm">
+            {subscription.status === 'trialing'
+              ? `Trial ends in ${daysLeft} day${
+                  daysLeft === 1 ? '' : 's'
+                }. Upgrade to avoid interruption.`
+              : `Subscription renews in ${daysLeft} day${
+                  daysLeft === 1 ? '' : 's'
+                }.`}
+          </div>
+        )
+      }
+
+      if (daysLeft <= 0) {
+        banner = (
+          <div className="bg-red-100 border-b border-red-300 text-red-900 px-6 py-3 text-sm">
+            Subscription expired. Please upgrade to continue.
+          </div>
+        )
+      }
+    }
   }
 
   return (
@@ -89,10 +138,14 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 bg-gray-50">
-        {children}
-      </main>
+      {/* Main */}
+      <div className="flex-1 flex flex-col">
+        {banner}
+
+        <main className="flex-1 p-8 bg-gray-50">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
