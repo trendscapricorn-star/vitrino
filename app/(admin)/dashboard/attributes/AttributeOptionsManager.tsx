@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseBrowser } from '@/lib/supabase-browser'
 
 type AttributeOption = {
   id: string
@@ -18,25 +18,27 @@ interface AttributeOptionsManagerProps {
 export default function AttributeOptionsManager({
   attributeId,
 }: AttributeOptionsManagerProps) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = supabaseBrowser
 
   const [options, setOptions] = useState<AttributeOption[]>([])
-  const [newOption, setNewOption] = useState<string>('')
+  const [newOption, setNewOption] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
+  const [editValue, setEditValue] = useState('')
+  const [loading, setLoading] = useState(false)
 
   async function loadOptions() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('attribute_options')
       .select('*')
       .eq('attribute_id', attributeId)
       .order('sort_order')
 
-    setOptions((data as AttributeOption[]) || [])
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setOptions(data || [])
   }
 
   useEffect(() => {
@@ -50,10 +52,20 @@ export default function AttributeOptionsManager({
 
     setLoading(true)
 
-    await supabase.from('attribute_options').insert({
-      attribute_id: attributeId,
-      value: newOption.trim(),
-    })
+    const { error } = await supabase
+      .from('attribute_options')
+      .insert({
+        attribute_id: attributeId,
+        value: newOption.trim(),
+        is_active: true,
+      })
+
+    if (error) {
+      alert(error.message)
+      console.error(error)
+      setLoading(false)
+      return
+    }
 
     setNewOption('')
     setLoading(false)
@@ -65,10 +77,17 @@ export default function AttributeOptionsManager({
 
     setLoading(true)
 
-    await supabase
+    const { error } = await supabase
       .from('attribute_options')
       .update({ value: editValue.trim() })
       .eq('id', id)
+
+    if (error) {
+      alert(error.message)
+      console.error(error)
+      setLoading(false)
+      return
+    }
 
     setEditingId(null)
     setEditValue('')
@@ -77,17 +96,22 @@ export default function AttributeOptionsManager({
   }
 
   async function toggleOption(option: AttributeOption) {
-    await supabase
+    const { error } = await supabase
       .from('attribute_options')
       .update({ is_active: !option.is_active })
       .eq('id', option.id)
+
+    if (error) {
+      alert(error.message)
+      console.error(error)
+      return
+    }
 
     loadOptions()
   }
 
   return (
     <div className="mt-3 space-y-2">
-
       {/* Add Option */}
       <div className="flex gap-2">
         <input
@@ -142,7 +166,6 @@ export default function AttributeOptionsManager({
             ) : (
               <>
                 <span>{opt.value}</span>
-
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
@@ -158,9 +181,7 @@ export default function AttributeOptionsManager({
                     onClick={() => toggleOption(opt)}
                     className="text-red-600"
                   >
-                    {opt.is_active
-                      ? 'Disable'
-                      : 'Enable'}
+                    {opt.is_active ? 'Disable' : 'Enable'}
                   </button>
                 </div>
               </>
