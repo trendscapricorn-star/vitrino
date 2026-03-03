@@ -20,28 +20,22 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    /* 🔍 Get existing subscription (trial row) */
+    /* 1️⃣ Get existing subscription */
     const { data: existingSub, error: fetchError } = await supabase
       .from("subscriptions")
-      .select("*")
+      .select("id")
       .eq("company_id", companyId)
-      .maybeSingle()
+      .single()
 
     if (fetchError) {
+      console.error("FETCH ERROR:", fetchError)
       return NextResponse.json(
-        { error: "Failed to fetch subscription" },
+        { error: fetchError.message },
         { status: 500 }
       )
     }
 
-    if (!existingSub) {
-      return NextResponse.json(
-        { error: "No subscription found" },
-        { status: 400 }
-      )
-    }
-
-    /* 🔹 Razorpay Init */
+    /* 2️⃣ Razorpay Init */
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -68,15 +62,13 @@ export async function POST(req: Request) {
       plan_id,
       customer_notify: 1,
       total_count: 12,
-      notes: {
-        company_id: companyId,
-      },
+      notes: { company_id: companyId },
     })
 
     console.log("Razorpay subscription created:", subscription.id)
 
-    /* 🔥 UPDATE existing subscription row */
-    const { error: updateError } = await supabase
+    /* 3️⃣ Update subscription row */
+    const { data: updated, error: updateError } = await supabase
       .from("subscriptions")
       .update({
         razorpay_subscription_id: subscription.id,
@@ -84,17 +76,26 @@ export async function POST(req: Request) {
         plan_type: planType,
         status: "created",
         trial_ends_at: null,
-        updated_at: new Date(),
+        updated_at: new Date().toISOString(),
       })
       .eq("company_id", companyId)
+      .select()
+      .single()
 
-if (updateError) {
-  console.error("SUPABASE UPDATE ERROR:", updateError)
-  return NextResponse.json(
-    { error: updateError.message },
-    { status: 500 }
-  )
-}
+    if (updateError) {
+      console.error("UPDATE ERROR:", updateError)
+      return NextResponse.json(
+        { error: updateError.message, details: updateError },
+        { status: 500 }
+      )
+    }
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: "No rows updated (possible RLS issue)" },
+        { status: 500 }
+      )
+    }
 
     console.log("Subscription updated successfully")
     console.log("---- CREATE SUBSCRIPTION END ----")
