@@ -88,13 +88,13 @@ export async function POST(req: Request) {
       })
       .eq("company_id", companyId)
 
-    if (updateError) {
-      console.error("SUPABASE UPDATE ERROR:", updateError)
-      return NextResponse.json(
-        { error: "Database update failed" },
-        { status: 500 }
-      )
-    }
+if (updateError) {
+  console.error("SUPABASE UPDATE ERROR:", updateError)
+  return NextResponse.json(
+    { error: updateError.message },
+    { status: 500 }
+  )
+}
 
     console.log("Subscription updated successfully")
     console.log("---- CREATE SUBSCRIPTION END ----")
