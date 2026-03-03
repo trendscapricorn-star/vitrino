@@ -18,9 +18,16 @@ function extractJSON(text: string) {
   }
 }
 
+async function imageToBase64(url: string) {
+  const res = await fetch(url)
+  const buffer = await res.arrayBuffer()
+  return Buffer.from(buffer).toString("base64")
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+
     const {
       mode,
       category,
@@ -86,6 +93,19 @@ Description: ${description || ""}
 `
     }
 
+    let parts: any[] = [{ text: prompt }]
+
+    if (mode === "product_autofill" && imageUrl) {
+      const base64Image = await imageToBase64(imageUrl)
+
+      parts.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Image,
+        },
+      })
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -96,12 +116,7 @@ Description: ${description || ""}
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                { text: prompt },
-                ...(imageUrl
-                  ? [{ file_data: { mime_type: "image/jpeg", file_uri: imageUrl } }]
-                  : []),
-              ],
+              parts,
             },
           ],
         }),
