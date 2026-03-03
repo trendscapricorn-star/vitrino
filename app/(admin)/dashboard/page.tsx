@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     categories: 0,
     products: 0,
-    variants: 0,
   })
   const [subscription, setSubscription] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -47,15 +46,9 @@ export default function DashboardPage() {
       .select('*', { count: 'exact', head: true })
       .eq('company_id', company.id)
 
-    const { count: variantCount } = await supabase
-      .from('variants')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id)
-
     setStats({
       categories: categoryCount || 0,
       products: productCount || 0,
-      variants: variantCount || 0,
     })
 
     /* 💳 Load subscription */
@@ -77,10 +70,9 @@ export default function DashboardPage() {
     <div className="space-y-8">
 
       {/* 🔥 Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatCard title="Categories" value={stats.categories} />
         <StatCard title="Products" value={stats.products} />
-        <StatCard title="Variants" value={stats.variants} />
       </div>
 
       {/* 🔹 Subscription Summary */}
