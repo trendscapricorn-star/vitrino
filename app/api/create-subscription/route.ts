@@ -6,8 +6,7 @@ export async function POST(req: Request) {
   try {
     console.log("---- CREATE SUBSCRIPTION START ----")
 
-    const body = await req.json()
-    const { planType, companyId } = body
+    const { planType, companyId } = await req.json()
 
     if (!planType || !companyId) {
       return NextResponse.json(
@@ -21,16 +20,23 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    /* 🔒 Prevent duplicate subscription creation */
-    const { data: existing } = await supabase
+    /* 🔍 Get existing subscription (trial row) */
+    const { data: existingSub, error: fetchError } = await supabase
       .from("subscriptions")
-      .select("id")
+      .select("*")
       .eq("company_id", companyId)
       .maybeSingle()
 
-    if (existing) {
+    if (fetchError) {
       return NextResponse.json(
-        { error: "Subscription already exists" },
+        { error: "Failed to fetch subscription" },
+        { status: 500 }
+      )
+    }
+
+    if (!existingSub) {
+      return NextResponse.json(
+        { error: "No subscription found" },
         { status: 400 }
       )
     }
@@ -61,7 +67,7 @@ export async function POST(req: Request) {
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
-      total_count: 12, // ✅ REQUIRED by Razorpay types
+      total_count: 12,
       notes: {
         company_id: companyId,
       },
@@ -69,34 +75,28 @@ export async function POST(req: Request) {
 
     console.log("Razorpay subscription created:", subscription.id)
 
-    /* 🔹 Insert DB row with status = created */
-    const { data, error } = await supabase
+    /* 🔥 UPDATE existing subscription row */
+    const { error: updateError } = await supabase
       .from("subscriptions")
-      .insert({
-        company_id: companyId,
+      .update({
         razorpay_subscription_id: subscription.id,
         razorpay_plan_id: plan_id,
         plan_type: planType,
-        status: "created", // 🔥 Not trialing
+        status: "created",
         trial_ends_at: null,
-        current_period_start: null,
-        current_period_end: null,
-        cancelled_at: null,
-        created_at: new Date(),
         updated_at: new Date(),
       })
-      .select()
-      .single()
+      .eq("company_id", companyId)
 
-    if (error) {
-      console.error("SUPABASE INSERT ERROR:", error)
+    if (updateError) {
+      console.error("SUPABASE UPDATE ERROR:", updateError)
       return NextResponse.json(
-        { error: "Database insert failed" },
+        { error: "Database update failed" },
         { status: 500 }
       )
     }
 
-    console.log("Subscription row inserted:", data.id)
+    console.log("Subscription updated successfully")
     console.log("---- CREATE SUBSCRIPTION END ----")
 
     return NextResponse.json({
