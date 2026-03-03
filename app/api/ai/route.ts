@@ -1,9 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse } from "next/server"
-
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY!
-)
 
 function extractJSON(text: string) {
   try {
@@ -43,14 +38,10 @@ export async function POST(req: Request) {
       )
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
-    })
-
     let prompt = ""
 
     // =============================
-    // ATTRIBUTE SUGGESTION MODE
+    // ATTRIBUTE SUGGESTION
     // =============================
     if (mode === "attribute_suggestion") {
       prompt = `
@@ -68,36 +59,17 @@ Format:
   ]
 }
 
-Rules:
-- Do not repeat existing attributes.
-- Suggest only highly relevant attributes.
-- Keep suggestions minimal.
-
 Category: ${category}
 
 Existing Attributes:
 ${JSON.stringify(existingAttributes, null, 2)}
 `
-
-      const result = await model.generateContent(prompt)
-      const parsed = extractJSON(result.response.text())
-
-      return NextResponse.json(
-        parsed || { suggested_attributes: [] }
-      )
     }
 
     // =============================
-    // PRODUCT AUTO FILL MODE
+    // PRODUCT AUTO FILL
     // =============================
     if (mode === "product_autofill") {
-      if (!imageUrl) {
-        return NextResponse.json(
-          { error: "Image required" },
-          { status: 400 }
-        )
-      }
-
       prompt = `
 You are a strict product classification AI.
 
@@ -123,13 +95,6 @@ Format:
   ]
 }
 
-Rules:
-- Only match attribute_name from provided list.
-- Only match matched_option from provided options.
-- If highly confident.
-- If unsure, skip.
-- Do not hallucinate.
-
 Category: ${category}
 
 Existing Attributes:
@@ -138,40 +103,63 @@ ${JSON.stringify(existingAttributes, null, 2)}
 Product Name: ${productName || ""}
 Description: ${description || ""}
 `
+    }
 
-      const result = await model.generateContent([
-        prompt,
-        {
-          fileData: {
-            mimeType: "image/jpeg",
-            fileUri: imageUrl,
-          },
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ])
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                ...(imageUrl
+                  ? [{ file_data: { mime_type: "image/jpeg", file_uri: imageUrl } }]
+                  : []),
+              ],
+            },
+          ],
+        }),
+      }
+    )
 
-      const parsed = extractJSON(result.response.text())
+    const result = await response.json()
 
+    if (!response.ok) {
+      console.error("Gemini Error:", result)
       return NextResponse.json(
-        parsed || {
-          moderation: { allowed: true, reason: "" },
-          matched_attributes: [],
-          new_option_suggestions: [],
-        }
+        { error: "Gemini API failed", message: result },
+        { status: 500 }
+      )
+    }
+
+    const text =
+      result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+
+    const parsed = extractJSON(text)
+
+    if (mode === "attribute_suggestion") {
+      return NextResponse.json(
+        parsed || { suggested_attributes: [] }
       )
     }
 
     return NextResponse.json(
-      { error: "Invalid mode" },
-      { status: 400 }
+      parsed || {
+        moderation: { allowed: true, reason: "" },
+        matched_attributes: [],
+        new_option_suggestions: [],
+      }
     )
   } catch (err: any) {
     console.error("AI FULL ERROR:", err)
 
     return NextResponse.json(
-      {
-        error: "AI failed",
-        message: err?.message || "Unknown server error"
-      },
+      { error: "AI failed", message: err?.message || "Unknown error" },
       { status: 500 }
     )
   }
