@@ -70,10 +70,13 @@ Category: ${category}
 Existing Attributes:
 ${JSON.stringify(existingAttributes, null, 2)}
 `
+
       const result = await model.generateContent(prompt)
       const parsed = extractJSON(result.response.text())
 
-      return NextResponse.json(parsed || { suggested_attributes: [] })
+      return NextResponse.json(
+        parsed || { suggested_attributes: [] }
+      )
     }
 
     // =============================
@@ -86,9 +89,6 @@ ${JSON.stringify(existingAttributes, null, 2)}
           { status: 400 }
         )
       }
-
-      const imageBuffer = await fetch(imageUrl).then(r => r.arrayBuffer())
-      const base64Image = Buffer.from(imageBuffer).toString("base64")
 
       prompt = `
 You are a strict product classification AI.
@@ -120,6 +120,7 @@ Rules:
 - Only match matched_option from provided options.
 - If highly confident.
 - If unsure, skip.
+- Do not hallucinate.
 
 Category: ${category}
 
@@ -133,9 +134,9 @@ Description: ${description || ""}
       const result = await model.generateContent([
         prompt,
         {
-          inlineData: {
+          fileData: {
             mimeType: "image/jpeg",
-            data: base64Image,
+            fileUri: imageUrl,
           },
         },
       ])
@@ -151,9 +152,15 @@ Description: ${description || ""}
       )
     }
 
-    return NextResponse.json({ error: "Invalid mode" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Invalid mode" },
+      { status: 400 }
+    )
   } catch (err) {
     console.error("AI Error:", err)
-    return NextResponse.json({ error: "AI failed" }, { status: 500 })
+    return NextResponse.json(
+      { error: "AI failed" },
+      { status: 500 }
+    )
   }
 }
