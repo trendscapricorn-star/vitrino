@@ -18,12 +18,6 @@ type Attribute = {
   category_id: string
 }
 
-type ProductImage = {
-  id: string
-  image_url: string
-  sort_order: number
-}
-
 interface ProductFormProps {
   product: Product | null
   categories: Category[]
@@ -47,13 +41,15 @@ export default function ProductForm({
 }: ProductFormProps) {
   const supabase = supabaseBrowser
 
-  const [name, setName] = useState<string>('')
-  const [categoryId, setCategoryId] = useState<string>('')
-  const [price, setPrice] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
+  const [name, setName] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [price, setPrice] = useState('')
+  const [description, setDescription] = useState('')
   const [attributeValues, setAttributeValues] =
     useState<AttributeValueMap>({})
-  const [loading, setLoading] = useState<boolean>(false)
+  const [images, setImages] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const categoryAttributes = attributes.filter(
     (a) => a.category_id === categoryId
@@ -68,12 +64,14 @@ export default function ProductForm({
       setPrice(product.base_price?.toString() || '')
       setDescription(product.description || '')
       loadExistingAttributes(product.id)
+      loadImages(product.id)
     } else {
       setName('')
       setCategoryId('')
       setPrice('')
       setDescription('')
       setAttributeValues({})
+      setImages([])
     }
   }, [product])
 
@@ -85,11 +83,81 @@ export default function ProductForm({
 
     const map: AttributeValueMap = {}
 
-    data?.forEach((row: { attribute_id: string; option_id: string }) => {
+    data?.forEach((row: any) => {
       map[row.attribute_id] = row.option_id
     })
 
     setAttributeValues(map)
+  }
+
+  async function loadImages(productId: string) {
+    const { data } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', productId)
+      .order('sort_order')
+
+    setImages(data || [])
+  }
+
+  /* ---------------- IMAGE UPLOAD ---------------- */
+
+  async function handleImageUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!product?.id) {
+      alert('Save product first before uploading images')
+      return
+    }
+
+    if (images.length >= 4) {
+      alert('Maximum 4 images allowed')
+      return
+    }
+
+    setUploading(true)
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${product.id}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, file)
+
+    if (uploadError) {
+      console.error(uploadError)
+      setUploading(false)
+      return
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(fileName)
+
+    await supabase.from('product_images').insert({
+      product_id: product.id,
+      image_url: publicUrl,
+      sort_order: images.length,
+    })
+
+    setUploading(false)
+    loadImages(product.id)
+  }
+
+  async function deleteImage(imageId: string) {
+    if (!product?.id) return
+
+    await supabase
+      .from('product_images')
+      .delete()
+      .eq('id', imageId)
+
+    loadImages(product.id)
   }
 
   /* ---------------- SUBMIT ---------------- */
@@ -101,7 +169,6 @@ export default function ProductForm({
     setLoading(true)
 
     let productId: string
-    let generatedSlug = ''
 
     if (product) {
       await supabase
@@ -121,25 +188,25 @@ export default function ProductForm({
         .delete()
         .eq('product_id', productId)
     } else {
-      // 🔹 Generate slug
-      generatedSlug = name
+      const slug = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
-      const { data: newProduct, error } = await supabase
-        .from('products')
-        .insert({
-          company_id: companyId,
-          category_id: categoryId,
-          name,
-          slug: generatedSlug,
-          base_price: price ? Number(price) : null,
-          description,
-          has_variants: false,
-        })
-        .select()
-        .single()
+      const { data: newProduct, error } =
+        await supabase
+          .from('products')
+          .insert({
+            company_id: companyId,
+            category_id: categoryId,
+            name,
+            slug,
+            base_price: price ? Number(price) : null,
+            description,
+            has_variants: false,
+          })
+          .select()
+          .single()
 
       if (error || !newProduct) {
         console.error(error)
@@ -148,18 +215,6 @@ export default function ProductForm({
       }
 
       productId = newProduct.id
-
-      // 🔔 Non-blocking push trigger
-      fetch('/api/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyId,
-          title: 'New Product Added',
-          body: name,
-          url: `/${window.location.pathname.split('/')[1]}/${generatedSlug}`,
-        }),
-      }).catch(() => {})
     }
 
     /* Save attribute values */
@@ -167,11 +222,13 @@ export default function ProductForm({
       const optionId = attributeValues[attrId]
       if (!optionId) continue
 
-      await supabase.from('product_attribute_values').insert({
-        product_id: productId,
-        attribute_id: attrId,
-        option_id: optionId,
-      })
+      await supabase
+        .from('product_attribute_values')
+        .insert({
+          product_id: productId,
+          attribute_id: attrId,
+          option_id: optionId,
+        })
     }
 
     setLoading(false)
@@ -223,6 +280,8 @@ export default function ProductForm({
           className="border px-3 py-2 w-full"
         />
 
+        {/* ---------------- ATTRIBUTES ---------------- */}
+
         {categoryAttributes.map((attr) => (
           <div key={attr.id}>
             <label className="block mb-1 text-sm font-medium">
@@ -242,13 +301,69 @@ export default function ProductForm({
           </div>
         ))}
 
+        {/* ---------------- IMAGES ---------------- */}
+
+        <div className="pt-4">
+          <label className="block mb-2 font-medium">
+            Product Images (Max 4)
+          </label>
+
+          {product && (
+            <>
+              <label className="cursor-pointer bg-black text-white px-4 py-2 rounded">
+                {uploading ? 'Uploading...' : 'Upload Image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                {images.map((img) => (
+                  <div
+                    key={img.id}
+                    className="relative group border rounded overflow-hidden"
+                  >
+                    <img
+                      src={img.image_url}
+                      className="w-full h-28 object-cover"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => deleteImage(img.id)}
+                      className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {!product && (
+            <p className="text-sm text-gray-500 mt-2">
+              Save product first to upload images
+            </p>
+          )}
+        </div>
+
+        {/* ---------------- BUTTONS ---------------- */}
+
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
             disabled={loading}
             className="bg-black text-white px-5 py-2 rounded"
           >
-            {loading ? 'Saving...' : product ? 'Update' : 'Save'}
+            {loading
+              ? 'Saving...'
+              : product
+              ? 'Update'
+              : 'Save'}
           </button>
 
           <button
