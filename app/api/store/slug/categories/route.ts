@@ -15,13 +15,14 @@ export async function GET(
   const { slug } = params
 
   // 1️⃣ Find company by slug
-  const { data: company } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('slug', slug)
-    .single()
+  const { data: company, error: companyError } =
+    await supabase
+      .from('companies')
+      .select('id')
+      .eq('slug', slug)
+      .single()
 
-  if (!company) {
+  if (companyError || !company) {
     return NextResponse.json(
       { error: 'Store not found' },
       { status: 404 }
@@ -29,12 +30,20 @@ export async function GET(
   }
 
   // 2️⃣ Fetch active categories
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('company_id', company.id)
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+  const { data: categories, error: categoriesError } =
+    await supabase
+      .from('categories')
+      .select('*')
+      .eq('company_id', company.id)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+  if (categoriesError) {
+    return NextResponse.json(
+      { error: 'Failed to fetch categories' },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json(categories || [])
 }
