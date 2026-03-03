@@ -7,6 +7,7 @@ import CategoriesList from './CategoriesList'
 export default async function CategoriesPage() {
   const supabase = await createSupabaseServerClient()
 
+  /* 🔐 Validate session */
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -15,21 +16,28 @@ export default async function CategoriesPage() {
     redirect('/login')
   }
 
-  const { data: company } = await supabase
+  /* 🏢 Get company for logged-in user */
+  const { data: company, error: companyError } = await supabase
     .from('companies')
     .select('id')
     .eq('auth_user_id', user.id)
     .single()
 
-  if (!company) {
+  if (companyError || !company) {
     redirect('/dashboard/setup')
   }
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('company_id', company.id)
-    .order('sort_order', { ascending: true })
+  /* 📂 Fetch categories for this company only */
+  const { data: categories, error: categoriesError } =
+    await supabase
+      .from('categories')
+      .select('*')
+      .eq('company_id', company.id)
+      .order('sort_order', { ascending: true })
+
+  if (categoriesError) {
+    console.error('Categories fetch error:', categoriesError)
+  }
 
   return (
     <CategoriesList

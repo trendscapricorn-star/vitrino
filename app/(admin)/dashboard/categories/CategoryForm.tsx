@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-/* 🔹 Types */
+import { useRouter } from 'next/navigation'
+import { supabaseBrowser } from '@/lib/supabase-browser'
 
 type Category = {
   id: string
@@ -22,14 +21,12 @@ export default function CategoryForm({
   category,
   onClose,
 }: CategoryFormProps) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const router = useRouter()
+  const supabase = supabaseBrowser
 
-  const [name, setName] = useState<string>('')
-  const [sortOrder, setSortOrder] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [name, setName] = useState('')
+  const [sortOrder, setSortOrder] = useState(0)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (category) {
@@ -47,32 +44,50 @@ export default function CategoryForm({
     e.preventDefault()
     setLoading(true)
 
-    if (category) {
-      await supabase
-        .from('categories')
-        .update({
-          name,
-          sort_order: sortOrder,
-        })
-        .eq('id', category.id)
-    } else {
-      await supabase
-        .from('categories')
-        .insert({
-          company_id: companyId,
-          name,
-          sort_order: sortOrder,
-        })
-    }
+    try {
+      if (category) {
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name: name.trim(),
+            sort_order: sortOrder,
+          })
+          .eq('id', category.id)
 
-    setLoading(false)
-    window.location.reload()
+        if (error) {
+          alert(error.message)
+          return
+        }
+      } else {
+        const { error } = await supabase
+          .from('categories')
+          .insert({
+            company_id: companyId,
+            name: name.trim(),
+            sort_order: sortOrder,
+            is_active: true, // explicit for safety
+          })
+
+        if (error) {
+          alert(error.message)
+          return
+        }
+      }
+
+      onClose()
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Something went wrong')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="border p-4 rounded mb-6"
+      className="border p-4 rounded mb-6 bg-white"
     >
       <input
         required
@@ -95,8 +110,8 @@ export default function CategoryForm({
       <div className="flex gap-3">
         <button
           type="submit"
-          className="bg-black text-white px-4 py-2 rounded hover:opacity-90"
           disabled={loading}
+          className="bg-black text-white px-4 py-2 rounded hover:opacity-90"
         >
           {loading
             ? 'Saving...'
@@ -108,6 +123,7 @@ export default function CategoryForm({
         <button
           type="button"
           onClick={onClose}
+          disabled={loading}
           className="border px-4 py-2 rounded"
         >
           Cancel

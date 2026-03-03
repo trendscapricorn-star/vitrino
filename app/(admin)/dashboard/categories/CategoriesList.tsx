@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabaseBrowser } from '@/lib/supabase-browser'
 import CategoryForm from './CategoryForm'
-import { createClient } from '@supabase/supabase-js'
-
-/* 🔹 Types */
 
 type Category = {
   id: string
@@ -22,22 +21,36 @@ export default function CategoriesList({
   categories,
   companyId,
 }: CategoriesListProps) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const router = useRouter()
+  const supabase = supabaseBrowser
 
-  const [showForm, setShowForm] = useState<boolean>(false)
+  const [showForm, setShowForm] = useState(false)
   const [editCategory, setEditCategory] =
     useState<Category | null>(null)
+  const [loadingId, setLoadingId] =
+    useState<string | null>(null)
 
   async function toggleActive(category: Category) {
-    await supabase
-      .from('categories')
-      .update({ is_active: !category.is_active })
-      .eq('id', category.id)
+    try {
+      setLoadingId(category.id)
 
-    window.location.reload()
+      const { error } = await supabase
+        .from('categories')
+        .update({ is_active: !category.is_active })
+        .eq('id', category.id)
+
+      if (error) {
+        alert(error.message)
+        return
+      }
+
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Something went wrong')
+    } finally {
+      setLoadingId(null)
+    }
   }
 
   return (
@@ -62,7 +75,10 @@ export default function CategoriesList({
         <CategoryForm
           companyId={companyId}
           category={editCategory}
-          onClose={() => setShowForm(false)}
+          onClose={() => {
+            setShowForm(false)
+            setEditCategory(null)
+          }}
         />
       )}
 
@@ -83,7 +99,7 @@ export default function CategoriesList({
               </div>
             </div>
 
-            <div className="flex gap-3 text-sm">
+            <div className="flex gap-3 text-sm items-center">
               <button
                 onClick={() => {
                   setEditCategory(cat)
@@ -95,10 +111,13 @@ export default function CategoriesList({
               </button>
 
               <button
+                disabled={loadingId === cat.id}
                 onClick={() => toggleActive(cat)}
                 className="text-red-600"
               >
-                {cat.is_active
+                {loadingId === cat.id
+                  ? 'Updating...'
+                  : cat.is_active
                   ? 'Disable'
                   : 'Enable'}
               </button>
