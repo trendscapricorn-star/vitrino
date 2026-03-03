@@ -4,15 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'edge'
 
 export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
+  request: Request,
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await context.params
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-
-  const { slug } = params
 
   // 1️⃣ Find company by slug
   const { data: company, error: companyError } =
