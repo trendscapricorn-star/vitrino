@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, FormEvent } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
+import { supabaseBrowser } from '@/lib/supabase-browser'
 
 type Attribute = {
   id: string
@@ -19,13 +20,11 @@ export default function AttributeForm({
   attribute = null,
   onClose,
 }: AttributeFormProps) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = supabaseBrowser
+  const router = useRouter()
 
-  const [name, setName] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
+  const [name, setName] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (attribute) {
@@ -39,21 +38,43 @@ export default function AttributeForm({
     e.preventDefault()
     setLoading(true)
 
-    if (attribute) {
-      await supabase
-        .from('attributes')
-        .update({ name })
-        .eq('id', attribute.id)
-    } else {
-      await supabase.from('attributes').insert({
-        category_id: categoryId,
-        name,
-        data_type: 'select',
-      })
-    }
+    try {
+      if (attribute) {
+        const { error } = await supabase
+          .from('attributes')
+          .update({ name: name.trim() })
+          .eq('id', attribute.id)
 
-    setLoading(false)
-    window.location.reload()
+        if (error) {
+          alert(error.message)
+          console.error(error)
+          return
+        }
+      } else {
+        const { error } = await supabase
+          .from('attributes')
+          .insert({
+            category_id: categoryId,
+            name: name.trim(),
+            data_type: 'select',
+            is_active: true,
+          })
+
+        if (error) {
+          alert(error.message)
+          console.error(error)
+          return
+        }
+      }
+
+      onClose()
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -72,8 +93,8 @@ export default function AttributeForm({
       <div className="flex gap-3">
         <button
           type="submit"
-          className="bg-black text-white px-4 py-2 rounded hover:opacity-90"
           disabled={loading}
+          className="bg-black text-white px-4 py-2 rounded hover:opacity-90"
         >
           {loading
             ? 'Saving...'
