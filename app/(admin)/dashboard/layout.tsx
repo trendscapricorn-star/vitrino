@@ -90,45 +90,25 @@ export default async function DashboardLayout({
         </h2>
 
         <nav className="space-y-4 text-sm flex-1">
-          <Link
-            href="/dashboard"
-            className="block hover:text-gray-300"
-          >
+          <Link href="/dashboard" className="block hover:text-gray-300">
             Dashboard
           </Link>
 
-          <Link
-            href="/dashboard/categories"
-            className="block hover:text-gray-300"
-          >
+          <Link href="/dashboard/categories" className="block hover:text-gray-300">
             Categories
           </Link>
 
-          <Link
-            href="/dashboard/products"
-            className="block hover:text-gray-300"
-          >
+          <Link href="/dashboard/products" className="block hover:text-gray-300">
             Products
           </Link>
 
-          <Link
-            href="/dashboard/variants"
-            className="block hover:text-gray-300"
-          >
-            Variants
-          </Link>
+          {/* 🔴 Variants link removed */}
 
-          <Link
-            href="/dashboard/attributes"
-            className="block hover:text-gray-300"
-          >
+          <Link href="/dashboard/attributes" className="block hover:text-gray-300">
             Attributes
           </Link>
 
-          <Link
-            href="/dashboard/settings"
-            className="block hover:text-gray-300"
-          >
+          <Link href="/dashboard/settings" className="block hover:text-gray-300">
             Settings
           </Link>
         </nav>
