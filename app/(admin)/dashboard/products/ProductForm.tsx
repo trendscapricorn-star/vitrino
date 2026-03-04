@@ -603,29 +603,32 @@ Images will be uploaded when the product is saved
 </p>
 )}
 
-</div>
+</div> {/* END grid-cols-3 */}
 
 {/* ---------------- AI BUTTON ---------------- */}
 
 {(images.length > 0 || pendingImages.length > 0) && (
 
+<div className="pt-2">
+
 <button
   type="button"
   onClick={handleAutoFill}
   disabled={loading}
-  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+  className="bg-blue-600 text-white px-4 py-2 rounded"
 >
 
 {loading ? "Processing..." : "Generate Attributes"}
 
 </button>
 
+</div>
+
 )}
 
 {/* ---------------- BUTTONS ---------------- */}
 
 <div className="flex gap-3 pt-6">
-
 <button
   type="submit"
   disabled={loading}
