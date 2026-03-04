@@ -6,6 +6,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser'
 interface Props {
   attributeId: string
   value: string
+  disabled?: boolean
   onChange: (value: string) => void
 }
 
@@ -17,6 +18,7 @@ type AttributeOption = {
 export default function AttributeSelect({
   attributeId,
   value,
+  disabled,
   onChange,
 }: Props) {
   const supabase = supabaseBrowser
@@ -50,10 +52,12 @@ export default function AttributeSelect({
 
   return (
     <select
-      value={value || ''}
+      disabled={disabled}
+      value={value}
       onChange={(e) => onChange(e.target.value)}
-      disabled={loading}
-      className="border px-2 py-1.5 w-full rounded"
+      className={`border px-3 py-2 w-full ${
+        disabled ? "opacity-60 cursor-not-allowed" : ""
+      }`}
     >
       <option value="">
         {loading ? 'Loading...' : 'Select'}

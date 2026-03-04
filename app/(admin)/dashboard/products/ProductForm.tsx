@@ -51,6 +51,9 @@ export default function ProductForm({
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
 
+const [aiFilled, setAiFilled] = useState<Record<string, boolean>>({})
+const [aiStep, setAiStep] = useState("")
+
   const categoryAttributes = attributes.filter(
     (a) => a.category_id === categoryId
   )
@@ -171,11 +174,13 @@ async function handleAutoFill() {
   }
 
   setLoading(true)
+  setAiStep("Analyzing product image...")
 
   try {
     const firstImage = images[0].image_url
 
-    // Build structured attribute list with options
+    setAiStep("Preparing attributes...")
+
     const structuredAttributes = await Promise.all(
       categoryAttributes.map(async (attr) => {
         const { data: options } = await supabase
@@ -191,6 +196,8 @@ async function handleAutoFill() {
       })
     )
 
+    setAiStep("Matching attributes with AI...")
+
     const response = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -204,6 +211,12 @@ async function handleAutoFill() {
       }),
     })
 
+    if (!response.ok) {
+      alert("AI request failed")
+      setLoading(false)
+      return
+    }
+
     const data = await response.json()
 
     if (!data.moderation?.allowed) {
@@ -212,8 +225,10 @@ async function handleAutoFill() {
       return
     }
 
-    // ✅ Apply matched attributes
+    setAiStep("Applying results...")
+
     const updatedValues: AttributeValueMap = { ...attributeValues }
+    const updatedAiFilled = { ...aiFilled }
 
     for (const match of data.matched_attributes || []) {
       const attr = structuredAttributes.find(
@@ -228,12 +243,13 @@ async function handleAutoFill() {
 
       if (option) {
         updatedValues[attr.id] = option.id
+        updatedAiFilled[attr.id] = true
       }
     }
 
     setAttributeValues(updatedValues)
+    setAiFilled(updatedAiFilled)
 
-    // ✅ Show new option suggestions (if any)
     if (data.new_option_suggestions?.length) {
       alert(
         "AI found new option suggestions. Review them manually in attributes section."
@@ -246,6 +262,7 @@ async function handleAutoFill() {
   }
 
   setLoading(false)
+  setAiStep("")
 }
   /* ---------------- SUBMIT ---------------- */
 
@@ -368,23 +385,38 @@ async function handleAutoFill() {
         />
 
         {/* ---------------- ATTRIBUTES ---------------- */}
-
+{loading && (
+  <div className="bg-blue-50 text-blue-700 text-sm px-3 py-2 rounded mb-3">
+    🤖 {aiStep}
+  </div>
+)}
         {categoryAttributes.map((attr) => (
           <div key={attr.id}>
-            <label className="block mb-1 text-sm font-medium">
-              {attr.name}
-            </label>
+<label className="block mb-1 text-sm font-medium flex items-center gap-2">
+  {attr.name}
 
-            <AttributeSelect
-              attributeId={attr.id}
-              value={attributeValues[attr.id] || ''}
-              onChange={(value) =>
-                setAttributeValues((prev) => ({
-                  ...prev,
-                  [attr.id]: value,
-                }))
-              }
-            />
+  {aiFilled[attr.id] && (
+    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+      AI
+    </span>
+  )}
+</label>
+<AttributeSelect
+  attributeId={attr.id}
+  value={attributeValues[attr.id] || ''}
+  disabled={loading}
+  onChange={(value) => {
+    setAttributeValues((prev) => ({
+      ...prev,
+      [attr.id]: value,
+    }))
+
+    setAiFilled(prev => ({
+      ...prev,
+      [attr.id]: false
+    }))
+  }}
+/>
           </div>
         ))}
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { Buffer } from "buffer"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
 function extractJSON(text: string) {
   try {
@@ -29,6 +31,37 @@ async function imageToBase64(url: string) {
 
 export async function POST(req: Request) {
   try {
+    // ================================
+    // SUPABASE AUTH CHECK
+    // ================================
+    const cookieStore = cookies()
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+        },
+      }
+    )
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // ================================
+    // REQUEST BODY
+    // ================================
     const body = await req.json()
 
     const {
