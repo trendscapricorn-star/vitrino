@@ -22,10 +22,21 @@ function extractJSON(text: string) {
 }
 
 async function imageToBase64(url: string) {
+
+  // if already base64 (data:image)
+  if (url.startsWith("data:image")) {
+    return url.split(",")[1]
+  }
+
+  // otherwise fetch normally
   const res = await fetch(url)
-  if (!res.ok) throw new Error("Failed to fetch image")
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch image")
+  }
 
   const buffer = await res.arrayBuffer()
+
   return Buffer.from(buffer).toString("base64")
 }
 
