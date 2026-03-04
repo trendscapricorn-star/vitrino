@@ -53,6 +53,7 @@ export default function ProductForm({
 
 const [aiFilled, setAiFilled] = useState<Record<string, boolean>>({})
 const [aiStep, setAiStep] = useState("")
+const [pendingImages, setPendingImages] = useState<File[]>([])
 
   const categoryAttributes = attributes.filter(
     (a) => a.category_id === categoryId
@@ -105,53 +106,21 @@ const [aiStep, setAiStep] = useState("")
 
   /* ---------------- IMAGE UPLOAD ---------------- */
 
-  async function handleImageUpload(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file = e.target.files?.[0]
-    if (!file) return
+async function handleImageUpload(
+  e: React.ChangeEvent<HTMLInputElement>
+) {
+  const file = e.target.files?.[0]
+  if (!file) return
 
-    if (!product?.id) {
-      alert('Save product first before uploading images')
-      return
-    }
-
-    if (images.length >= 4) {
-      alert('Maximum 4 images allowed')
-      return
-    }
-
-    setUploading(true)
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${product.id}/${Date.now()}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, file)
-
-    if (uploadError) {
-      console.error(uploadError)
-      setUploading(false)
-      return
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(fileName)
-
-    await supabase.from('product_images').insert({
-      product_id: product.id,
-      image_url: publicUrl,
-      sort_order: images.length,
-    })
-
-    setUploading(false)
-    loadImages(product.id)
+  if (images.length + pendingImages.length >= 4) {
+    alert("Maximum 4 images allowed")
+    return
   }
 
+  setPendingImages((prev) => [...prev, file])
+}
+
+    
   async function deleteImage(imageId: string) {
     if (!product?.id) return
 
@@ -266,78 +235,106 @@ async function handleAutoFill() {
 }
   /* ---------------- SUBMIT ---------------- */
 
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
-    e.preventDefault()
-    setLoading(true)
+async function handleSubmit(
+  e: React.FormEvent<HTMLFormElement>
+) {
+  e.preventDefault()
+  setLoading(true)
 
-    let productId: string
+  let productId: string
 
-    if (product) {
-      await supabase
-        .from('products')
-        .update({
-          name,
-          category_id: categoryId,
-          base_price: price ? Number(price) : null,
-          description,
-        })
-        .eq('id', product.id)
+  if (product) {
+    await supabase
+      .from("products")
+      .update({
+        name,
+        category_id: categoryId,
+        base_price: price ? Number(price) : null,
+        description,
+      })
+      .eq("id", product.id)
 
-      productId = product.id
+    productId = product.id
 
-      await supabase
-        .from('product_attribute_values')
-        .delete()
-        .eq('product_id', productId)
-    } else {
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
+    await supabase
+      .from("product_attribute_values")
+      .delete()
+      .eq("product_id", productId)
+  } else {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
 
-      const { data: newProduct, error } =
-        await supabase
-          .from('products')
-          .insert({
-            company_id: companyId,
-            category_id: categoryId,
-            name,
-            slug,
-            base_price: price ? Number(price) : null,
-            description,
-            has_variants: false,
-          })
-          .select()
-          .single()
+    const { data: newProduct, error } = await supabase
+      .from("products")
+      .insert({
+        company_id: companyId,
+        category_id: categoryId,
+        name,
+        slug,
+        base_price: price ? Number(price) : null,
+        description,
+        has_variants: false,
+      })
+      .select()
+      .single()
 
-      if (error || !newProduct) {
-        console.error(error)
-        setLoading(false)
-        return
-      }
-
-      productId = newProduct.id
+    if (error || !newProduct) {
+      console.error(error)
+      setLoading(false)
+      return
     }
 
-    /* Save attribute values */
-    for (const attrId in attributeValues) {
-      const optionId = attributeValues[attrId]
-      if (!optionId) continue
-
-      await supabase
-        .from('product_attribute_values')
-        .insert({
-          product_id: productId,
-          attribute_id: attrId,
-          option_id: optionId,
-        })
-    }
-
-    setLoading(false)
-    window.location.reload()
+    productId = newProduct.id
   }
+
+  /* ---------------- SAVE ATTRIBUTE VALUES ---------------- */
+
+  for (const attrId in attributeValues) {
+    const optionId = attributeValues[attrId]
+    if (!optionId) continue
+
+    await supabase
+      .from("product_attribute_values")
+      .insert({
+        product_id: productId,
+        attribute_id: attrId,
+        option_id: optionId,
+      })
+  }
+
+  /* ---------------- UPLOAD PENDING IMAGES ---------------- */
+
+  for (const file of pendingImages) {
+    const fileExt = file.name.split(".").pop()
+    const fileName = `${productId}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file)
+
+    if (uploadError) {
+      console.error(uploadError)
+      continue
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(fileName)
+
+    await supabase.from("product_images").insert({
+      product_id: productId,
+      image_url: publicUrl,
+      sort_order: 0,
+    })
+  }
+
+  setLoading(false)
+  window.location.reload()
+}
 
   /* ---------------- UI ---------------- */
 
@@ -427,7 +424,7 @@ async function handleAutoFill() {
             Product Images (Max 4)
           </label>
 
-          {product && (
+          
             <>
               <label className="cursor-pointer bg-black text-white px-4 py-2 rounded">
                 {uploading ? 'Uploading...' : 'Upload Image'}
@@ -461,11 +458,21 @@ async function handleAutoFill() {
                 ))}
               </div>
             </>
-          )}
-
+          
+{pendingImages.map((file, index) => (
+  <div
+    key={`pending-${index}`}
+    className="relative group border rounded overflow-hidden"
+  >
+    <img
+      src={URL.createObjectURL(file)}
+      className="w-full h-28 object-cover"
+    />
+  </div>
+))}
           {!product && (
             <p className="text-sm text-gray-500 mt-2">
-              Save product first to upload images
+              Images will be uploaded when the product is saved
             </p>
           )}
         </div>
