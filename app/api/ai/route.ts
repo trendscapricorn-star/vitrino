@@ -119,13 +119,16 @@ ${JSON.stringify(existingAttributes, null, 2)}
     // =============================
     // PRODUCT AUTO FILL
     // =============================
-    if (mode === "product_autofill") {
-      prompt = `
-You are a strict product classification AI.
+if (mode === "product_autofill") {
+  prompt = `
+You are an expert fashion product classification AI.
+
+Your job is to analyze the product image and classify attributes.
 
 Return ONLY valid JSON.
 
-Format:
+JSON FORMAT:
+
 {
   "moderation": { "allowed": true, "reason": "" },
   "matched_attributes": [
@@ -136,23 +139,40 @@ Format:
   ]
 }
 
-Rules:
-- Only match attribute_name from provided list.
-- Only match matched_option from provided options.
-- If highly confident.
-- If unsure, skip.
-- Never hallucinate.
+STRICT RULES:
 
-Category: ${category}
+1. Only use attribute_name values from the provided list.
+2. Only use matched_option values from the provided options.
+3. Do NOT invent attributes.
+4. Do NOT invent options.
+5. If uncertain, skip the attribute.
+6. Prefer visual evidence from the image over text.
+7. Product name and description are only secondary hints.
 
-Existing Attributes:
+ATTRIBUTE MATCHING METHOD:
+
+For each attribute:
+- Look at the image
+- Compare with the available options
+- Choose the closest match
+
+If none match clearly:
+- Skip the attribute
+- Or suggest a new option in "new_option_suggestions"
+
+CATEGORY:
+${category}
+
+AVAILABLE ATTRIBUTES:
 ${JSON.stringify(existingAttributes, null, 2)}
 
-Product Name: ${productName || ""}
-Description: ${description || ""}
-`
-    }
+PRODUCT NAME:
+${productName || ""}
 
+DESCRIPTION:
+${description || ""}
+`
+}
     let parts: any[] = [{ text: prompt }]
 
     if (mode === "product_autofill" && imageUrl) {

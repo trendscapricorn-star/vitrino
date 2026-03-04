@@ -11,14 +11,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
 
-      {/* 🔹 Header */}
+      {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
           <div className="text-xl font-semibold">
             Vitrino
           </div>
 
           <div className="flex gap-4">
+
             <Link
               href="/login"
               className="text-sm font-medium hover:underline"
@@ -32,12 +34,15 @@ export default function Home() {
             >
               Get Started
             </Link>
+
           </div>
         </div>
       </header>
 
-      {/* 🔹 Hero Section */}
+
+      {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 py-24 text-center">
+
         <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
           Launch Your Own Branded Product Catalog in 15 Minutes
         </h1>
@@ -49,6 +54,7 @@ export default function Home() {
         </p>
 
         <div className="flex justify-center gap-4">
+
           <Link
             href="/signup"
             className="bg-black text-white px-8 py-3 rounded-lg hover:opacity-90 transition"
@@ -62,63 +68,86 @@ export default function Home() {
           >
             Vendor Login
           </Link>
+
         </div>
 
         <p className="text-xs text-gray-500 mt-6">
           ⚡ 7-day free trial • No setup required • Cancel anytime
         </p>
+
       </section>
 
-      {/* 🔹 Who It's For */}
+
+      {/* Who It's For */}
       <section className="bg-white py-16 border-t">
+
         <div className="max-w-5xl mx-auto px-6 text-center">
+
           <h2 className="text-2xl font-semibold mb-8">
             Perfect For
           </h2>
 
           <div className="grid md:grid-cols-4 gap-6 text-sm text-gray-600">
+
             <div className="border rounded-lg p-6 bg-zinc-50">
               Manufacturers
             </div>
+
             <div className="border rounded-lg p-6 bg-zinc-50">
               Distributors
             </div>
+
             <div className="border rounded-lg p-6 bg-zinc-50">
               B2B Sellers
             </div>
+
             <div className="border rounded-lg p-6 bg-zinc-50">
               Product-Based Businesses
             </div>
+
           </div>
+
         </div>
+
       </section>
 
-      {/* 🔹 How It Works */}
+
+      {/* How It Works */}
       <section className="bg-zinc-50 py-20 border-t">
+
         <div className="max-w-5xl mx-auto px-6 text-center">
+
           <h2 className="text-2xl font-semibold mb-12">
             How It Works
           </h2>
 
           <div className="grid md:grid-cols-3 gap-10 text-gray-600">
+
             <div>
               <div className="text-3xl font-bold mb-4">1</div>
               <p>Create your account</p>
             </div>
+
             <div>
               <div className="text-3xl font-bold mb-4">2</div>
               <p>Upload products & set filters</p>
             </div>
+
             <div>
               <div className="text-3xl font-bold mb-4">3</div>
               <p>Share your catalog link</p>
             </div>
+
           </div>
+
         </div>
+
       </section>
 
-      {/* 🔹 Core Features */}
+
+      {/* Core Features */}
       <section className="bg-white py-20 border-t">
+
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
 
           <div>
@@ -152,11 +181,15 @@ export default function Home() {
           </div>
 
         </div>
+
       </section>
 
-      {/* 🔹 Differentiator */}
+
+      {/* Differentiator */}
       <section className="bg-zinc-50 py-20 border-t">
+
         <div className="max-w-4xl mx-auto px-6 text-center">
+
           <h2 className="text-2xl font-semibold mb-6">
             Built for Catalog Sharing — Not E-commerce Complexity
           </h2>
@@ -167,15 +200,142 @@ export default function Home() {
           </p>
 
           <div className="grid md:grid-cols-3 gap-8 text-sm text-gray-600">
+
             <div>⚡ Live in under 15 minutes</div>
             <div>🤖 AI-assisted product setup</div>
             <div>🔐 Secure subscription-managed access</div>
+
           </div>
+
         </div>
+
       </section>
 
-      {/* 🔹 Final CTA */}
+
+      {/* Pricing */}
+      <section className="bg-white py-20 border-t">
+
+        <div className="max-w-6xl mx-auto px-6 text-center">
+
+          <h2 className="text-3xl font-semibold mb-12">
+            Simple Pricing
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            {/* Monthly */}
+
+            <div className="border rounded-xl p-8 bg-zinc-50">
+
+              <h3 className="text-lg font-semibold mb-2">
+                Monthly
+              </h3>
+
+              <p className="text-4xl font-bold mb-4">
+                ₹399
+              </p>
+
+              <p className="text-sm text-gray-500 mb-6">
+                per month
+              </p>
+
+              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+                <li>✔ Unlimited products</li>
+                <li>✔ Branded catalog webpage</li>
+                <li>✔ Smart product filters</li>
+                <li>✔ AI-assisted setup</li>
+              </ul>
+
+              <Link
+                href="/signup"
+                className="bg-black text-white px-6 py-2 rounded-lg text-sm"
+              >
+                Start Monthly
+              </Link>
+
+            </div>
+
+
+            {/* Quarterly */}
+
+            <div className="border-2 border-black rounded-xl p-8 bg-white">
+
+              <h3 className="text-lg font-semibold mb-2">
+                Quarterly
+              </h3>
+
+              <p className="text-4xl font-bold mb-4">
+                ₹1,099
+              </p>
+
+              <p className="text-sm text-gray-500 mb-6">
+                every 3 months
+              </p>
+
+              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+                <li>✔ Everything in Monthly</li>
+                <li>✔ Save ₹98</li>
+                <li>✔ Priority support</li>
+                <li>✔ Faster catalog setup</li>
+              </ul>
+
+              <Link
+                href="/signup"
+                className="bg-black text-white px-6 py-2 rounded-lg text-sm"
+              >
+                Choose Quarterly
+              </Link>
+
+            </div>
+
+
+            {/* Yearly */}
+
+            <div className="border rounded-xl p-8 bg-zinc-50">
+
+              <h3 className="text-lg font-semibold mb-2">
+                Yearly
+              </h3>
+
+              <p className="text-4xl font-bold mb-4">
+                ₹3,999
+              </p>
+
+              <p className="text-sm text-gray-500 mb-6">
+                per year
+              </p>
+
+              <ul className="text-sm text-gray-600 space-y-2 mb-6">
+                <li>✔ Everything in Quarterly</li>
+                <li>✔ Save ₹789</li>
+                <li>✔ Best value</li>
+                <li>✔ Early feature access</li>
+              </ul>
+
+              <Link
+                href="/signup"
+                className="bg-black text-white px-6 py-2 rounded-lg text-sm"
+              >
+                Choose Yearly
+              </Link>
+
+            </div>
+
+          </div>
+
+          <p className="text-xs text-gray-500 mt-8">
+            All plans include hosting, updates, and catalog sharing.
+            Prices in INR.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      {/* Final CTA */}
       <section className="py-20 text-center border-t bg-white">
+
         <h2 className="text-2xl font-semibold mb-6">
           Ready to launch your branded catalog?
         </h2>
@@ -186,11 +346,19 @@ export default function Home() {
         >
           Start Free
         </Link>
+
       </section>
 
-      {/* 🔹 Footer */}
+
+      {/* Footer */}
       <footer className="border-t bg-white py-6 text-center text-sm text-gray-500">
+
         © {new Date().getFullYear()} Vitrino. All rights reserved.
+
+        <div className="mt-2">
+          Payments are securely processed via Razorpay.
+        </div>
+
       </footer>
 
     </div>
