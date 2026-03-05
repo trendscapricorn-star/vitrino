@@ -3,15 +3,18 @@ export const runtime = 'edge'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import ImageSlider from './ImageSlider'
+import ProductTracker from './ProductTracker'
 
 export default async function ProductPage(props: any) {
+
   const supabase = await createSupabaseServerClient()
 
   const params = await props.params
   const slug = params.slug
   const productSlug = params.productSlug
 
-  /* 🔹 Company */
+  /* ---------------- COMPANY ---------------- */
+
   const { data: company } = await supabase
     .from('companies')
     .select('id, display_name, logo_url, phone, whatsapp, email')
@@ -20,7 +23,8 @@ export default async function ProductPage(props: any) {
 
   if (!company) return notFound()
 
-  /* 🔹 Product + Attributes */
+  /* ---------------- PRODUCT ---------------- */
+
   const { data: product } = await supabase
     .from('products')
     .select(`
@@ -55,13 +59,16 @@ export default async function ProductPage(props: any) {
       )
       .map((i: any) => i.image_url) || []
 
-  /* 🔹 Group Attributes Properly */
+  /* ---------------- ATTRIBUTES ---------------- */
+
   const attributeMap: Record<string, string[]> = {}
 
   product.product_attribute_values?.forEach(
     (item: any) => {
+
       const attrName =
         item.attribute_options.attributes.name
+
       const value =
         item.attribute_options.value
 
@@ -74,7 +81,14 @@ export default async function ProductPage(props: any) {
   )
 
   return (
+
     <div className="min-h-screen bg-gray-50">
+
+      {/* Product View Tracking */}
+      <ProductTracker
+        companyId={company.id}
+        productId={product.id}
+      />
 
       {/* Product */}
       <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-12">
@@ -116,16 +130,18 @@ export default async function ProductPage(props: any) {
                     <div className="font-medium w-32">
                       {attr}:
                     </div>
+
                     <div className="text-gray-600">
                       {values.join(', ')}
                     </div>
                   </div>
                 )
               )}
+
             </div>
           )}
 
-          {/* Compact Enquiry */}
+          {/* Contact */}
           <div className="border-t pt-6 space-y-2">
 
             <div className="text-sm font-medium">

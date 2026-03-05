@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 import FilterSidebar from "./components/FilterSidebar"
 import InstallButton from "./components/InstallButton"
+import VisitorGate from "./components/VisitorGate"
+
 
 const PAGE_SIZE = 12
 
@@ -218,7 +220,10 @@ if (!isTrialValid && !isActiveValid) {
     categories.find(c => c.id === selectedCategory)?.name || ""
 
   return (
-    <div className="bg-zinc-50">
+
+  <VisitorGate companyId={company.id}>
+
+  <div className="bg-zinc-50">
 
       <div className="max-w-7xl mx-auto px-6 py-8">
 
@@ -301,5 +306,6 @@ if (!isTrialValid && !isActiveValid) {
       <InstallButton />
 
     </div>
+  </VisitorGate>
   )
 }
