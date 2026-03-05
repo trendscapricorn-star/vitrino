@@ -3,7 +3,7 @@ export const runtime = 'edge'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import ImageSlider from './ImageSlider'
-import ProductTracker from './ProductTracker'
+import ProductTracker from './tracker'
 
 export default async function ProductPage(props: any) {
 
