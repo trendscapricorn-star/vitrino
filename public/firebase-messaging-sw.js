@@ -7,14 +7,15 @@ firebase.initializeApp({
   projectId: "vitrino-push",
   storageBucket: "vitrino-push.appspot.com",
   messagingSenderId: "345907703597",
-  appId: "vitrino-push"
+  appId: "1:345907703597:web:48ecd87b4f6c1e74a42da4"
 });
 
 const messaging = firebase.messaging();
 
 /* =========================
-   Background Message Handler
+   Background Message
 ========================= */
+
 messaging.onBackgroundMessage(function (payload) {
 
   const title = payload.notification?.title || 'New Update';
@@ -22,18 +23,21 @@ messaging.onBackgroundMessage(function (payload) {
   const options = {
     body: payload.notification?.body || '',
     icon: '/icon-192.png',
+    badge: '/icon-192.png',
     data: {
       url: payload.data?.url || '/'
     }
   };
 
   self.registration.showNotification(title, options);
+
 });
 
 
 /* =========================
-   Notification Click Handler
+   Notification Click
 ========================= */
+
 self.addEventListener('notificationclick', function (event) {
 
   event.notification.close();
@@ -41,11 +45,12 @@ self.addEventListener('notificationclick', function (event) {
   const url = event.notification?.data?.url || '/';
 
   event.waitUntil(
+
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(function (clientList) {
 
         for (const client of clientList) {
-          if (client.url.includes(url) && 'focus' in client) {
+          if ('focus' in client) {
             return client.focus();
           }
         }
@@ -53,6 +58,8 @@ self.addEventListener('notificationclick', function (event) {
         if (clients.openWindow) {
           return clients.openWindow(url);
         }
+
       })
   );
+
 });
