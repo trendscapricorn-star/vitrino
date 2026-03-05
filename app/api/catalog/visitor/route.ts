@@ -20,22 +20,26 @@ export async function POST(req: Request) {
     )
 
     const { data, error } = await supabase
-      .from("catalog_visitor")
+      .from("catalog_visitors")   // ✅ corrected
       .insert({
         company_id: companyId,
-        name: name || null,
+        name: name ?? null,
         mobile
       })
       .select()
+      .single()
 
     if (error) {
-      console.error(error)
-      return NextResponse.json({ error }, { status: 500 })
+      console.error("Supabase error:", error)
+      return NextResponse.json(
+        { error: "Database error" },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({
       success: true,
-      visitor: data[0]
+      visitor: data
     })
 
   } catch (err) {
