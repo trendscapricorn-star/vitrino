@@ -118,9 +118,9 @@ export default function ProductsList({
           <tbody>
             {localProducts.map((p) => {
               const primaryImage =
-                p.product_images?.find(
-                  (img) => img.sort_order === 0
-                )?.image_url
+  p.product_images
+    ?.sort((a, b) => a.sort_order - b.sort_order)[0]
+    ?.image_url
 
               const imageCount =
                 p.product_images?.length || 0

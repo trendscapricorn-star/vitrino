@@ -35,16 +35,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <form onSubmit={handleLogin} className="w-80 space-y-4">
-        <h1 className="text-2xl font-bold">Login</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+
+      <form
+        onSubmit={handleLogin}
+        className="w-80 space-y-4 bg-white p-6 rounded-xl shadow"
+      >
+
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={() => router.push('/')}
+          className="text-sm text-gray-500 hover:underline"
+        >
+          ← Back
+        </button>
+
+        <h1 className="text-2xl font-bold">
+          Login
+        </h1>
 
         <input
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2"
+          onChange={(e)=>setEmail(e.target.value)}
+          className="w-full border p-2 rounded"
           required
         />
 
@@ -52,21 +68,39 @@ export default function LoginPage() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border p-2"
+          onChange={(e)=>setPassword(e.target.value)}
+          className="w-full border p-2 rounded"
           required
         />
 
         <button
           type="submit"
-          className="w-full bg-black text-white p-2"
+          className="w-full bg-black text-white p-2 rounded"
           disabled={loading}
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm">
+            {error}
+          </p>
+        )}
+
+        {/* Create Account */}
+        <p className="text-sm text-center text-gray-600">
+          Don't have an account?{' '}
+          <button
+            type="button"
+            onClick={() => router.push('/signup')}
+            className="text-black font-medium hover:underline"
+          >
+            Create Account
+          </button>
+        </p>
+
       </form>
+
     </div>
   )
 }

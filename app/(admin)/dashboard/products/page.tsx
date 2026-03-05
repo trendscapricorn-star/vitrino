@@ -24,19 +24,20 @@ export default async function ProductsPage() {
   if (!company) redirect('/dashboard/setup')
 
   // 📦 Get products (WITHOUT variants)
-  const { data: products } = await supabase
-    .from('products')
-    .select(`
-      *,
-      categories(name),
-      product_images (
-        id,
-        image_url,
-        sort_order
-      )
-    `)
-    .eq('company_id', company.id)
-    .order('sort_order', { ascending: true })
+const { data: products } = await supabase
+  .from('products')
+  .select(`
+    *,
+    categories(name),
+    product_images (
+      id,
+      image_url,
+      sort_order
+    )
+  `)
+  .eq('company_id', company.id)
+  .order('sort_order', { ascending: true })
+  .order('sort_order', { foreignTable: 'product_images', ascending: true })
 
   // 📂 Get categories
   const { data: categories } = await supabase

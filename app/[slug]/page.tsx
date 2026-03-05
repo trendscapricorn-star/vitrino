@@ -5,7 +5,6 @@ import InstallButton from "./components/InstallButton"
 
 const PAGE_SIZE = 12
 
-/* 🔹 Type for RPC result */
 type Company = {
   id: string
   display_name: string
@@ -16,31 +15,43 @@ type Company = {
 }
 
 export default async function PublicCatalog(props: any) {
+
   const params = await props.params
   const searchParams = await props.searchParams
 
   const supabase = await createSupabaseServerClient()
+
   const slug = params.slug
+
+  console.log("CATALOG DEBUG: slug =", slug)
 
   if (!slug) notFound()
 
-  /* 🔹 Company (SECURE RPC — Supabase v2 safe) */
+  /* ---------------- COMPANY ---------------- */
+
   const { data: companyData } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
 
   const company = companyData as Company | null
 
+  console.log("CATALOG DEBUG: company =", company)
+
   if (!company) notFound()
 
-  /* 🔹 Subscription Check */
+  /* ---------------- SUBSCRIPTION ---------------- */
+
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("status, trial_ends_at, current_period_end")
     .eq("company_id", company.id)
     .maybeSingle()
 
+  console.log("CATALOG DEBUG: subscription =", subscription)
+
   const now = new Date()
+
+  console.log("CATALOG DEBUG: server time =", now.toISOString())
 
   const isTrialValid =
     subscription?.status === "trialing" &&
@@ -52,7 +63,13 @@ export default async function PublicCatalog(props: any) {
     subscription.current_period_end &&
     new Date(subscription.current_period_end) > now
 
+  console.log("CATALOG DEBUG: trial check =", isTrialValid)
+  console.log("CATALOG DEBUG: active check =", isActiveValid)
+
   if (!isTrialValid && !isActiveValid) {
+
+    console.log("CATALOG DEBUG: ACCOUNT BLOCKED")
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
         <div className="bg-white p-10 rounded-xl shadow text-center max-w-md">
@@ -68,7 +85,10 @@ export default async function PublicCatalog(props: any) {
     )
   }
 
-  /* 🔹 Categories */
+  console.log("CATALOG DEBUG: subscription valid")
+
+  /* ---------------- CATEGORIES ---------------- */
+
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name")
@@ -99,7 +119,8 @@ export default async function PublicCatalog(props: any) {
       ? Number(searchParams.page)
       : 1
 
-  /* 🔹 Attributes */
+  /* ---------------- ATTRIBUTES ---------------- */
+
   const { data: attributes } = await supabase
     .from("attributes")
     .select(`
@@ -113,11 +134,11 @@ export default async function PublicCatalog(props: any) {
     .eq("category_id", selectedCategory)
     .order("sort_order", { ascending: true })
 
-  /* 🔹 Products Query */
+  /* ---------------- PRODUCTS ---------------- */
+
   let query = supabase
     .from("products")
-    .select(
-      `
+    .select(`
       id,
       name,
       slug,
@@ -127,21 +148,19 @@ export default async function PublicCatalog(props: any) {
         image_url,
         sort_order
       )
-    `,
-      { count: "exact" }
-    )
+    `,{ count:"exact" })
     .eq("company_id", company.id)
     .eq("category_id", selectedCategory)
     .eq("is_active", true)
 
-  /* 🔹 Filter by attribute options */
   if (selectedOptions.length > 0) {
+
     const { data: productIds } = await supabase
       .from("product_attribute_values")
       .select("product_id")
       .in("option_id", selectedOptions)
 
-    const ids = productIds?.map((p) => p.product_id) ?? []
+    const ids = productIds?.map(p => p.product_id) ?? []
 
     query =
       ids.length > 0
@@ -149,36 +168,40 @@ export default async function PublicCatalog(props: any) {
         : query.in("id", ["00000000-0000-0000-0000-000000000000"])
   }
 
-  /* 🔹 Sorting */
-  if (sort === "price_asc") {
+  if (sort === "price_asc")
     query = query.order("base_price", { ascending: true })
-  } else if (sort === "price_desc") {
-    query = query.order("base_price", { ascending: false })
-  } else if (sort === "name_asc") {
-    query = query.order("name", { ascending: true })
-  } else if (sort === "name_desc") {
-    query = query.order("name", { ascending: false })
-  } else {
-    query = query.order("sort_order", { ascending: true })
-  }
 
-  /* 🔹 Pagination */
+  else if (sort === "price_desc")
+    query = query.order("base_price", { ascending: false })
+
+  else if (sort === "name_asc")
+    query = query.order("name", { ascending: true })
+
+  else if (sort === "name_desc")
+    query = query.order("name", { ascending: false })
+
+  else
+    query = query.order("sort_order", { ascending: true })
+
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
   const { data: products, count } = await query.range(from, to)
 
   const selectedCategoryName =
-    categories.find((c) => c.id === selectedCategory)?.name || ""
+    categories.find(c => c.id === selectedCategory)?.name || ""
 
   return (
     <div className="bg-zinc-50">
+
       <div className="max-w-7xl mx-auto px-6 py-8">
+
         <div className="text-sm text-gray-500 mb-6">
           {company.display_name} / {selectedCategoryName}
         </div>
 
         <div className="grid grid-cols-12 gap-8">
+
           <div className="col-span-3">
             <FilterSidebar
               slug={slug}
@@ -192,60 +215,65 @@ export default async function PublicCatalog(props: any) {
           </div>
 
           <div className="col-span-9">
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products && products.length > 0 ? (
-                products.map((p: any) => {
-                  const primaryImage =
-                    p.product_images?.find(
-                      (img: any) => img.sort_order === 0
-                    )?.image_url
 
-                  return (
-                    <a
-                      key={p.id}
-                      href={`/${slug}/${p.slug}`}
-                      className="border rounded bg-white overflow-hidden hover:shadow-md transition"
-                    >
-                      {primaryImage ? (
-                        <img
-                          src={primaryImage}
-                          alt={p.name}
-                          className="w-full h-64 object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                          No Image
-                        </div>
-                      )}
+              {products?.map((p:any)=>{
 
-                      <div className="p-3">
-                        <div className="font-medium truncate">
-                          {p.name}
-                        </div>
+                const primaryImage =
+                  p.product_images?.find(
+                    (img:any)=>img.sort_order===0
+                  )?.image_url
 
-                        <div className="text-sm text-gray-600 mt-1">
-                          ₹ {p.base_price ?? "-"}
-                        </div>
+                return(
+
+                  <a
+                    key={p.id}
+                    href={`/${slug}/${p.slug}`}
+                    className="border rounded bg-white overflow-hidden hover:shadow-md transition"
+                  >
+
+                    {primaryImage ? (
+
+                      <img
+                        src={primaryImage}
+                        alt={p.name}
+                        className="w-full h-64 object-cover"
+                      />
+
+                    ):(
+                      <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                        No Image
                       </div>
-                    </a>
-                  )
-                })
-              ) : (
-                <div className="col-span-full text-center py-20">
-                  <div className="text-lg font-medium mb-2">
-                    No products match your selected filters
-                  </div>
-                  <div className="text-gray-500 text-sm">
-                    Try expanding your filter options.
-                  </div>
-                </div>
-              )}
+                    )}
+
+                    <div className="p-3">
+
+                      <div className="font-medium truncate">
+                        {p.name}
+                      </div>
+
+                      <div className="text-sm text-gray-600 mt-1">
+                        ₹ {p.base_price ?? "-"}
+                      </div>
+
+                    </div>
+
+                  </a>
+
+                )
+              })}
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
       <InstallButton />
+
     </div>
   )
 }
