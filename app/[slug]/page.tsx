@@ -41,51 +41,77 @@ export default async function PublicCatalog(props: any) {
 
   /* ---------------- SUBSCRIPTION ---------------- */
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, trial_ends_at, current_period_end")
-    .eq("company_id", company.id)
-    .maybeSingle()
+ /* 🔹 Subscription Check */
 
-  console.log("CATALOG DEBUG: subscription =", subscription)
+const { data: subscription } = await supabase
+  .from("subscriptions")
+  .select("status, trial_ends_at, current_period_end")
+  .eq("company_id", company.id)
+  .maybeSingle()
 
-  const now = new Date()
+const now = new Date()
 
-  console.log("CATALOG DEBUG: server time =", now.toISOString())
+const isTrialValid =
+  subscription?.status === "trialing" &&
+  subscription?.trial_ends_at &&
+  new Date(subscription.trial_ends_at) > now
 
-  const isTrialValid =
-    subscription?.status === "trialing" &&
-    subscription.trial_ends_at &&
-    new Date(subscription.trial_ends_at) > now
+const isActiveValid =
+  subscription?.status === "active" &&
+  subscription?.current_period_end &&
+  new Date(subscription.current_period_end) > now
 
-  const isActiveValid =
-    subscription?.status === "active" &&
-    subscription.current_period_end &&
-    new Date(subscription.current_period_end) > now
+if (!isTrialValid && !isActiveValid) {
 
-  console.log("CATALOG DEBUG: trial check =", isTrialValid)
-  console.log("CATALOG DEBUG: active check =", isActiveValid)
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+      <div className="bg-white p-10 rounded-xl shadow text-left max-w-xl">
 
-  if (!isTrialValid && !isActiveValid) {
-
-    console.log("CATALOG DEBUG: ACCOUNT BLOCKED")
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <div className="bg-white p-10 rounded-xl shadow text-center max-w-md">
-          <div className="text-xl font-semibold mb-4 text-red-600">
-            Account Suspended
-          </div>
-          <div className="text-gray-600 mb-6">
-            This vendor account is currently suspended.
-            Please renew the subscription to restore access.
-          </div>
+        <div className="text-xl font-semibold mb-4 text-red-600">
+          Account Suspended (DEBUG MODE)
         </div>
-      </div>
-    )
-  }
 
-  console.log("CATALOG DEBUG: subscription valid")
+        <div className="text-sm text-gray-700 space-y-2">
+
+          <div>
+            <strong>Company ID:</strong> {company.id}
+          </div>
+
+          <div>
+            <strong>Status:</strong> {subscription?.status ?? "NULL"}
+          </div>
+
+          <div>
+            <strong>Trial Ends:</strong>{" "}
+            {subscription?.trial_ends_at ?? "NULL"}
+          </div>
+
+          <div>
+            <strong>Current Period End:</strong>{" "}
+            {subscription?.current_period_end ?? "NULL"}
+          </div>
+
+          <div>
+            <strong>Server Time:</strong>{" "}
+            {now.toISOString()}
+          </div>
+
+          <div>
+            <strong>Trial Valid:</strong>{" "}
+            {String(isTrialValid)}
+          </div>
+
+          <div>
+            <strong>Active Valid:</strong>{" "}
+            {String(isActiveValid)}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  )
+}
 
   /* ---------------- CATEGORIES ---------------- */
 
