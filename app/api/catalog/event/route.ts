@@ -19,14 +19,22 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    await supabase
-      .from("catalog_events")
-      .insert({
-        company_id: companyId,
-        product_id: productId || null,
-        event_type: eventType,
-        visitor_id: visitorId || null
-      })
+   const { data, error } = await supabase
+  .from("catalog_events")
+  .insert({
+    company_id: companyId,
+    product_id: productId || null,
+    event_type: eventType,
+    visitor_id: visitorId || null
+  })
+  .select()
+
+if (error) {
+  console.error("Supabase insert error:", error)
+  return NextResponse.json({ error }, { status: 500 })
+}
+
+console.log("Inserted row:", data)
 
     return NextResponse.json({ success: true })
 
