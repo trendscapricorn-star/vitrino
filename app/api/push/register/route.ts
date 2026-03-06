@@ -1,94 +1,47 @@
-export const runtime = 'nodejs'
+export const runtime = "nodejs"
 
-import { NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { firebaseAdmin } from '@/lib/firebase-admin'
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
 export async function POST(req: Request) {
 
   try {
 
-    const body = await req.json()
-
-    const {
-      token,
-      companyId,
-      platform,
-      userAgent
-    } = body
+    const { token, companyId } = await req.json()
 
     if (!token || !companyId) {
-      return NextResponse.json(
-        { error: 'Invalid payload' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
     }
 
-    const supabase = await createSupabaseServerClient()
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
-    const safePlatform =
-      platform === 'android' ||
-      platform === 'ios' ||
-      platform === 'desktop'
-        ? platform
-        : 'desktop'
-
-    const { data, error } = await supabase
-      .from('fcm_subscriptions')
+    const { error } = await supabase
+      .from("fcm_subscriptions")
       .upsert(
         {
           token,
           company_id: companyId,
-          platform: safePlatform,
-          user_agent: userAgent || null,
-          is_active: true,
-          updated_at: new Date().toISOString(),
+          platform: "desktop",
+          is_active: true
         },
-        { onConflict: 'token' }
+        { onConflict: "token" }
       )
 
     if (error) {
-      console.error('FCM INSERT ERROR:', error)
-
-      return NextResponse.json(
-        { error: 'Insert failed', details: error },
-        { status: 500 }
-      )
+      console.error(error)
     }
 
-    console.log('FCM INSERT SUCCESS:', data)
+    return NextResponse.json({ success: true })
 
-    try {
+  } catch (err) {
 
-      await firebaseAdmin
-        .messaging()
-        .subscribeToTopic(
-          token,
-          `vendor_${companyId}`
-        )
-
-    } catch (err) {
-
-      console.error(
-        'Topic subscribe failed:',
-        err
-      )
-
-    }
-
-    return NextResponse.json({
-      success: true
-    })
-
-  } catch (error) {
-
-    console.error(
-      'Push register error:',
-      error
-    )
+    console.error(err)
 
     return NextResponse.json(
-      { error: 'Server error' },
+      { error: "Server error" },
       { status: 500 }
     )
 

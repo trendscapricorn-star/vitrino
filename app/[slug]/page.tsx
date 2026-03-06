@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server"
 import FilterSidebar from "./components/FilterSidebar"
 import InstallButton from "./components/InstallButton"
 import VisitorGate from "./components/VisitorGate"
+import PushRegister from "./components/PushRegister"
 
 
 const PAGE_SIZE = 12
@@ -222,7 +223,7 @@ if (!isTrialValid && !isActiveValid) {
   return (
 
   <VisitorGate companyId={company.id}>
-
+<PushRegister companyId={company.id} />
   <div className="bg-zinc-50">
 
       <div className="max-w-7xl mx-auto px-6 py-8">
