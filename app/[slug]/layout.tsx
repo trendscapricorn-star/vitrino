@@ -3,7 +3,7 @@ export const runtime = 'edge'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import PushRegister from '@/components/PushRegister'
+import PushRegister from './components/PushRegister'
 
 /* =========================
    Dynamic Metadata (Next 16 Safe)
