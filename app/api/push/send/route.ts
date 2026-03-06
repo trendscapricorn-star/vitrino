@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import { firebaseAdmin } from '@/lib/firebase-admin'
 
 export async function POST(req: Request) {
+
   try {
+
     const body = await req.json()
     const { companyId, title, body: messageBody, url } = body
 
@@ -20,15 +22,15 @@ export async function POST(req: Request) {
     )
 
     const { data: tokens } = await supabase
-      .from('fcm_tokens') // ⚠️ make sure this table name is correct
+      .from('fcm_subscriptions')
       .select('token')
       .eq('company_id', companyId)
+      .eq('is_active', true)
 
     if (!tokens || tokens.length === 0) {
       return NextResponse.json({ success: true, sent: 0 })
     }
 
-    // ✅ Correct way to get messaging
     const messaging = firebaseAdmin.messaging()
 
     const response = await messaging.sendEachForMulticast({
@@ -46,11 +48,15 @@ export async function POST(req: Request) {
       success: true,
       sent: response.successCount,
     })
+
   } catch (err) {
+
     console.error(err)
+
     return NextResponse.json(
       { error: 'Server error' },
       { status: 500 }
     )
+
   }
 }
