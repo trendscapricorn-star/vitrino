@@ -2,15 +2,18 @@
 
 import { useEffect } from "react"
 import { initializeApp, getApps } from "firebase/app"
-import { getMessaging, getToken } from "firebase/messaging"
+import { getMessaging, getToken, isSupported } from "firebase/messaging"
 
 export default function PushRegister({ companyId }: { companyId: string }) {
 
   useEffect(() => {
 
-    async function register() {
+    async function registerPush() {
 
-      if (!("serviceWorker" in navigator)) return
+      if (typeof window === "undefined") return
+
+      const supported = await isSupported()
+      if (!supported) return
 
       const firebaseConfig = {
         apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -31,9 +34,7 @@ export default function PushRegister({ companyId }: { companyId: string }) {
 
       if (permission !== "granted") return
 
-      const registration = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
-      )
+      const registration = await navigator.serviceWorker.ready
 
       const token = await getToken(messaging, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
@@ -49,13 +50,17 @@ export default function PushRegister({ companyId }: { companyId: string }) {
         },
         body: JSON.stringify({
           token,
-          companyId
+          companyId,
+          platform: "desktop",
+          userAgent: navigator.userAgent
         })
       })
 
+      console.log("FCM TOKEN REGISTERED")
+
     }
 
-    register()
+    registerPush()
 
   }, [companyId])
 
