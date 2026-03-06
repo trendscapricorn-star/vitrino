@@ -15,13 +15,14 @@ export default function PushRegister({ companyId }: { companyId: string }) {
       const supported = await isSupported()
       if (!supported) return
 
-      const firebaseConfig = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-      }
+const firebaseConfig = {
+  apiKey: "AIzaSyBfq9JB_Rq6C3lgyAa5bnkmqJx79IGgafY",
+  authDomain: "vitrino-push.firebaseapp.com",
+  projectId: "vitrino-push",
+  storageBucket: "vitrino-push.firebasestorage.app",
+  messagingSenderId: "345907703597",
+  appId: "1:345907703597:web:48ecd87b4f6c1e74a42da4"
+}
 
       const app =
         getApps().length === 0
