@@ -18,15 +18,27 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function (payload) {
 
-  const title = payload.notification?.title || 'New Update';
+  console.log("FCM Background:", payload);
+
+  const title =
+    payload.notification?.title ||
+    payload.data?.title ||
+    "New Update";
+
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    "";
+
+  const url =
+    payload.data?.url ||
+    "/";
 
   const options = {
-    body: payload.notification?.body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    data: {
-      url: payload.data?.url || '/'
-    }
+    body,
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: { url }
   };
 
   self.registration.showNotification(title, options);
@@ -38,21 +50,23 @@ messaging.onBackgroundMessage(function (payload) {
    Notification Click
 ========================= */
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener("notificationclick", function (event) {
 
   event.notification.close();
 
-  const url = event.notification?.data?.url || '/';
+  const url = event.notification?.data?.url || "/";
 
   event.waitUntil(
 
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
+    clients.matchAll({ type: "window", includeUncontrolled: true })
       .then(function (clientList) {
 
         for (const client of clientList) {
-          if ('focus' in client) {
+
+          if (client.url.includes(url) && "focus" in client) {
             return client.focus();
           }
+
         }
 
         if (clients.openWindow) {
@@ -60,6 +74,7 @@ self.addEventListener('notificationclick', function (event) {
         }
 
       })
+
   );
 
 });
