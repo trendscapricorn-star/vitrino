@@ -31,9 +31,7 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    /* -----------------------
-       Fetch tokens
-    ----------------------- */
+    /* Fetch tokens */
 
     const { data: tokens, error } = await supabase
       .from('fcm_subscriptions')
@@ -63,9 +61,7 @@ export async function POST(req: Request) {
 
     const messaging = firebaseAdmin.messaging()
 
-    /* -----------------------
-       Send notification
-    ----------------------- */
+    /* Send notification */
 
     const response = await messaging.sendEachForMulticast({
 
@@ -73,10 +69,12 @@ export async function POST(req: Request) {
 
       notification: {
         title,
-        body: messageBody,
+        body: messageBody
       },
 
       data: {
+        title,
+        body: messageBody,
         url: url || '/'
       }
 
