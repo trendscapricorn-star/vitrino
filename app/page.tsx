@@ -4,16 +4,14 @@ export default function Page() {
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-900">
 
-      {/* Header */}
+      {/* HEADER */}
 
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="text-lg font-semibold">Vitrino</div>
 
           <div className="flex gap-4 text-sm">
-            <Link href="/login" className="hover:underline">
-              Login
-            </Link>
+            <Link href="/login" className="hover:underline">Login</Link>
 
             <Link
               href="/signup"
@@ -27,7 +25,7 @@ export default function Page() {
 
 
 
-      {/* Hero */}
+      {/* HERO */}
 
       <section className="max-w-5xl mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
@@ -58,7 +56,7 @@ export default function Page() {
 
 
 
-      {/* Industries */}
+      {/* INDUSTRIES */}
 
       <section className="py-10 bg-white border-t">
         <div className="max-w-5xl mx-auto px-4 text-center">
@@ -71,173 +69,225 @@ export default function Page() {
 
             <div className="bg-zinc-100 p-3 rounded">Garments</div>
             <div className="bg-zinc-100 p-3 rounded">Footwear</div>
-            <div className="bg-zinc-100 p-3 rounded">Jewellery</div>
-            <div className="bg-zinc-100 p-3 rounded">Cosmetics</div>
             <div className="bg-zinc-100 p-3 rounded">Toys</div>
             <div className="bg-zinc-100 p-3 rounded">Bakery</div>
-
             <div className="bg-zinc-100 p-3 rounded">Hardware</div>
             <div className="bg-zinc-100 p-3 rounded">Electrical</div>
-            <div className="bg-zinc-100 p-3 rounded">Tools</div>
-            <div className="bg-zinc-100 p-3 rounded">Automotive</div>
+
             <div className="bg-zinc-100 p-3 rounded">Furniture</div>
             <div className="bg-zinc-100 p-3 rounded">Home Decor</div>
-
-            <div className="bg-zinc-100 p-3 rounded">Medical Supplies</div>
             <div className="bg-zinc-100 p-3 rounded">Stationery</div>
+            <div className="bg-zinc-100 p-3 rounded">Medical</div>
             <div className="bg-zinc-100 p-3 rounded">Electronics</div>
-            <div className="bg-zinc-100 p-3 rounded">Packaging</div>
             <div className="bg-zinc-100 p-3 rounded">Agriculture</div>
-            <div className="bg-zinc-100 p-3 rounded">Wholesale</div>
 
           </div>
-
         </div>
       </section>
 
 
 
-      {/* Explainer */}
+      {/* HOW IT WORKS */}
 
-      <section className="py-12">
-        <div className="max-w-6xl mx-auto px-4 space-y-12">
+      <section className="py-12 bg-zinc-50 border-t">
+        <div className="max-w-5xl mx-auto px-4 text-center">
 
+          <h2 className="text-xl font-semibold mb-8">
+            How Vitrino Works
+          </h2>
 
-          {/* What is Vitrino */}
+          <div className="grid md:grid-cols-3 gap-6 text-sm">
 
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_28%20PM.png"
-              className="rounded-lg shadow"
-            />
-
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                What is Vitrino
-              </h3>
-
-              <p className="text-gray-600 text-sm">
-                Vitrino helps manufacturers and distributors showcase products
-                through structured digital catalogs with filters, sorting and
-                easy browsing.
-              </p>
-            </div>
-          </div>
-
-
-
-          {/* Manufacturers */}
-
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                Built for Manufacturers
-              </h3>
-
-              <p className="text-gray-600 text-sm">
-                Upload products once and instantly share your branded catalog
-                with distributors and retailers.
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">1. Upload Products</h3>
+              <p className="text-gray-600">
+                Manufacturers upload products with attributes, images and pricing.
               </p>
             </div>
 
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_22%20PM.png"
-              className="rounded-lg shadow"
-            />
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">2. Organize Catalog</h3>
+              <p className="text-gray-600">
+                Products get structured with filters like price, category,
+                attributes and tags.
+              </p>
+            </div>
+
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">3. Share Instantly</h3>
+              <p className="text-gray-600">
+                Send catalog links or generate PDFs instantly for retailers.
+              </p>
+            </div>
+
           </div>
+        </div>
+      </section>
 
 
 
-          {/* Launch */}
+      {/* REAL WORLD SCENARIOS */}
 
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_14%20PM.png"
-              className="rounded-lg shadow"
-            />
+      <section className="py-12 border-t bg-white">
+        <div className="max-w-6xl mx-auto px-4">
 
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                Launch in 15 Minutes
+          <h2 className="text-xl font-semibold text-center mb-10">
+            Real-world product discovery made simple
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6 text-sm">
+
+            {/* SHIRTS */}
+
+            <div className="bg-zinc-50 border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">
+                Apparel distributor request
               </h3>
 
-              <p className="text-gray-600 text-sm">
-                Setup your product catalog quickly and start sharing products
+              <p className="text-gray-600 mb-2">
+                A retailer asks:
+              </p>
+
+              <p className="italic text-gray-700 mb-3">
+                "Show cotton shirts between ₹500-₹600, half sleeves,
+                regular collar, solid colours."
+              </p>
+
+              <p className="text-gray-600">
+                With Vitrino you simply apply filters and instantly see
+                all matching designs. Share the catalog link or generate
+                a PDF in seconds.
+              </p>
+            </div>
+
+
+
+            {/* TOYS */}
+
+            <div className="bg-zinc-50 border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">
+                Toy distributor request
+              </h3>
+
+              <p className="italic text-gray-700 mb-3">
+                "Show toys ₹400-₹500 for boys. Non-electronic.
+                Educational, board game or sports related."
+              </p>
+
+              <p className="text-gray-600">
+                Apply filters for price, type and category. The exact
+                products appear instantly. Send the catalog link and
+                let the buyer browse easily.
+              </p>
+            </div>
+
+
+
+            {/* BAKERY */}
+
+            <div className="bg-zinc-50 border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">
+                Bakery wholesaler request
+              </h3>
+
+              <p className="italic text-gray-700 mb-3">
+                "Show eggless cakes under ₹300 suitable for birthdays."
+              </p>
+
+              <p className="text-gray-600">
+                Filter by price, product type and attributes. The
+                correct options appear instantly and can be shared
+                through a catalog link.
+              </p>
+            </div>
+
+
+
+            {/* HARDWARE */}
+
+            <div className="bg-zinc-50 border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">
+                Hardware distributor request
+              </h3>
+
+              <p className="italic text-gray-700 mb-3">
+                "Show stainless steel door handles between ₹200-₹400."
+              </p>
+
+              <p className="text-gray-600">
+                Apply price and material filters to instantly find
+                matching products and send them to the customer.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* KEY BENEFITS */}
+
+      <section className="py-12 bg-zinc-50 border-t">
+        <div className="max-w-5xl mx-auto px-4 text-center">
+
+          <h2 className="text-xl font-semibold mb-8">
+            Why Businesses Choose Vitrino
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6 text-sm">
+
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">Start selling instantly</h3>
+              <p className="text-gray-600">
+                Products become available to distributors immediately
+                after upload.
+              </p>
+            </div>
+
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">No overselling</h3>
+              <p className="text-gray-600">
+                Everyone always sees the latest product information.
+              </p>
+            </div>
+
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">Instant updates</h3>
+              <p className="text-gray-600">
+                Manufacturers update once and distributors see it
                 instantly.
               </p>
             </div>
-          </div>
 
-
-
-          {/* Distributors */}
-
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                Perfect for Distributors
-              </h3>
-
-              <p className="text-gray-600 text-sm">
-                Combine multiple manufacturers into a single multi-brand catalog.
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">Generate PDFs</h3>
+              <p className="text-gray-600">
+                Create product catalogs or quotations in seconds.
               </p>
             </div>
 
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_09%20PM.png"
-              className="rounded-lg shadow"
-            />
-          </div>
-
-
-
-          {/* Connect */}
-
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_56%20PM.png"
-              className="rounded-lg shadow"
-            />
-
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                Connect Manufacturers
-              </h3>
-
-              <p className="text-gray-600 text-sm">
-                Request manufacturers and instantly showcase their products.
-              </p>
-            </div>
-          </div>
-
-
-
-          {/* Benefits */}
-
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-xl font-semibold mb-2">
-                Why Businesses Use Vitrino
-              </h3>
-
-              <p className="text-gray-600 text-sm">
-                Share catalogs instantly, send product notifications,
-                and manage multi-brand catalogs easily.
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">Smart filters</h3>
+              <p className="text-gray-600">
+                Buyers can quickly find the exact product they need.
               </p>
             </div>
 
-            <img
-              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_45%20PM.png"
-              className="rounded-lg shadow"
-            />
-          </div>
+            <div className="bg-white border rounded-lg p-5">
+              <h3 className="font-semibold mb-2">Product notifications</h3>
+              <p className="text-gray-600">
+                Notify buyers instantly about new launches.
+              </p>
+            </div>
 
+          </div>
         </div>
       </section>
 
 
 
-      {/* Pricing / Subscription */}
+      {/* PRICING */}
 
       <section className="py-12 bg-white border-t">
         <div className="max-w-5xl mx-auto px-4 text-center">
@@ -260,8 +310,6 @@ export default function Page() {
               </Link>
             </div>
 
-
-
             <div className="border-2 border-black rounded-lg p-4 bg-white">
               <h3 className="font-semibold text-sm mb-2">Quarterly</h3>
               <p className="text-2xl font-bold mb-3">₹1,099</p>
@@ -273,8 +321,6 @@ export default function Page() {
                 Choose
               </Link>
             </div>
-
-
 
             <div className="border rounded-lg p-4 bg-zinc-50">
               <h3 className="font-semibold text-sm mb-2">Yearly</h3>
@@ -312,7 +358,7 @@ export default function Page() {
 
 
 
-      {/* Footer */}
+      {/* FOOTER */}
 
       <footer className="border-t bg-white py-4 text-center text-xs text-gray-500">
         © {new Date().getFullYear()} Vitrino
