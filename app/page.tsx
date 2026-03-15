@@ -1,223 +1,243 @@
-{/* Product Explainer Sections */}
+import Link from "next/link";
+import type { Metadata } from "next";
 
-<section className="py-24 bg-white border-t">
+export const metadata: Metadata = {
+  title: "Vitrino | Product Catalog Platform",
+  description:
+    "Manufacturers create digital catalogs. Distributors combine multiple brands into one catalog app.",
+};
 
-<div className="max-w-7xl mx-auto px-6 space-y-28">
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-white to-zinc-100 text-zinc-900">
 
+      {/* Header */}
 
-{/* Section 1 */}
+      <header className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="text-xl font-bold">
+            Vitrino
+          </div>
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_45%20PM.png"
-className="rounded-xl shadow-lg"
-/>
+          <div className="flex gap-4">
 
-<div>
+            <Link href="/login" className="text-sm font-medium hover:underline">
+              Login
+            </Link>
 
-<h2 className="text-3xl font-semibold mb-4">
-What is Vitrino?
-</h2>
+            <Link
+              href="/signup"
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm"
+            >
+              Get Started
+            </Link>
 
-<p className="text-gray-600 mb-4">
-Vitrino is a smart digital catalog platform designed for manufacturers and distributors.
-Upload products once and instantly share your catalog with retailers and buyers.
-</p>
+          </div>
 
-<ul className="space-y-2 text-gray-600 text-sm">
+        </div>
+      </header>
 
-<li>✔ Digital product catalogs</li>
-<li>✔ Smart filters and categories</li>
-<li>✔ Shareable catalog links</li>
-<li>✔ Easy product browsing</li>
 
-</ul>
+      {/* Hero */}
 
-</div>
+      <section className="max-w-6xl mx-auto px-6 py-24 text-center">
 
-</div>
+        <h1 className="text-5xl font-bold mb-6">
+          The Smart Catalog Platform
+        </h1>
 
+        <p className="text-lg text-gray-600 mb-10 max-w-2xl mx-auto">
+          Manufacturers upload products once. Distributors combine multiple
+          brands into one powerful catalog for retailers.
+        </p>
 
+        <Link
+          href="/signup"
+          className="bg-black text-white px-8 py-3 rounded-xl"
+        >
+          Create Your Catalog
+        </Link>
 
-{/* Section 2 */}
+      </section>
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
 
-<div>
+      {/* Product Explainer Sections */}
 
-<h2 className="text-3xl font-semibold mb-4">
-Built for Manufacturers
-</h2>
+      <section className="py-24 bg-white border-t">
 
-<p className="text-gray-600 mb-4">
-Manufacturers can publish their entire product catalog and share it with distributors,
-retailers, and customers instantly.
-</p>
+        <div className="max-w-7xl mx-auto px-6 space-y-28">
 
-<ul className="space-y-2 text-gray-600 text-sm">
 
-<li>✔ Upload products once</li>
-<li>✔ AI organizes attributes</li>
-<li>✔ Share branded catalog link</li>
-<li>✔ Send product notifications</li>
+          {/* Image 1 */}
 
-</ul>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-</div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_45%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_56%20PM.png"
-className="rounded-xl shadow-lg"
-/>
+            <div>
 
-</div>
+              <h2 className="text-3xl font-semibold mb-4">
+                What is Vitrino?
+              </h2>
 
+              <p className="text-gray-600">
+                Vitrino is a digital catalog platform designed for
+                manufacturers and distributors to showcase products and share
+                catalogs instantly.
+              </p>
 
+            </div>
 
-{/* Section 3 */}
+          </div>
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_09%20PM.png"
-className="rounded-xl shadow-lg"
-/>
 
-<div>
+          {/* Image 2 */}
 
-<h2 className="text-3xl font-semibold mb-4">
-Launch in Minutes
-</h2>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-<p className="text-gray-600 mb-4">
-Setting up your catalog is simple. Upload products, organize attributes,
-and your digital catalog is ready to share.
-</p>
+            <div>
 
-<ul className="space-y-2 text-gray-600 text-sm">
+              <h2 className="text-3xl font-semibold mb-4">
+                Built for Manufacturers
+              </h2>
 
-<li>✔ Setup in 15 minutes</li>
-<li>✔ No technical knowledge needed</li>
-<li>✔ AI assists product setup</li>
-<li>✔ Easy image and attribute management</li>
+              <p className="text-gray-600">
+                Upload products once and instantly share your branded
+                catalog with distributors and retailers.
+              </p>
 
-</ul>
+            </div>
 
-</div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_56%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
-</div>
+          </div>
 
 
 
-{/* Section 4 */}
+          {/* Image 3 */}
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-<div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_09%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
-<h2 className="text-3xl font-semibold mb-4">
-Perfect for Distributors
-</h2>
+            <div>
 
-<p className="text-gray-600 mb-4">
-Distributors can combine multiple manufacturers into one powerful catalog
-for retailers and buyers.
-</p>
+              <h2 className="text-3xl font-semibold mb-4">
+                Launch in Minutes
+              </h2>
 
-<ul className="space-y-2 text-gray-600 text-sm">
+              <p className="text-gray-600">
+                Create your digital product catalog in under 15 minutes with
+                AI-assisted product organization.
+              </p>
 
-<li>✔ Multi-brand catalog</li>
-<li>✔ One app for all companies</li>
-<li>✔ Organized by company and category</li>
-<li>✔ Always synced with manufacturer updates</li>
+            </div>
 
-</ul>
+          </div>
 
-</div>
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_14%20PM.png"
-className="rounded-xl shadow-lg"
-/>
 
-</div>
+          {/* Image 4 */}
 
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
+            <div>
 
-{/* Section 5 */}
+              <h2 className="text-3xl font-semibold mb-4">
+                Perfect for Distributors
+              </h2>
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
+              <p className="text-gray-600">
+                Combine multiple manufacturers into one catalog and share it
+                easily with retailers.
+              </p>
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_22%20PM.png"
-className="rounded-xl shadow-lg"
-/>
+            </div>
 
-<div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_14%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
-<h2 className="text-3xl font-semibold mb-4">
-Connect with Manufacturers
-</h2>
+          </div>
 
-<p className="text-gray-600 mb-4">
-Distributors simply request access to manufacturers and instantly
-showcase their products in their catalog.
-</p>
 
-<ul className="space-y-2 text-gray-600 text-sm">
 
-<li>✔ Request manufacturer access</li>
-<li>✔ Get quick approval</li>
-<li>✔ Showcase products instantly</li>
-<li>✔ No product uploads needed</li>
+          {/* Image 5 */}
 
-</ul>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-</div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_22%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
-</div>
+            <div>
 
+              <h2 className="text-3xl font-semibold mb-4">
+                Connect with Manufacturers
+              </h2>
 
+              <p className="text-gray-600">
+                Request access from manufacturers and instantly showcase their
+                products without uploading anything.
+              </p>
 
-{/* Section 6 */}
+            </div>
 
-<div className="grid md:grid-cols-2 gap-12 items-center">
+          </div>
 
-<div>
 
-<h2 className="text-3xl font-semibold mb-4">
-Why Businesses Use Vitrino
-</h2>
 
-<p className="text-gray-600 mb-4">
-Vitrino simplifies product sharing and communication between manufacturers,
-distributors, and retailers.
-</p>
+          {/* Image 6 */}
 
-<ul className="space-y-2 text-gray-600 text-sm">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-<li>✔ Setup catalogs in 15 minutes</li>
-<li>✔ Instant product notifications</li>
-<li>✔ Multi-brand product catalogs</li>
-<li>✔ Switch between brands easily</li>
-<li>✔ Smart filters and organized display</li>
-<li>✔ Share catalog links instantly</li>
-<li>✔ Reach more retailers and distributors</li>
+            <div>
 
-</ul>
+              <h2 className="text-3xl font-semibold mb-4">
+                Why Businesses Use Vitrino
+              </h2>
 
-</div>
+              <p className="text-gray-600">
+                Setup catalogs in minutes, send product notifications, and
+                manage multi-brand catalogs easily.
+              </p>
 
-<img
-src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_28%20PM.png"
-className="rounded-xl shadow-lg"
-/>
+            </div>
 
-</div>
+            <img
+              src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_28%20PM.png"
+              className="rounded-xl shadow-lg w-full"
+            />
 
+          </div>
 
 
-</div>
 
-</section>
+        </div>
+
+      </section>
+
+
+      {/* Footer */}
+
+      <footer className="border-t py-8 text-center text-sm text-gray-500">
+        © {new Date().getFullYear()} Vitrino
+      </footer>
+
+
+    </div>
+  );
+}
