@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Vitrino | Launch Your Product Catalog in 15 Minutes",
+  title: "Vitrino | Product Catalog Platform for Manufacturers & Distributors",
   description:
-    "Create your own branded product catalog with smart filters and shareable webpage — live in under 15 minutes. No e-commerce complexity.",
+    "Manufacturers create digital catalogs. Distributors combine multiple brands in one app. Launch your catalog in minutes.",
 };
 
 export default function Home() {
@@ -12,6 +12,7 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
 
       {/* Header */}
+
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
@@ -39,18 +40,17 @@ export default function Home() {
         </div>
       </header>
 
-
       {/* Hero */}
+
       <section className="max-w-6xl mx-auto px-6 py-24 text-center">
 
         <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-          Launch Your Own Branded Product Catalog in 15 Minutes
+          The Catalog Platform for Manufacturers & Distributors
         </h1>
 
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
-          Create your own professional catalog with your logo, your webpage,
-          smart filters, and organized products — without building a full
-          e-commerce store.
+          Manufacturers create digital product catalogs.  
+          Distributors combine multiple brands into one powerful catalog app.
         </p>
 
         <div className="flex justify-center gap-4">
@@ -77,33 +77,53 @@ export default function Home() {
 
       </section>
 
+      {/* Two Roles Section */}
 
-      {/* Who It's For */}
-      <section className="bg-white py-16 border-t">
+      <section className="bg-white py-20 border-t">
 
-        <div className="max-w-5xl mx-auto px-6 text-center">
+        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16">
 
-          <h2 className="text-2xl font-semibold mb-8">
-            Perfect For
-          </h2>
+          {/* Manufacturer */}
 
-          <div className="grid md:grid-cols-4 gap-6 text-sm text-gray-600">
+          <div className="border rounded-xl p-10 bg-zinc-50">
 
-            <div className="border rounded-lg p-6 bg-zinc-50">
-              Manufacturers
-            </div>
+            <h2 className="text-xl font-semibold mb-4">
+              For Manufacturers
+            </h2>
 
-            <div className="border rounded-lg p-6 bg-zinc-50">
-              Distributors
-            </div>
+            <ul className="text-sm text-gray-600 space-y-3">
 
-            <div className="border rounded-lg p-6 bg-zinc-50">
-              B2B Sellers
-            </div>
+              <li>✔ Upload products once</li>
+              <li>✔ Organize using categories & filters</li>
+              <li>✔ Share your branded catalog link</li>
+              <li>✔ Send new product notifications</li>
+              <li>✔ Allow distributors to showcase your products</li>
 
-            <div className="border rounded-lg p-6 bg-zinc-50">
-              Product-Based Businesses
-            </div>
+            </ul>
+
+            <p className="text-sm text-gray-500 mt-6">
+              Example: vitrino.in/yourbrand
+            </p>
+
+          </div>
+
+          {/* Distributor */}
+
+          <div className="border rounded-xl p-10 bg-zinc-50">
+
+            <h2 className="text-xl font-semibold mb-4">
+              For Distributors
+            </h2>
+
+            <ul className="text-sm text-gray-600 space-y-3">
+
+              <li>✔ Combine multiple manufacturers</li>
+              <li>✔ Show all brands in one catalog</li>
+              <li>✔ Organized by company → category → product</li>
+              <li>✔ Share your distributor app with retailers</li>
+              <li>✔ Always synced with manufacturer updates</li>
+
+            </ul>
 
           </div>
 
@@ -111,31 +131,31 @@ export default function Home() {
 
       </section>
 
-
       {/* How It Works */}
+
       <section className="bg-zinc-50 py-20 border-t">
 
         <div className="max-w-5xl mx-auto px-6 text-center">
 
           <h2 className="text-2xl font-semibold mb-12">
-            How It Works
+            How Vitrino Works
           </h2>
 
           <div className="grid md:grid-cols-3 gap-10 text-gray-600">
 
             <div>
               <div className="text-3xl font-bold mb-4">1</div>
-              <p>Create your account</p>
+              <p>Sign up as manufacturer or distributor</p>
             </div>
 
             <div>
               <div className="text-3xl font-bold mb-4">2</div>
-              <p>Upload products & set filters</p>
+              <p>Create or connect catalogs</p>
             </div>
 
             <div>
               <div className="text-3xl font-bold mb-4">3</div>
-              <p>Share your catalog link</p>
+              <p>Share your catalog app with buyers</p>
             </div>
 
           </div>
@@ -144,75 +164,8 @@ export default function Home() {
 
       </section>
 
-
-      {/* Core Features */}
-      <section className="bg-white py-20 border-t">
-
-        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">
-              🌐 Your Dedicated Webpage
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Get your own branded link like vitrino.in/yourbrand
-              to share instantly with buyers.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">
-              🎨 Your Logo & Branding
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Upload your logo, banner, and business details —
-              make the catalog completely yours.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-3">
-              🗂 Smart Product Filters
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Organize products using custom attributes and filters
-              so buyers can find what they need instantly.
-            </p>
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* Differentiator */}
-      <section className="bg-zinc-50 py-20 border-t">
-
-        <div className="max-w-4xl mx-auto px-6 text-center">
-
-          <h2 className="text-2xl font-semibold mb-6">
-            Built for Catalog Sharing — Not E-commerce Complexity
-          </h2>
-
-          <p className="text-gray-600 mb-10">
-            No shopping carts. No payment gateway setup.
-            Just a structured, professional product catalog ready to share.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8 text-sm text-gray-600">
-
-            <div>⚡ Live in under 15 minutes</div>
-            <div>🤖 AI-assisted product setup</div>
-            <div>🔐 Secure subscription-managed access</div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
       {/* Pricing */}
+
       <section className="bg-white py-20 border-t">
 
         <div className="max-w-6xl mx-auto px-6 text-center">
@@ -239,13 +192,6 @@ export default function Home() {
                 per month
               </p>
 
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
-                <li>✔ Unlimited products</li>
-                <li>✔ Branded catalog webpage</li>
-                <li>✔ Smart product filters</li>
-                <li>✔ AI-assisted setup</li>
-              </ul>
-
               <Link
                 href="/signup"
                 className="bg-black text-white px-6 py-2 rounded-lg text-sm"
@@ -255,10 +201,9 @@ export default function Home() {
 
             </div>
 
-
             {/* Quarterly */}
 
-            <div className="border-2 border-black rounded-xl p-8 bg-white">
+            <div className="border-2 border-black rounded-xl p-8">
 
               <h3 className="text-lg font-semibold mb-2">
                 Quarterly
@@ -272,13 +217,6 @@ export default function Home() {
                 every 3 months
               </p>
 
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
-                <li>✔ Everything in Monthly</li>
-                <li>✔ Save ₹98</li>
-                <li>✔ Priority support</li>
-                <li>✔ Faster catalog setup</li>
-              </ul>
-
               <Link
                 href="/signup"
                 className="bg-black text-white px-6 py-2 rounded-lg text-sm"
@@ -287,7 +225,6 @@ export default function Home() {
               </Link>
 
             </div>
-
 
             {/* Yearly */}
 
@@ -305,13 +242,6 @@ export default function Home() {
                 per year
               </p>
 
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
-                <li>✔ Everything in Quarterly</li>
-                <li>✔ Save ₹789</li>
-                <li>✔ Best value</li>
-                <li>✔ Early feature access</li>
-              </ul>
-
               <Link
                 href="/signup"
                 className="bg-black text-white px-6 py-2 rounded-lg text-sm"
@@ -323,21 +253,16 @@ export default function Home() {
 
           </div>
 
-          <p className="text-xs text-gray-500 mt-8">
-            All plans include hosting, updates, and catalog sharing.
-            Prices in INR.
-          </p>
-
         </div>
 
       </section>
 
-
       {/* Final CTA */}
+
       <section className="py-20 text-center border-t bg-white">
 
         <h2 className="text-2xl font-semibold mb-6">
-          Ready to launch your branded catalog?
+          Ready to launch your catalog?
         </h2>
 
         <Link
@@ -349,14 +274,14 @@ export default function Home() {
 
       </section>
 
-
       {/* Footer */}
+
       <footer className="border-t bg-white py-6 text-center text-sm text-gray-500">
 
         © {new Date().getFullYear()} Vitrino. All rights reserved.
 
         <div className="mt-2">
-          Payments are securely processed via Razorpay.
+          Payments securely processed via Razorpay.
         </div>
 
       </footer>
