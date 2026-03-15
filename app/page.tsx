@@ -1,312 +1,223 @@
-import Link from "next/link";
-import type { Metadata } from "next";
+{/* Product Explainer Sections */}
 
-export const metadata: Metadata = {
-  title: "Vitrino | Product Catalog Platform",
-  description:
-    "Manufacturers create digital catalogs. Distributors combine multiple brands into one catalog app.",
-};
+<section className="py-24 bg-white border-t">
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-zinc-100 text-zinc-900">
+<div className="max-w-7xl mx-auto px-6 space-y-28">
 
-      {/* Header */}
 
-      <header className="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+{/* Section 1 */}
 
-          <div className="text-xl font-bold tracking-tight">
-            Vitrino
-          </div>
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-          <div className="flex gap-4 items-center">
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_45%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
-            <Link
-              href="/login"
-              className="text-sm font-medium text-gray-600 hover:text-black"
-            >
-              Login
-            </Link>
+<div>
 
-            <Link
-              href="/signup"
-              className="bg-black text-white px-4 py-2 rounded-lg text-sm hover:scale-105 transition"
-            >
-              Get Started
-            </Link>
+<h2 className="text-3xl font-semibold mb-4">
+What is Vitrino?
+</h2>
 
-          </div>
-        </div>
-      </header>
+<p className="text-gray-600 mb-4">
+Vitrino is a smart digital catalog platform designed for manufacturers and distributors.
+Upload products once and instantly share your catalog with retailers and buyers.
+</p>
 
+<ul className="space-y-2 text-gray-600 text-sm">
 
-      {/* Hero */}
+<li>✔ Digital product catalogs</li>
+<li>✔ Smart filters and categories</li>
+<li>✔ Shareable catalog links</li>
+<li>✔ Easy product browsing</li>
 
-      <section className="max-w-6xl mx-auto px-6 py-28 text-center">
+</ul>
 
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-          The Smart Catalog Platform
-          <span className="block text-gray-500 mt-2">
-            for Manufacturers & Distributors
-          </span>
-        </h1>
+</div>
 
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-12">
-          Manufacturers upload products once. Distributors combine multiple
-          brands into one powerful catalog app for retailers.
-        </p>
+</div>
 
-        <div className="flex justify-center gap-4">
 
-          <Link
-            href="/signup"
-            className="bg-black text-white px-8 py-3 rounded-xl hover:scale-105 transition shadow-lg"
-          >
-            Create Your Catalog
-          </Link>
 
-          <Link
-            href="/login"
-            className="border px-8 py-3 rounded-xl hover:bg-gray-100 transition"
-          >
-            Vendor Login
-          </Link>
+{/* Section 2 */}
 
-        </div>
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-        <p className="text-xs text-gray-500 mt-6">
-          ⚡ 7-day free trial • No setup required • Cancel anytime
-        </p>
+<div>
 
-      </section>
+<h2 className="text-3xl font-semibold mb-4">
+Built for Manufacturers
+</h2>
 
+<p className="text-gray-600 mb-4">
+Manufacturers can publish their entire product catalog and share it with distributors,
+retailers, and customers instantly.
+</p>
 
-      {/* Social Proof */}
+<ul className="space-y-2 text-gray-600 text-sm">
 
-      <section className="bg-white border-t py-16">
+<li>✔ Upload products once</li>
+<li>✔ AI organizes attributes</li>
+<li>✔ Share branded catalog link</li>
+<li>✔ Send product notifications</li>
 
-        <div className="max-w-6xl mx-auto px-6 text-center">
+</ul>
 
-          <p className="text-sm text-gray-500 mb-10">
-            Used by businesses across multiple industries
-          </p>
+</div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-6 text-sm text-gray-600">
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_56%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
-            <div className="bg-zinc-50 p-4 rounded-lg">Garments</div>
-            <div className="bg-zinc-50 p-4 rounded-lg">Hardware</div>
-            <div className="bg-zinc-50 p-4 rounded-lg">Electronics</div>
-            <div className="bg-zinc-50 p-4 rounded-lg">Textiles</div>
-            <div className="bg-zinc-50 p-4 rounded-lg">Building Materials</div>
-            <div className="bg-zinc-50 p-4 rounded-lg">Wholesale Trade</div>
+</div>
 
-          </div>
 
-        </div>
 
-      </section>
+{/* Section 3 */}
 
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-      {/* Trust Section */}
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_09%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
-      <section className="bg-white border-t py-20">
+<div>
 
-        <div className="max-w-6xl mx-auto px-6 text-center">
+<h2 className="text-3xl font-semibold mb-4">
+Launch in Minutes
+</h2>
 
-          <h2 className="text-3xl font-semibold mb-12">
-            Why Businesses Use Vitrino
-          </h2>
+<p className="text-gray-600 mb-4">
+Setting up your catalog is simple. Upload products, organize attributes,
+and your digital catalog is ready to share.
+</p>
 
-          <div className="grid md:grid-cols-4 gap-10 text-gray-600 text-sm">
+<ul className="space-y-2 text-gray-600 text-sm">
 
-            <div className="bg-zinc-50 p-6 rounded-xl shadow hover:shadow-md transition">
-              ⚡ Launch catalogs in minutes
-            </div>
+<li>✔ Setup in 15 minutes</li>
+<li>✔ No technical knowledge needed</li>
+<li>✔ AI assists product setup</li>
+<li>✔ Easy image and attribute management</li>
 
-            <div className="bg-zinc-50 p-6 rounded-xl shadow hover:shadow-md transition">
-              📱 Works perfectly on mobile
-            </div>
+</ul>
 
-            <div className="bg-zinc-50 p-6 rounded-xl shadow hover:shadow-md transition">
-              🔍 Smart filters for products
-            </div>
+</div>
 
-            <div className="bg-zinc-50 p-6 rounded-xl shadow hover:shadow-md transition">
-              🔔 Product notifications
-            </div>
+</div>
 
-          </div>
 
-        </div>
 
-      </section>
+{/* Section 4 */}
 
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-      {/* Role Cards */}
+<div>
 
-      <section className="bg-white py-24 border-t">
+<h2 className="text-3xl font-semibold mb-4">
+Perfect for Distributors
+</h2>
 
-        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12">
+<p className="text-gray-600 mb-4">
+Distributors can combine multiple manufacturers into one powerful catalog
+for retailers and buyers.
+</p>
 
-          <div className="border rounded-2xl p-10 bg-gradient-to-b from-white to-zinc-50 shadow hover:shadow-xl transition">
+<ul className="space-y-2 text-gray-600 text-sm">
 
-            <h2 className="text-xl font-semibold mb-6">
-              🏭 For Manufacturers
-            </h2>
+<li>✔ Multi-brand catalog</li>
+<li>✔ One app for all companies</li>
+<li>✔ Organized by company and category</li>
+<li>✔ Always synced with manufacturer updates</li>
 
-            <ul className="text-sm text-gray-600 space-y-3">
-              <li>✔ Upload products once</li>
-              <li>✔ Create categories & filters</li>
-              <li>✔ Share branded catalog link</li>
-              <li>✔ Send product notifications</li>
-              <li>✔ Allow distributors to showcase products</li>
-            </ul>
+</ul>
 
-            <p className="text-sm text-gray-400 mt-6">
-              Example: vitrino.in/yourbrand
-            </p>
+</div>
 
-          </div>
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_14%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
+</div>
 
-          <div className="border rounded-2xl p-10 bg-gradient-to-b from-white to-zinc-50 shadow hover:shadow-xl transition">
 
-            <h2 className="text-xl font-semibold mb-6">
-              📦 For Distributors
-            </h2>
 
-            <ul className="text-sm text-gray-600 space-y-3">
-              <li>✔ Combine multiple manufacturers</li>
-              <li>✔ Multi-brand catalog app</li>
-              <li>✔ Company → Category → Product structure</li>
-              <li>✔ Perfect for retailers & dealers</li>
-              <li>✔ Always synced with manufacturer updates</li>
-            </ul>
+{/* Section 5 */}
 
-          </div>
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-        </div>
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_22%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
-      </section>
+<div>
 
+<h2 className="text-3xl font-semibold mb-4">
+Connect with Manufacturers
+</h2>
 
-      {/* How It Works */}
+<p className="text-gray-600 mb-4">
+Distributors simply request access to manufacturers and instantly
+showcase their products in their catalog.
+</p>
 
-      <section className="py-24 bg-zinc-50 border-t">
+<ul className="space-y-2 text-gray-600 text-sm">
 
-        <div className="max-w-5xl mx-auto px-6 text-center">
+<li>✔ Request manufacturer access</li>
+<li>✔ Get quick approval</li>
+<li>✔ Showcase products instantly</li>
+<li>✔ No product uploads needed</li>
 
-          <h2 className="text-3xl font-semibold mb-16">
-            How Vitrino Works
-          </h2>
+</ul>
 
-          <div className="grid md:grid-cols-3 gap-12">
+</div>
 
-            <div className="bg-white p-8 rounded-xl shadow">
-              <div className="text-4xl font-bold mb-4">1</div>
-              <p className="text-gray-600">
-                Sign up as manufacturer or distributor
-              </p>
-            </div>
+</div>
 
-            <div className="bg-white p-8 rounded-xl shadow">
-              <div className="text-4xl font-bold mb-4">2</div>
-              <p className="text-gray-600">
-                Upload or connect product catalogs
-              </p>
-            </div>
 
-            <div className="bg-white p-8 rounded-xl shadow">
-              <div className="text-4xl font-bold mb-4">3</div>
-              <p className="text-gray-600">
-                Share your catalog app with buyers
-              </p>
-            </div>
 
-          </div>
+{/* Section 6 */}
 
-        </div>
+<div className="grid md:grid-cols-2 gap-12 items-center">
 
-      </section>
+<div>
 
+<h2 className="text-3xl font-semibold mb-4">
+Why Businesses Use Vitrino
+</h2>
 
-      {/* Pricing */}
+<p className="text-gray-600 mb-4">
+Vitrino simplifies product sharing and communication between manufacturers,
+distributors, and retailers.
+</p>
 
-      <section className="bg-white py-24 border-t">
+<ul className="space-y-2 text-gray-600 text-sm">
 
-        <div className="max-w-6xl mx-auto px-6 text-center">
+<li>✔ Setup catalogs in 15 minutes</li>
+<li>✔ Instant product notifications</li>
+<li>✔ Multi-brand product catalogs</li>
+<li>✔ Switch between brands easily</li>
+<li>✔ Smart filters and organized display</li>
+<li>✔ Share catalog links instantly</li>
+<li>✔ Reach more retailers and distributors</li>
 
-          <h2 className="text-3xl font-semibold mb-16">
-            Simple Pricing
-          </h2>
+</ul>
 
-          <div className="grid md:grid-cols-3 gap-8">
+</div>
 
-            <div className="border rounded-2xl p-8 bg-zinc-50 shadow">
-              <h3 className="text-lg font-semibold mb-2">Monthly</h3>
-              <p className="text-4xl font-bold mb-4">₹399</p>
-              <p className="text-sm text-gray-500 mb-6">per month</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Start Monthly
-              </Link>
-            </div>
+<img
+src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_28%20PM.png"
+className="rounded-xl shadow-lg"
+/>
 
-            <div className="border-2 border-black rounded-2xl p-8 shadow-xl bg-white scale-105">
-              <h3 className="text-lg font-semibold mb-2">Quarterly</h3>
-              <p className="text-4xl font-bold mb-4">₹1,099</p>
-              <p className="text-sm text-gray-500 mb-6">every 3 months</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Choose Quarterly
-              </Link>
-            </div>
+</div>
 
-            <div className="border rounded-2xl p-8 bg-zinc-50 shadow">
-              <h3 className="text-lg font-semibold mb-2">Yearly</h3>
-              <p className="text-4xl font-bold mb-4">₹3,999</p>
-              <p className="text-sm text-gray-500 mb-6">per year</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Choose Yearly
-              </Link>
-            </div>
 
-          </div>
 
-        </div>
+</div>
 
-      </section>
-
-
-      {/* CTA */}
-
-      <section className="py-24 text-center bg-gradient-to-r from-black to-zinc-800 text-white">
-
-        <h2 className="text-3xl font-semibold mb-6">
-          Ready to launch your catalog?
-        </h2>
-
-        <Link
-          href="/signup"
-          className="bg-white text-black px-10 py-4 rounded-xl hover:scale-105 transition"
-        >
-          Start Free
-        </Link>
-
-      </section>
-
-
-      {/* Footer */}
-
-      <footer className="border-t bg-white py-8 text-center text-sm text-gray-500">
-
-        © {new Date().getFullYear()} Vitrino. All rights reserved.
-
-        <div className="mt-2">
-          Payments securely processed via Razorpay.
-        </div>
-
-      </footer>
-
-    </div>
-  );
-}
+</section>
