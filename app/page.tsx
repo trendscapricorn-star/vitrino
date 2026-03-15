@@ -6,28 +6,37 @@ export default function Page() {
 
       {/* Header */}
 
-      <header className="bg-white border-b">
+      <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="text-xl font-semibold">Vitrino</div>
+
+          <div className="text-xl font-semibold">
+            Vitrino
+          </div>
 
           <div className="flex gap-4">
+
             <Link href="/login" className="text-sm hover:underline">
               Login
             </Link>
 
             <Link
               href="/signup"
-              className="bg-black text-white px-4 py-2 rounded-lg text-sm"
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm hover:opacity-90 transition"
             >
               Get Started
             </Link>
+
           </div>
+
         </div>
       </header>
+
+
 
       {/* Hero */}
 
       <section className="max-w-6xl mx-auto px-6 py-20 text-center">
+
         <h1 className="text-4xl md:text-5xl font-bold mb-6">
           The Smart Catalog Platform
         </h1>
@@ -38,38 +47,107 @@ export default function Page() {
         </p>
 
         <div className="flex justify-center gap-4">
+
           <Link
             href="/signup"
-            className="bg-black text-white px-8 py-3 rounded-lg"
+            className="bg-black text-white px-8 py-3 rounded-lg hover:opacity-90 transition"
           >
             Create Your Catalog
           </Link>
 
           <Link
             href="/login"
-            className="border px-8 py-3 rounded-lg"
+            className="border px-8 py-3 rounded-lg hover:bg-gray-100 transition"
           >
             Vendor Login
           </Link>
+
         </div>
+
       </section>
+
+
+
+      {/* Industries */}
+
+      <section className="py-16 bg-white border-t">
+
+        <div className="max-w-6xl mx-auto px-6 text-center">
+
+          <h2 className="text-2xl font-semibold mb-8">
+            Used by businesses across industries
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-sm text-gray-600">
+
+            <div className="bg-zinc-50 p-4 rounded-lg">Garments</div>
+            <div className="bg-zinc-50 p-4 rounded-lg">Hardware</div>
+            <div className="bg-zinc-50 p-4 rounded-lg">Electronics</div>
+            <div className="bg-zinc-50 p-4 rounded-lg">Textiles</div>
+            <div className="bg-zinc-50 p-4 rounded-lg">Wholesale</div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      {/* How it works */}
+
+      <section className="py-20 bg-zinc-50 border-t">
+
+        <div className="max-w-6xl mx-auto px-6 text-center">
+
+          <h2 className="text-3xl font-semibold mb-12">
+            How Vitrino Works
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-10">
+
+            <div>
+              <div className="text-3xl font-bold mb-3">1</div>
+              <p>Create your catalog</p>
+            </div>
+
+            <div>
+              <div className="text-3xl font-bold mb-3">2</div>
+              <p>Connect brands or distributors</p>
+            </div>
+
+            <div>
+              <div className="text-3xl font-bold mb-3">3</div>
+              <p>Share with retailers instantly</p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
 
       {/* Explainer */}
 
-      <section className="py-16 bg-white border-t">
-        <div className="max-w-7xl mx-auto px-6 space-y-16">
+      <section className="py-20 bg-white border-t">
+
+        <div className="max-w-7xl mx-auto px-6 space-y-20">
+
 
           {/* What is Vitrino */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_28%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 What is Vitrino?
               </h2>
 
@@ -77,6 +155,7 @@ export default function Page() {
                 Vitrino is a digital catalog platform that helps manufacturers
                 and distributors showcase products and share catalogs instantly.
               </p>
+
             </div>
 
           </div>
@@ -85,10 +164,11 @@ export default function Page() {
 
           {/* Manufacturers */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 Built for Manufacturers
               </h2>
 
@@ -96,11 +176,12 @@ export default function Page() {
                 Upload products once and instantly share your branded catalog
                 with distributors and retailers.
               </p>
+
             </div>
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_22%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
           </div>
@@ -109,22 +190,23 @@ export default function Page() {
 
           {/* Launch */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_14%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 Launch in 15 Minutes
               </h2>
 
               <p className="text-gray-600">
-                Setup your catalog quickly. Upload products, organize attributes
-                and your digital catalog is ready to share.
+                Setup your product catalog quickly and start sharing products immediately.
               </p>
+
             </div>
 
           </div>
@@ -133,22 +215,23 @@ export default function Page() {
 
           {/* Distributors */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 Perfect for Distributors
               </h2>
 
               <p className="text-gray-600">
-                Combine multiple manufacturers into one powerful multi-brand
-                catalog for retailers.
+                Combine multiple manufacturers into one multi-brand catalog.
               </p>
+
             </div>
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_30_09%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
           </div>
@@ -157,22 +240,23 @@ export default function Page() {
 
           {/* Connect */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_56%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 Connect Manufacturers
               </h2>
 
               <p className="text-gray-600">
-                Request manufacturers for permission and instantly showcase
-                their products in your distributor catalog.
+                Request manufacturers and instantly showcase their products.
               </p>
+
             </div>
 
           </div>
@@ -181,76 +265,93 @@ export default function Page() {
 
           {/* Benefits */}
 
-          <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
             <div>
-              <h2 className="text-3xl font-semibold mb-3">
+
+              <h2 className="text-3xl font-semibold mb-4">
                 Why Businesses Use Vitrino
               </h2>
 
               <p className="text-gray-600">
-                No more manually sending product images. Share catalogs instantly,
-                notify buyers about launches and manage multi-brand catalogs easily.
+                Share catalogs instantly, notify buyers and manage multi-brand
+                catalogs easily.
               </p>
+
             </div>
 
             <img
               src="https://gurnaesxznoppfzdcwmh.supabase.co/storage/v1/object/public/Banner/ChatGPT%20Image%20Mar%2015,%202026,%2011_29_45%20PM.png"
-              className="rounded-xl shadow"
+              className="rounded-xl shadow-md hover:shadow-xl transition"
             />
 
           </div>
 
         </div>
+
       </section>
 
 
 
-      {/* Pricing */}
+      {/* Comparison */}
 
-      <section className="py-20 border-t bg-zinc-50">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+      <section className="py-20 bg-zinc-50 border-t">
+
+        <div className="max-w-5xl mx-auto px-6 text-center">
 
           <h2 className="text-3xl font-semibold mb-10">
-            Simple Pricing
+            Why Vitrino beats WhatsApp catalogs
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <table className="w-full text-sm border rounded-lg overflow-hidden">
 
-            <div className="border rounded-xl p-6 bg-white">
-              <h3 className="font-semibold mb-2">Monthly</h3>
-              <p className="text-3xl font-bold mb-4">₹399</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Start Monthly
-              </Link>
-            </div>
+            <thead className="bg-zinc-100">
+              <tr>
+                <th className="p-4 text-left">Feature</th>
+                <th className="p-4">WhatsApp</th>
+                <th className="p-4">Vitrino</th>
+              </tr>
+            </thead>
 
-            <div className="border-2 border-black rounded-xl p-6 bg-white">
-              <h3 className="font-semibold mb-2">Quarterly</h3>
-              <p className="text-3xl font-bold mb-4">₹1,099</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Choose Quarterly
-              </Link>
-            </div>
+            <tbody>
 
-            <div className="border rounded-xl p-6 bg-white">
-              <h3 className="font-semibold mb-2">Yearly</h3>
-              <p className="text-3xl font-bold mb-4">₹3,999</p>
-              <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg text-sm">
-                Choose Yearly
-              </Link>
-            </div>
+              <tr className="border-t">
+                <td className="p-4 text-left">Product organization</td>
+                <td>❌</td>
+                <td>✔</td>
+              </tr>
 
-          </div>
+              <tr className="border-t">
+                <td className="p-4 text-left">Filters</td>
+                <td>❌</td>
+                <td>✔</td>
+              </tr>
+
+              <tr className="border-t">
+                <td className="p-4 text-left">Notifications</td>
+                <td>❌</td>
+                <td>✔</td>
+              </tr>
+
+              <tr className="border-t">
+                <td className="p-4 text-left">Multi-brand catalogs</td>
+                <td>❌</td>
+                <td>✔</td>
+              </tr>
+
+            </tbody>
+
+          </table>
 
         </div>
+
       </section>
 
 
 
       {/* CTA */}
 
-      <section className="py-20 text-center border-t bg-white">
+      <section className="py-20 text-center bg-white border-t">
 
         <h2 className="text-2xl font-semibold mb-6">
           Ready to launch your catalog?
