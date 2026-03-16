@@ -20,18 +20,53 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    /* ---------- LOGIN ---------- */
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    setLoading(false)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      router.push('/dashboard')
+    if (error || !data.user) {
+      setError(error?.message || 'Login failed')
+      setLoading(false)
+      return
     }
+
+    const userId = data.user.id
+
+    /* ---------- CHECK MANUFACTURER ---------- */
+
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .maybeSingle()
+
+    if (company) {
+      setLoading(false)
+      router.push('/dashboard')
+      return
+    }
+
+    /* ---------- CHECK DISTRIBUTOR ---------- */
+
+    const { data: distributor } = await supabase
+      .from('distributors')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .maybeSingle()
+
+    if (distributor) {
+      setLoading(false)
+      router.push('/distributor')
+      return
+    }
+
+    /* ---------- FALLBACK ---------- */
+
+    setLoading(false)
+    router.push('/')
   }
 
   return (
@@ -43,6 +78,7 @@ export default function LoginPage() {
       >
 
         {/* Back Button */}
+
         <button
           type="button"
           onClick={() => router.push('/')}
@@ -88,6 +124,7 @@ export default function LoginPage() {
         )}
 
         {/* Create Account */}
+
         <p className="text-sm text-center text-gray-600">
           Don't have an account?{' '}
           <button
