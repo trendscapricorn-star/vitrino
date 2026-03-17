@@ -6,11 +6,11 @@ import { supabaseBrowser } from '@/lib/supabase-browser'
 type Request = {
   id: string
   status: string
-  distributors: {
+  distributor: {
     id: string
     name: string
     phone: string | null
-  }
+  } | null
 }
 
 export default function DistributorApprovalPage() {
@@ -78,7 +78,16 @@ export default function DistributorApprovalPage() {
         return
       }
 
-      setRequests(data || [])
+      /* ---------- FIX ARRAY → OBJECT ---------- */
+
+      const formatted: Request[] =
+        (data || []).map((r: any) => ({
+          id: r.id,
+          status: r.status,
+          distributor: r.distributors?.[0] || null,
+        }))
+
+      setRequests(formatted)
       setLoading(false)
 
     } catch (err: any) {
@@ -98,7 +107,6 @@ export default function DistributorApprovalPage() {
       })
       .eq('id', id)
 
-    // Optimistic update
     setRequests(prev =>
       prev.map(r =>
         r.id === id ? { ...r, status: 'approved' } : r
@@ -164,10 +172,10 @@ export default function DistributorApprovalPage() {
 
               <div>
                 <p className="font-medium">
-                  {req.distributors?.name}
+                  {req.distributor?.name}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {req.distributors?.phone || 'No phone'}
+                  {req.distributor?.phone || 'No phone'}
                 </p>
               </div>
 
@@ -216,10 +224,10 @@ export default function DistributorApprovalPage() {
 
               <div>
                 <p className="font-medium">
-                  {req.distributors?.name}
+                  {req.distributor?.name}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {req.distributors?.phone || 'No phone'}
+                  {req.distributor?.phone || 'No phone'}
                 </p>
               </div>
 
