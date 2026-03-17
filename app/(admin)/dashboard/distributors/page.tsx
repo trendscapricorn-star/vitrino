@@ -16,9 +16,9 @@ type Request = {
 export default function DistributorApprovalPage() {
   const supabase = supabaseBrowser
 
-  const [companyId, setCompanyId] = useState<string | null>(null)
   const [requests, setRequests] = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadRequests()
@@ -26,45 +26,65 @@ export default function DistributorApprovalPage() {
 
   async function loadRequests() {
     setLoading(true)
+    setError(null)
 
-    /* ---------- GET USER ---------- */
+    try {
+      /* ---------- GET USER ---------- */
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-    if (!user) return
+      if (userError || !user) {
+        setError('User not found')
+        setLoading(false)
+        return
+      }
 
-    /* ---------- GET COMPANY ---------- */
+      /* ---------- GET COMPANY ---------- */
 
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single()
 
-    if (!company) return
+      if (companyError || !company) {
+        setError('Company not found')
+        setLoading(false)
+        return
+      }
 
-    setCompanyId(company.id)
+      /* ---------- FETCH REQUESTS ---------- */
 
-    /* ---------- FETCH REQUESTS ---------- */
-
-    const { data } = await supabase
-      .from('distributor_company_access')
-      .select(`
-        id,
-        status,
-        distributors (
+      const { data, error: requestError } = await supabase
+        .from('distributor_company_access')
+        .select(`
           id,
-          name,
-          phone
-        )
-      `)
-      .eq('company_id', company.id)
-      .order('requested_at', { ascending: false })
+          status,
+          distributors (
+            id,
+            name,
+            phone
+          )
+        `)
+        .eq('company_id', company.id)
+        .order('requested_at', { ascending: false })
 
-    setRequests(data || [])
-    setLoading(false)
+      if (requestError) {
+        setError(requestError.message)
+        setLoading(false)
+        return
+      }
+
+      setRequests(data || [])
+      setLoading(false)
+
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong')
+      setLoading(false)
+    }
   }
 
   /* ---------- APPROVE ---------- */
@@ -78,7 +98,12 @@ export default function DistributorApprovalPage() {
       })
       .eq('id', id)
 
-    loadRequests()
+    // Optimistic update
+    setRequests(prev =>
+      prev.map(r =>
+        r.id === id ? { ...r, status: 'approved' } : r
+      )
+    )
   }
 
   /* ---------- REJECT ---------- */
@@ -91,7 +116,11 @@ export default function DistributorApprovalPage() {
       })
       .eq('id', id)
 
-    loadRequests()
+    setRequests(prev =>
+      prev.map(r =>
+        r.id === id ? { ...r, status: 'rejected' } : r
+      )
+    )
   }
 
   /* ---------- FILTER ---------- */
@@ -108,7 +137,11 @@ export default function DistributorApprovalPage() {
 
       {loading && <p>Loading...</p>}
 
-      {/* 🔶 Pending Requests */}
+      {error && (
+        <p className="text-red-500 text-sm">{error}</p>
+      )}
+
+      {/* 🔶 Pending */}
 
       <div>
         <h2 className="text-lg font-medium mb-4">
