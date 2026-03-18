@@ -39,6 +39,13 @@ export default async function DashboardLayout({
     .eq('company_id', company.id)
     .single()
 
+  /* 🔔 Pending distributor requests count */
+  const { count: pendingCount } = await supabase
+    .from('distributor_company_access')
+    .select('*', { count: 'exact', head: true })
+    .eq('company_id', company.id)
+    .eq('status', 'pending')
+
   let banner: React.ReactNode = null
 
   if (subscription) {
@@ -102,10 +109,22 @@ export default async function DashboardLayout({
             Products
           </Link>
 
-          {/* 🔴 Variants link removed */}
-
           <Link href="/dashboard/attributes" className="block hover:text-gray-300">
             Attributes
+          </Link>
+
+          {/* ✅ Added Distributors with badge */}
+          <Link
+            href="/dashboard/distributors"
+            className="flex items-center justify-between hover:text-gray-300"
+          >
+            <span>Distributors</span>
+
+            {pendingCount && pendingCount > 0 && (
+              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded">
+                {pendingCount}
+              </span>
+            )}
           </Link>
 
           <Link href="/dashboard/settings" className="block hover:text-gray-300">
