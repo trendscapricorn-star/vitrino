@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export default async function SetupPage() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies() // ✅ FIX
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +37,6 @@ export default async function SetupPage() {
     .maybeSingle()
 
   if (distributor) {
-    // 🚫 distributor should not access manufacturer setup
     redirect('/distributor')
   }
 
@@ -49,13 +48,9 @@ export default async function SetupPage() {
     .eq('auth_user_id', user.id)
     .maybeSingle()
 
-  /* ---------- IF COMPANY EXISTS → DASHBOARD ---------- */
-
   if (company) {
     redirect('/dashboard')
   }
-
-  /* ---------- ELSE SHOW SETUP FORM ---------- */
 
   return <SetupForm />
 }
