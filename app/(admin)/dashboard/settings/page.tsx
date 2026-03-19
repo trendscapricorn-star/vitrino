@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [address,setAddress] = useState('')
   const [logoUrl,setLogoUrl] = useState<string | null>(null)
 
+  /* ✅ NEW */
   const [description,setDescription] = useState('')
   const [keywords,setKeywords] = useState<string[]>([])
   const [generating,setGenerating] = useState(false)
@@ -65,12 +66,13 @@ export default function SettingsPage() {
     /* ✅ FIXED LOADING */
     setDescription(company.business_description || '')
 
-    const loadedKeywords =
-      Array.isArray(company.business_tags)
-        ? company.business_tags
-        : typeof company.business_tags === 'string'
-        ? company.business_tags.split(' ')
-        : []
+    let loadedKeywords: string[] = []
+
+    if (Array.isArray(company.business_tags)) {
+      loadedKeywords = company.business_tags
+    } else if (typeof company.business_tags === 'string') {
+      loadedKeywords = company.business_tags.split(' ')
+    }
 
     setKeywords(loadedKeywords)
 
@@ -85,7 +87,7 @@ export default function SettingsPage() {
     setLoading(false)
   }
 
-  /* 🔥 AI GENERATE */
+  /* 🔥 AI */
   async function handleGenerate(){
 
     if(!description){
@@ -125,7 +127,6 @@ export default function SettingsPage() {
         email,
         whatsapp,
         address,
-
         business_description:description,
         business_tags:keywords,
         business_tags_text:keywords.join(' ')
@@ -145,7 +146,6 @@ export default function SettingsPage() {
   async function handleLogoUpload(e:any){
 
     const file = e.target.files?.[0]
-
     if(!file || !companyId) return
 
     setUploadingLogo(true)
@@ -162,10 +162,7 @@ export default function SettingsPage() {
       return
     }
 
-    const { data } = supabase
-      .storage
-      .from('company-logos')
-      .getPublicUrl(filePath)
+    const { data } = supabase.storage.from('company-logos').getPublicUrl(filePath)
 
     const publicUrl = data.publicUrl
 
@@ -175,7 +172,6 @@ export default function SettingsPage() {
       .eq('id',companyId)
 
     setLogoUrl(publicUrl)
-
     setUploadingLogo(false)
   }
 
@@ -202,15 +198,10 @@ export default function SettingsPage() {
     const rzp = new (window as any).Razorpay({
       key:data.key,
       subscription_id:data.subscriptionId,
-      name:'Vitrino',
-      description:'Vitrino Subscription',
-      handler:function(){
-        window.location.reload()
-      }
+      handler:function(){ window.location.reload() }
     })
 
     rzp.open()
-
     setSubscriptionLoading(false)
   }
 
@@ -222,21 +213,13 @@ export default function SettingsPage() {
 
     <div className="max-w-4xl space-y-8">
 
-      <h1 className="text-2xl font-semibold">
-        Settings
-      </h1>
+      <h1 className="text-2xl font-semibold">Settings</h1>
 
-      {/* 🔥 BUSINESS DESCRIPTION + AI */}
+      {/* 🔥 DESCRIPTION + KEYWORDS */}
 
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
 
-        <h2 className="font-semibold">
-          Business Description & Keywords
-        </h2>
-
-        <p className="text-sm text-gray-500">
-          Describe your business properly so AI can generate best search keywords for distributors to find you.
-        </p>
+        <h2 className="font-semibold">Business Description & Keywords</h2>
 
         <textarea
           value={description}
@@ -247,46 +230,56 @@ export default function SettingsPage() {
 
         <button
           onClick={handleGenerate}
-          disabled={generating}
           className="bg-black text-white px-4 py-2 rounded"
         >
           {generating ? 'Generating...' : 'Generate Keywords'}
         </button>
 
         <div className="flex flex-wrap gap-2">
-
           {keywords.map((tag,index)=>(
-            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex items-center gap-2">
+            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
               {tag}
-              <button
-                onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}
-                className="text-red-500"
-              >
-                ×
-              </button>
+              <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
             </div>
           ))}
-
         </div>
-
-        <input
-          placeholder="Add keyword"
-          className="border px-3 py-2 rounded w-full"
-          onKeyDown={(e)=>{
-            if(e.key === 'Enter'){
-              e.preventDefault()
-              const val = (e.target as HTMLInputElement).value.trim()
-              if(val){
-                setKeywords([...keywords,val])
-                ;(e.target as HTMLInputElement).value = ''
-              }
-            }
-          }}
-        />
 
       </div>
 
-      {/* KEEP REST SAME (logo, info, contact, subscription, notification) */}
+      {/* LOGO */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        <h2 className="font-semibold">Company Logo</h2>
+        {logoUrl && <img src={logoUrl} className="w-32"/>}
+        <input type="file" onChange={handleLogoUpload}/>
+      </div>
+
+      {/* COMPANY INFO */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border p-2 w-full"/>
+        <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border p-2 w-full"/>
+        <button onClick={handleSave} className="bg-black text-white px-6 py-2 rounded">
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+
+      {/* CONTACT */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border p-2 w-full"/>
+        <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border p-2 w-full"/>
+        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border p-2 w-full"/>
+      </div>
+
+      {/* SUBSCRIPTION */}
+      {subscription && (
+        <div className="bg-white p-6 rounded-xl shadow border">
+          {subscription.plan_type}
+        </div>
+      )}
+
+      {/* NOTIFICATIONS */}
+      {companyId && (
+        <SendNotification companyId={companyId}/>
+      )}
 
     </div>
   )
