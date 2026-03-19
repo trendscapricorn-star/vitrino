@@ -121,7 +121,7 @@ Description: ${description || ""}
     }
 
     /* ============================= */
-    /* 🔥 NEW SEARCH PARSER */
+    /* 🔥 SEARCH PARSER */
     /* ============================= */
     if (mode === "search_parse") {
       prompt = `
@@ -148,6 +148,33 @@ Examples:
 → {"search":"utensils","tags":["kitchen","steel"],"city":"delhi"}
 
 Query: ${query}
+`
+    }
+
+    /* ============================= */
+    /* 🔥 KEYWORD GENERATOR */
+    /* ============================= */
+    if (mode === "keyword_generate") {
+      prompt = `
+You are helping a B2B manufacturer improve discoverability.
+
+Based on the business description, generate search keywords.
+
+Return ONLY JSON:
+
+{
+  "tags": [],
+  "tags_text": ""
+}
+
+Rules:
+- Tags should be short (1-2 words)
+- Include product types, categories, materials, audience
+- Minimum 5, maximum 15 tags
+- Keep them generic and searchable
+
+Business Description:
+${description}
 `
     }
 
@@ -181,6 +208,16 @@ Query: ${query}
       result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const parsed = extractJSON(text)
+
+    /* 🔥 KEYWORD RESPONSE */
+    if (mode === "keyword_generate") {
+      return NextResponse.json(
+        parsed || {
+          tags: [],
+          tags_text: "",
+        }
+      )
+    }
 
     /* 🔥 SEARCH RESPONSE */
     if (mode === "search_parse") {

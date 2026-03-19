@@ -19,6 +19,11 @@ export default function SettingsPage() {
   const [address,setAddress] = useState('')
   const [logoUrl,setLogoUrl] = useState<string | null>(null)
 
+  /* ✅ NEW */
+  const [description,setDescription] = useState('')
+  const [keywords,setKeywords] = useState<string[]>([])
+  const [generating,setGenerating] = useState(false)
+
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
   const [subscriptionLoading,setSubscriptionLoading] = useState(false)
@@ -58,6 +63,10 @@ export default function SettingsPage() {
     setAddress(company.address || '')
     setLogoUrl(company.logo_url || null)
 
+    /* ✅ LOAD NEW */
+    setDescription(company.business_description || '')
+    setKeywords(company.business_tags || [])
+
     const { data:subscription } = await supabase
       .from('subscriptions')
       .select('*')
@@ -67,6 +76,32 @@ export default function SettingsPage() {
     setSubscription(subscription)
 
     setLoading(false)
+  }
+
+  /* 🔥 AI GENERATE */
+  async function handleGenerate(){
+
+    if(!description){
+      alert('Please enter business description')
+      return
+    }
+
+    setGenerating(true)
+
+    const res = await fetch('/api/ai',{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({
+        mode:'keyword_generate',
+        description
+      })
+    })
+
+    const data = await res.json()
+
+    setKeywords(data.tags || [])
+
+    setGenerating(false)
   }
 
   async function handleSave(){
@@ -82,7 +117,12 @@ export default function SettingsPage() {
         phone,
         email,
         whatsapp,
-        address
+        address,
+
+        /* ✅ SAVE NEW */
+        business_description:description,
+        business_tags:keywords,
+        business_tags_text:keywords.join(' ')
       })
       .eq('id',companyId)
 
@@ -180,6 +220,69 @@ export default function SettingsPage() {
         Settings
       </h1>
 
+      {/* 🔥 NEW: BUSINESS DESCRIPTION + AI */}
+
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+
+        <h2 className="font-semibold">
+          Business Description & Keywords
+        </h2>
+
+        <p className="text-sm text-gray-500">
+          Describe your business properly so AI can generate best search keywords for distributors to find you.
+        </p>
+
+        <textarea
+          value={description}
+          onChange={(e)=>setDescription(e.target.value)}
+          className="border px-4 py-2 rounded w-full"
+          rows={4}
+          placeholder="Example: We manufacture premium denim jeans for men, bulk supply, export quality..."
+        />
+
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          {generating ? 'Generating...' : 'Generate Keywords'}
+        </button>
+
+        {/* KEYWORDS */}
+
+        <div className="flex flex-wrap gap-2">
+
+          {keywords.map((tag,index)=>(
+            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex items-center gap-2">
+              {tag}
+              <button
+                onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}
+                className="text-red-500"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
+        </div>
+
+        <input
+          placeholder="Add keyword"
+          className="border px-3 py-2 rounded w-full"
+          onKeyDown={(e)=>{
+            if(e.key === 'Enter'){
+              e.preventDefault()
+              const val = (e.target as HTMLInputElement).value.trim()
+              if(val){
+                setKeywords([...keywords,val])
+                ;(e.target as HTMLInputElement).value = ''
+              }
+            }
+          }}
+        />
+
+      </div>
+
       {/* LOGO */}
 
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
@@ -189,27 +292,12 @@ export default function SettingsPage() {
         </h2>
 
         {logoUrl ? (
-          <img
-            src={logoUrl}
-            className="w-32 h-32 object-contain border rounded"
-          />
-        ):(
-          <div className="text-gray-400">
-            No logo uploaded
-          </div>
-        )}
+          <img src={logoUrl} className="w-32 h-32 object-contain border rounded"/>
+        ):(<div className="text-gray-400">No logo uploaded</div>)}
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleLogoUpload}
-        />
+        <input type="file" accept="image/*" onChange={handleLogoUpload}/>
 
-        {uploadingLogo && (
-          <p className="text-sm text-gray-500">
-            Uploading logo...
-          </p>
-        )}
+        {uploadingLogo && <p className="text-sm text-gray-500">Uploading logo...</p>}
 
       </div>
 
@@ -253,115 +341,44 @@ export default function SettingsPage() {
           Contact Details
         </h2>
 
-        <input
-          value={phone}
-          onChange={(e)=>setPhone(e.target.value)}
-          placeholder="Phone"
-          className="border px-4 py-2 rounded w-full"
-        />
-
-        <input
-          value={email}
-          onChange={(e)=>setEmail(e.target.value)}
-          placeholder="Email"
-          className="border px-4 py-2 rounded w-full"
-        />
-
-        <input
-          value={whatsapp}
-          onChange={(e)=>setWhatsapp(e.target.value)}
-          placeholder="WhatsApp"
-          className="border px-4 py-2 rounded w-full"
-        />
+        <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Phone" className="border px-4 py-2 rounded w-full"/>
+        <input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="Email" className="border px-4 py-2 rounded w-full"/>
+        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} placeholder="WhatsApp" className="border px-4 py-2 rounded w-full"/>
 
       </div>
 
       {/* SUBSCRIPTION */}
 
       {subscription && (
-
         <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold text-lg">Subscription</h2>
 
-          <h2 className="font-semibold text-lg">
-            Subscription
-          </h2>
-
-          <div className="flex items-center justify-between">
-
+          <div className="flex justify-between">
             <div>
-              <p className="text-sm text-gray-500">
-                Plan
-              </p>
-
-              <p className="font-semibold capitalize">
-                {subscription.plan_type}
-              </p>
+              <p className="text-sm text-gray-500">Plan</p>
+              <p className="font-semibold capitalize">{subscription.plan_type}</p>
             </div>
 
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                subscription.status === 'active'
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              subscription.status === 'active'
                 ? 'bg-green-100 text-green-700'
                 : subscription.status === 'trialing'
                 ? 'bg-yellow-100 text-yellow-700'
                 : 'bg-red-100 text-red-700'
-              }`}
-            >
+            }`}>
               {subscription.status}
             </span>
-
           </div>
-
-          {subscription.status !== 'active' && (
-
-            <div className="pt-4 flex gap-4">
-
-              <button
-                onClick={()=>handleSubscribe('monthly')}
-                disabled={subscriptionLoading}
-                className="bg-black text-white px-6 py-2 rounded"
-              >
-                Monthly ₹399
-              </button>
-
-              <button
-                onClick={()=>handleSubscribe('quarterly')}
-                disabled={subscriptionLoading}
-                className="bg-black text-white px-6 py-2 rounded"
-              >
-                Quarterly ₹1099
-              </button>
-
-              <button
-                onClick={()=>handleSubscribe('yearly')}
-                disabled={subscriptionLoading}
-                className="bg-black text-white px-6 py-2 rounded"
-              >
-                Yearly ₹3999
-              </button>
-
-            </div>
-
-          )}
-
         </div>
-
       )}
 
       {/* NOTIFICATIONS */}
 
       {companyId && (
-
         <div className="bg-white p-6 rounded-xl shadow border">
-
-          <h2 className="font-semibold mb-4">
-            Send Notification
-          </h2>
-
-          <SendNotification companyId={companyId} />
-
+          <h2 className="font-semibold mb-4">Send Notification</h2>
+          <SendNotification companyId={companyId}/>
         </div>
-
       )}
 
     </div>
