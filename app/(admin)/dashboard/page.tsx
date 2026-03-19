@@ -12,7 +12,7 @@ export default function DashboardPage() {
     products: 0,
   })
   const [subscription, setSubscription] = useState<any>(null)
-  const [recentActivity, setRecentActivity] = useState<any[]>([]) // ✅ ADDED
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function DashboardPage() {
       products: productCount || 0,
     })
 
-    /* 💳 Load subscription */
+    /* 💳 Subscription */
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('*')
@@ -61,15 +61,23 @@ export default function DashboardPage() {
 
     setSubscription(subscription)
 
-    /* 📊 Recent Activity */ // ✅ ADDED
+    /* 📊 Recent Activity with JOIN */ ✅ UPGRADED
     const { data: events } = await supabase
       .from('catalog_events')
-      .select('*')
+      .select(`
+        id,
+        event_type,
+        visitor_id,
+        created_at,
+        products (
+          name
+        )
+      `)
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
       .limit(10)
 
-    setRecentActivity(events || []) // ✅ ADDED
+    setRecentActivity(events || [])
 
     setLoading(false)
   }
@@ -87,7 +95,7 @@ export default function DashboardPage() {
         <StatCard title="Products" value={stats.products} />
       </div>
 
-      {/* 🔹 Subscription Summary */}
+      {/* 🔹 Subscription */}
       {subscription && (
         <div className="bg-white rounded-xl shadow p-6 border">
           <h2 className="text-lg font-semibold mb-2">
@@ -141,7 +149,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 📊 Recent Activity */} {/* ✅ ADDED */}
+      {/* 📊 Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="bg-white rounded-xl shadow p-6 border">
           <h2 className="text-lg font-semibold mb-4">
@@ -155,12 +163,11 @@ export default function DashboardPage() {
                 className="flex justify-between text-sm text-gray-700 border-b pb-2"
               >
                 <div>
-                  <strong>{item.event_type}</strong>{' '}
-                  {item.product_id && (
-                    <span className="text-gray-500">
-                      (Product ID: {item.product_id})
-                    </span>
-                  )}
+                  <strong>{item.visitor_id}</strong>{' '}
+                  viewed{' '}
+                  <strong>
+                    {item.products?.name || 'Product'}
+                  </strong>
                 </div>
 
                 <div className="text-gray-400">
@@ -176,7 +183,7 @@ export default function DashboardPage() {
   )
 }
 
-/* 🔹 Reusable Stat Card */
+/* 🔹 Stat Card */
 function StatCard({
   title,
   value,
