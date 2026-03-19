@@ -8,171 +8,201 @@ type Company = {
   id: string
   display_name: string
   slug: string
-  logo_url: string | null
 }
 
-export default function DistributorCompaniesPage() {
+type Connection = {
+  id: string
+  status: string
+  company: Company
+}
+
+export default function CompaniesPage() {
   const supabase = getSupabaseClient()
   const router = useRouter()
 
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [distributorId, setDistributorId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadCompanies() {
-      setLoading(true)
-      setError(null)
+    loadData()
+  }, [])
 
-      /* ---------- GET USER ---------- */
+  async function loadData() {
+    setLoading(true)
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      /* ---------- GET DISTRIBUTOR ---------- */
-
-      const { data: distributor } = await supabase
-        .from('distributors')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .maybeSingle()
-
-      if (!distributor) {
-        setError('Distributor not found')
-        setLoading(false)
-        return
-      }
-
-      /* ---------- FETCH APPROVED COMPANIES ---------- */
-
-      const { data, error } = await supabase
-        .from('distributor_company_access')
-        .select(`
-          company_id,
-          companies (
-            id,
-            display_name,
-            slug,
-            logo_url
-          )
-        `)
-        .eq('distributor_id', distributor.id)
-        .eq('status', 'approved')
-
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-
-      const formatted =
-        data?.map((item: any) => item.companies).filter(Boolean) || []
-
-      setCompanies(formatted)
-      setLoading(false)
+    if (!user) {
+      router.push('/login')
+      return
     }
 
-    loadCompanies()
-  }, [supabase, router])
+    const { data: distributor } = await supabase
+      .from('distributors')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+
+    if (!distributor) return
+
+    setDistributorId(distributor.id)
+
+    const { data } = await supabase
+      .from('distributor_company_access')
+      .select(`
+        id,
+        status,
+        company:companies (
+          id,
+          display_name,
+          slug
+        )
+      `)
+      .eq('distributor_id', distributor.id)
+
+    setConnections(data || [])
+    setLoading(false)
+  }
+
+  /* ---------- ACCEPT ---------- */
+
+  async function acceptInvite(companyId: string) {
+    if (!distributorId) return
+
+    await supabase
+      .from('distributor_company_access')
+      .update({ status: 'approved' })
+      .eq('company_id', companyId)
+      .eq('distributor_id', distributorId)
+
+    loadData()
+  }
+
+  /* ---------- REJECT ---------- */
+
+  async function rejectInvite(companyId: string) {
+    if (!distributorId) return
+
+    await supabase
+      .from('distributor_company_access')
+      .update({ status: 'rejected' })
+      .eq('company_id', companyId)
+      .eq('distributor_id', distributorId)
+
+    loadData()
+  }
+
+  if (loading) {
+    return <p>Loading...</p>
+  }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-6">
+    <div className="space-y-8">
 
-      <div className="max-w-4xl mx-auto space-y-6">
+      <h1 className="text-2xl font-semibold">
+        My Manufacturers
+      </h1>
 
-        {/* HEADER */}
+      {/* 🔥 INVITES */}
 
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">
-            My Manufacturers
-          </h1>
+      <div>
+        <h2 className="text-lg font-medium mb-4">
+          Invitations
+        </h2>
 
-          <button
-            onClick={() => router.push('/distributor')}
-            className="text-sm text-zinc-500 hover:underline"
-          >
-            ← Back
-          </button>
-        </div>
-
-        {/* LOADING */}
-
-        {loading && (
-          <p className="text-zinc-500">Loading...</p>
+        {connections.filter(c => c.status === 'invited').length === 0 && (
+          <p className="text-sm text-gray-500">
+            No invites
+          </p>
         )}
 
-        {/* ERROR */}
+        <div className="space-y-3">
 
-        {error && (
-          <p className="text-red-500">{error}</p>
-        )}
+          {connections
+            .filter(c => c.status === 'invited')
+            .map((c) => (
+              <div
+                key={c.id}
+                className="bg-white border rounded-xl p-4 flex justify-between items-center"
+              >
 
-        {/* EMPTY STATE */}
+                <div>
+                  <p className="font-medium">
+                    {c.company?.display_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    /{c.company?.slug}
+                  </p>
+                </div>
 
-        {!loading && companies.length === 0 && (
-          <div className="bg-white p-6 rounded-xl shadow text-center">
-            <p className="text-zinc-600 mb-4">
-              No manufacturers connected yet
-            </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => acceptInvite(c.company.id)}
+                    className="bg-black text-white px-3 py-1 rounded"
+                  >
+                    Accept
+                  </button>
 
-            <button
-              onClick={() => router.push('/distributor/discover')}
-              className="bg-black text-white px-4 py-2 rounded"
-            >
-              Discover Manufacturers
-            </button>
-          </div>
-        )}
+                  <button
+                    onClick={() => rejectInvite(c.company.id)}
+                    className="border px-3 py-1 rounded"
+                  >
+                    Reject
+                  </button>
+                </div>
 
-        {/* COMPANY LIST */}
-
-        <div className="grid grid-cols-1 gap-4">
-
-          {companies.map((company) => (
-            <div
-              key={company.id}
-              onClick={() => router.push(`/${company.slug}`)}
-              className="bg-white p-4 rounded-xl shadow flex items-center gap-4 cursor-pointer hover:shadow-md"
-            >
-
-              {/* LOGO */}
-
-              <div className="w-12 h-12 bg-zinc-200 rounded-full overflow-hidden flex items-center justify-center">
-                {company.logo_url ? (
-                  <img
-                    src={company.logo_url}
-                    alt={company.display_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm text-zinc-500">
-                    Logo
-                  </span>
-                )}
               </div>
-
-              {/* INFO */}
-
-              <div>
-                <p className="font-medium">
-                  {company.display_name}
-                </p>
-                <p className="text-sm text-zinc-500">
-                  /{company.slug}
-                </p>
-              </div>
-
-            </div>
-          ))}
+            ))}
 
         </div>
+      </div>
 
+      {/* 🟢 CONNECTED */}
+
+      <div>
+        <h2 className="text-lg font-medium mb-4">
+          Connected
+        </h2>
+
+        {connections.filter(c => c.status === 'approved').length === 0 && (
+          <p className="text-sm text-gray-500">
+            No connected manufacturers
+          </p>
+        )}
+
+        <div className="space-y-3">
+
+          {connections
+            .filter(c => c.status === 'approved')
+            .map((c) => (
+              <div
+                key={c.id}
+                className="bg-white border rounded-xl p-4 flex justify-between items-center"
+              >
+
+                <div>
+                  <p className="font-medium">
+                    {c.company?.display_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    /{c.company?.slug}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => router.push(`/${c.company.slug}`)}
+                  className="border px-3 py-1 rounded"
+                >
+                  View
+                </button>
+
+              </div>
+            ))}
+
+        </div>
       </div>
 
     </div>

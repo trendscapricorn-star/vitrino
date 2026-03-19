@@ -22,13 +22,10 @@ function extractJSON(text: string) {
 }
 
 async function imageToBase64(url: string) {
-
-  // if already base64 (data:image)
   if (url.startsWith("data:image")) {
     return url.split(",")[1]
   }
 
-  // otherwise fetch normally
   const res = await fetch(url)
 
   if (!res.ok) {
@@ -42,9 +39,6 @@ async function imageToBase64(url: string) {
 
 export async function POST(req: Request) {
   try {
-    // ================================
-    // SUPABASE AUTH CHECK
-    // ================================
     const cookieStore = await cookies()
 
     const supabase = createServerClient(
@@ -64,15 +58,9 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // ================================
-    // REQUEST BODY
-    // ================================
     const body = await req.json()
 
     const {
@@ -82,6 +70,7 @@ export async function POST(req: Request) {
       imageUrl,
       productName,
       description,
+      query,
     } = body
 
     if (!process.env.GEMINI_API_KEY) {
@@ -93,16 +82,13 @@ export async function POST(req: Request) {
 
     let prompt = ""
 
-    // =============================
-    // ATTRIBUTE SUGGESTION
-    // =============================
+    /* ============================= */
+    /* ATTRIBUTE SUGGESTION */
+    /* ============================= */
     if (mode === "attribute_suggestion") {
       prompt = `
-You are a product taxonomy expert.
+Return ONLY JSON:
 
-Return ONLY valid JSON.
-
-Format:
 {
   "suggested_attributes": [
     { "name": "", "options": [] }
@@ -110,69 +96,61 @@ Format:
 }
 
 Category: ${category}
-
-Existing Attributes:
-${JSON.stringify(existingAttributes, null, 2)}
+Existing: ${JSON.stringify(existingAttributes)}
 `
     }
 
-    // =============================
-    // PRODUCT AUTO FILL
-    // =============================
-if (mode === "product_autofill") {
-  prompt = `
-You are an expert fashion product classification AI.
-
-Your job is to analyze the product image and classify attributes.
-
-Return ONLY valid JSON.
-
-JSON FORMAT:
+    /* ============================= */
+    /* PRODUCT AUTO FILL */
+    /* ============================= */
+    if (mode === "product_autofill") {
+      prompt = `
+Return ONLY JSON:
 
 {
   "moderation": { "allowed": true, "reason": "" },
-  "matched_attributes": [
-    { "attribute_name": "", "matched_option": "" }
-  ],
-  "new_option_suggestions": [
-    { "attribute_name": "", "suggested_option": "" }
-  ]
+  "matched_attributes": [],
+  "new_option_suggestions": []
 }
 
-STRICT RULES:
-
-1. Only use attribute_name values from the provided list.
-2. Only use matched_option values from the provided options.
-3. Do NOT invent attributes.
-4. Do NOT invent options.
-5. If uncertain, skip the attribute.
-6. Prefer visual evidence from the image over text.
-7. Product name and description are only secondary hints.
-
-ATTRIBUTE MATCHING METHOD:
-
-For each attribute:
-- Look at the image
-- Compare with the available options
-- Choose the closest match
-
-If none match clearly:
-- Skip the attribute
-- Or suggest a new option in "new_option_suggestions"
-
-CATEGORY:
-${category}
-
-AVAILABLE ATTRIBUTES:
-${JSON.stringify(existingAttributes, null, 2)}
-
-PRODUCT NAME:
-${productName || ""}
-
-DESCRIPTION:
-${description || ""}
+Category: ${category}
+Attributes: ${JSON.stringify(existingAttributes)}
+Name: ${productName || ""}
+Description: ${description || ""}
 `
+    }
+
+    /* ============================= */
+    /* 🔥 NEW SEARCH PARSER */
+    /* ============================= */
+    if (mode === "search_parse") {
+      prompt = `
+You are a marketplace search parser.
+
+Return ONLY JSON:
+
+{
+  "search": "main keyword",
+  "tags": [],
+  "city": null
 }
+
+Rules:
+- Fix spelling (denm → denim)
+- Extract intent
+- Keep tags generic (multi-industry)
+
+Examples:
+"denm jaipur"
+→ {"search":"denim","tags":["denim"],"city":"jaipur"}
+
+"steel utensils delhi"
+→ {"search":"utensils","tags":["kitchen","steel"],"city":"delhi"}
+
+Query: ${query}
+`
+    }
+
     let parts: any[] = [{ text: prompt }]
 
     if (mode === "product_autofill" && imageUrl) {
@@ -190,33 +168,30 @@ ${description || ""}
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            {
-              parts,
-            },
-          ],
+          contents: [{ parts }],
         }),
       }
     )
 
     const result = await response.json()
 
-    if (!response.ok) {
-      console.error("Gemini Error:", result)
-      return NextResponse.json(
-        { error: "Gemini failed", message: result },
-        { status: 500 }
-      )
-    }
-
     const text =
       result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
     const parsed = extractJSON(text)
+
+    /* 🔥 SEARCH RESPONSE */
+    if (mode === "search_parse") {
+      return NextResponse.json(
+        parsed || {
+          search: query,
+          tags: [],
+          city: null,
+        }
+      )
+    }
 
     if (mode === "attribute_suggestion") {
       return NextResponse.json(parsed || { suggested_attributes: [] })
@@ -230,10 +205,8 @@ ${description || ""}
       }
     )
   } catch (err: any) {
-    console.error("AI FULL ERROR:", err)
-
     return NextResponse.json(
-      { error: "AI failed", message: err?.message || "Unknown error" },
+      { error: "AI failed", message: err?.message },
       { status: 500 }
     )
   }

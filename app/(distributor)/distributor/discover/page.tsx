@@ -8,6 +8,9 @@ type Company = {
   id: string
   display_name: string
   slug: string
+  business_tags_text?: string
+  city?: string
+  score?: number
 }
 
 export default function DiscoverPage() {
@@ -43,8 +46,6 @@ export default function DiscoverPage() {
       if (data) {
         setDistributorId(data.id)
 
-        /* load existing connections */
-
         const { data: conn } = await supabase
           .from('distributor_company_access')
           .select('*')
@@ -57,20 +58,44 @@ export default function DiscoverPage() {
     loadDistributor()
   }, [supabase, router])
 
-  /* ---------- SEARCH COMPANIES ---------- */
+  /* ---------- 🔥 NEW FUZZY SEARCH ---------- */
 
-  async function searchCompanies() {
-    setLoading(true)
+async function searchCompanies() {
+  if (!search.trim()) return
 
-    const { data } = await supabase
-      .from('companies')
-      .select('id, display_name, slug')
-      .ilike('display_name', `%${search}%`)
-      .limit(20)
+  setLoading(true)
+
+  try {
+    /* ---------- AI PARSE ---------- */
+
+    const aiRes = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'search_parse',
+        query: search,
+      }),
+    })
+
+    const ai = await aiRes.json()
+
+    const finalSearch = ai.search || search
+
+    /* ---------- DB SEARCH ---------- */
+
+    const { data } = await supabase.rpc('search_companies', {
+      search_text: finalSearch,
+    })
 
     setCompanies(data || [])
-    setLoading(false)
+
+  } catch (err) {
+    console.error(err)
+    setCompanies([])
   }
+
+  setLoading(false)
+}
 
   /* ---------- REQUEST ACCESS ---------- */
 
@@ -83,7 +108,6 @@ export default function DiscoverPage() {
       status: 'pending',
     })
 
-    // refresh connections
     const { data: conn } = await supabase
       .from('distributor_company_access')
       .select('*')
@@ -126,7 +150,7 @@ export default function DiscoverPage() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search manufacturers..."
+            placeholder="Search manufacturers (e.g. denim, kurti...)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 border px-3 py-2 rounded"
@@ -143,6 +167,12 @@ export default function DiscoverPage() {
         {/* RESULTS */}
 
         {loading && <p>Searching...</p>}
+
+        {!loading && search && (
+          <p className="text-sm text-zinc-500">
+            Showing results for "{search}"
+          </p>
+        )}
 
         <div className="space-y-3">
 
@@ -161,9 +191,23 @@ export default function DiscoverPage() {
                   <p className="font-medium">
                     {company.display_name}
                   </p>
+
                   <p className="text-sm text-zinc-500">
                     /{company.slug}
                   </p>
+
+                  {/* 🔥 Extra info (NEW) */}
+                  {company.city && (
+                    <p className="text-xs text-zinc-400">
+                      📍 {company.city}
+                    </p>
+                  )}
+
+                  {company.business_tags_text && (
+                    <p className="text-xs text-zinc-400">
+                      {company.business_tags_text}
+                    </p>
+                  )}
                 </div>
 
                 {/* ACTION */}

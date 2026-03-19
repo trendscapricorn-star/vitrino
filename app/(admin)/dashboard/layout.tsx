@@ -126,7 +126,9 @@ export default async function DashboardLayout({
               </span>
             )}
           </Link>
-
+<Link href="/dashboard/discover-distributors" className="block hover:text-gray-300">
+  Discover Distributors
+</Link>
           <Link href="/dashboard/settings" className="block hover:text-gray-300">
             Settings
           </Link>
