@@ -7,7 +7,48 @@ import PushRegister from "./components/PushRegister"
 
 const PAGE_SIZE = 12
 
-export default async function PublicCatalog({ params, searchParams }: any) {
+/* ---------------- TYPES ---------------- */
+
+type Company = {
+  id: string
+  display_name: string
+  phone: string | null
+  email: string | null
+  whatsapp: string | null
+  address: string | null
+}
+
+type Category = {
+  id: string
+  name: string
+}
+
+type Attribute = {
+  id: string
+  name: string
+  attribute_options: {
+    id: string
+    value: string
+  }[]
+}
+
+type Product = {
+  id: string
+  name: string
+  slug: string
+  base_price: number | null
+  image_url: string | null
+}
+
+/* ---------------- PAGE ---------------- */
+
+export default async function PublicCatalog({
+  params,
+  searchParams
+}: {
+  params: { slug: string }
+  searchParams: Record<string, string | string[] | undefined>
+}) {
 
   const supabase = await createSupabaseServerClient()
   const slug = params?.slug
@@ -16,9 +57,11 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
   /* ---------------- COMPANY ---------------- */
 
-  const { data: company } = await supabase
+  const { data: companyRaw } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
+
+  const company = companyRaw as Company | null
 
   if (!company) notFound()
 
@@ -54,13 +97,15 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
   /* ---------------- CATEGORIES ---------------- */
 
-  const { data: categories } = await supabase
+  const { data: categoriesRaw } = await supabase
     .from("categories")
     .select("id, name")
     .eq("company_id", company.id)
     .order("sort_order", { ascending: true })
 
-  if (!categories?.length) {
+  const categories = (categoriesRaw || []) as Category[]
+
+  if (!categories.length) {
     return <div className="p-10">No categories found.</div>
   }
 
@@ -86,7 +131,7 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
   /* ---------------- ATTRIBUTES ---------------- */
 
-  const { data: attributes } = await supabase
+  const { data: attributesRaw } = await supabase
     .from("attributes")
     .select(`
       id,
@@ -96,11 +141,13 @@ export default async function PublicCatalog({ params, searchParams }: any) {
     .eq("category_id", selectedCategory)
     .order("sort_order", { ascending: true })
 
-  /* ---------------- PRODUCTS (RPC OPTIMIZED) ---------------- */
+  const attributes = (attributesRaw || []) as Attribute[]
+
+  /* ---------------- PRODUCTS (RPC) ---------------- */
 
   const from = (page - 1) * PAGE_SIZE
 
-  const { data: products } = await supabase.rpc("get_products_filtered", {
+  const { data: productsRaw } = await supabase.rpc("get_products_filtered", {
     p_company_id: company.id,
     p_category_id: selectedCategory,
     p_option_ids: selectedOptions.length ? selectedOptions : null,
@@ -108,6 +155,8 @@ export default async function PublicCatalog({ params, searchParams }: any) {
     p_limit: PAGE_SIZE,
     p_offset: from
   })
+
+  const products = (productsRaw || []) as Product[]
 
   /* ---------------- UI ---------------- */
 
@@ -117,7 +166,7 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
       <div className="bg-zinc-50 min-h-screen">
 
-        {/* 🔥 HEADER (GROWTH CRITICAL) */}
+        {/* HEADER */}
         <div className="sticky top-0 z-10 bg-white border-b">
 
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -135,7 +184,7 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
               <button
                 onClick={() => {
-                  if (navigator.share) {
+                  if (typeof window !== "undefined" && navigator.share) {
                     navigator.share({
                       title: company.display_name,
                       url: window.location.href
@@ -149,7 +198,9 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(window.location.href)
+                  if (typeof window !== "undefined") {
+                    navigator.clipboard.writeText(window.location.href)
+                  }
                 }}
                 className="px-3 py-1 bg-black text-white rounded text-sm"
               >
@@ -160,10 +211,10 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
           </div>
 
-          {/* 🔥 CATEGORY TABS (MOBILE POWER) */}
+          {/* CATEGORY TABS */}
           <div className="overflow-x-auto flex gap-2 px-4 pb-2">
 
-            {categories.map((c: any) => (
+            {categories.map((c) => (
               <a
                 key={c.id}
                 href={`/${slug}?category=${c.id}`}
@@ -185,7 +236,7 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
         <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
 
-          {/* SIDEBAR (DESKTOP ONLY) */}
+          {/* SIDEBAR */}
           <div className="hidden md:block col-span-3">
             <FilterSidebar
               slug={slug}
@@ -202,16 +253,13 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
-              {products?.map((p: any) => {
+              {products.map((p) => {
 
                 const productUrl = `${slug}/${p.slug}`
                 const fullUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${productUrl}`
 
                 return (
-                  <div
-                    key={p.id}
-                    className="bg-white rounded border overflow-hidden"
-                  >
+                  <div key={p.id} className="bg-white rounded border overflow-hidden">
 
                     <a href={`/${productUrl}`}>
 
@@ -227,20 +275,17 @@ export default async function PublicCatalog({ params, searchParams }: any) {
                       )}
 
                       <div className="p-2">
-
                         <div className="text-sm font-medium truncate">
                           {p.name}
                         </div>
-
                         <div className="text-xs text-gray-600">
                           ₹ {p.base_price ?? "-"}
                         </div>
-
                       </div>
 
                     </a>
 
-                    {/* 🔥 WHATSAPP SHARE (GROWTH LOOP) */}
+                    {/* WHATSAPP SHARE */}
                     <a
                       href={`https://wa.me/?text=${encodeURIComponent(
                         `${p.name} - ₹${p.base_price}\n${fullUrl}`
@@ -261,7 +306,7 @@ export default async function PublicCatalog({ params, searchParams }: any) {
 
         </div>
 
-        {/* 🔥 STICKY CTA */}
+        {/* CONTACT BUTTON */}
         {company.whatsapp && (
           <a
             href={`https://wa.me/${company.whatsapp}`}
