@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
     setSubscription(subscription)
 
-    /* 📊 Recent Activity with JOIN */ ✅ UPGRADED
+    /* 📊 Recent Activity with JOIN */
     const { data: events } = await supabase
       .from('catalog_events')
       .select(`
