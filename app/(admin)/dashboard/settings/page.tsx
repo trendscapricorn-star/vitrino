@@ -64,6 +64,8 @@ export default function SettingsPage() {
       setKeywords(company.business_tags)
     } else if(typeof company.business_tags === 'string'){
       setKeywords(company.business_tags.split(' '))
+    } else {
+      setKeywords([])
     }
 
     const { data:subscription } = await supabase
@@ -80,7 +82,7 @@ export default function SettingsPage() {
   async function handleGenerate(){
 
     if(!description){
-      alert('Enter description first')
+      alert('Please enter business description')
       return
     }
 
@@ -102,24 +104,9 @@ export default function SettingsPage() {
     setGenerating(false)
   }
 
-  async function handleSaveBusiness(){
+  async function handleSave(){
 
-    setSaving(true)
-
-    await supabase
-      .from('companies')
-      .update({
-        business_description:description,
-        business_tags:keywords,
-        business_tags_text:keywords.join(' ')
-      })
-      .eq('id',companyId)
-
-    setSaving(false)
-    alert('Business saved')
-  }
-
-  async function handleSaveCompany(){
+    if(!companyId) return
 
     setSaving(true)
 
@@ -130,18 +117,22 @@ export default function SettingsPage() {
         phone,
         email,
         whatsapp,
-        address
+        address,
+        business_description:description,
+        business_tags:keywords,
+        business_tags_text:keywords.join(' ')
       })
       .eq('id',companyId)
 
     setSaving(false)
-    alert('Company saved')
+
+    alert('Saved successfully')
   }
 
   async function handleLogoUpload(e:any){
 
     const file = e.target.files?.[0]
-    if(!file) return
+    if(!file || !companyId) return
 
     setUploadingLogo(true)
 
@@ -171,112 +162,134 @@ export default function SettingsPage() {
 
   return (
 
-    <div className="max-w-6xl space-y-8">
+  <div className="max-w-6xl space-y-8">
 
-      <h1 className="text-2xl font-semibold">Settings</h1>
+    <h1 className="text-2xl font-semibold">Settings</h1>
 
-      {/* ROW 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* 🔹 ROW 1 */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* BUSINESS */}
-        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+      {/* BUSINESS */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
 
-          <h2 className="font-semibold">Business Description & Keywords</h2>
+        <h2 className="font-semibold">Business Description & Keywords</h2>
 
-          <textarea
-            value={description}
-            onChange={(e)=>setDescription(e.target.value)}
-            className="border w-full p-2 rounded"
-            rows={4}
-          />
+        <textarea
+          value={description}
+          onChange={(e)=>setDescription(e.target.value)}
+          className="border px-4 py-2 rounded w-full"
+          rows={4}
+        />
 
-          <button
-            onClick={handleGenerate}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            {generating ? 'Generating...' : 'Generate Keywords'}
-          </button>
+        <button
+          onClick={handleGenerate}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          {generating ? 'Generating...' : 'Generate Keywords'}
+        </button>
 
-          <div className="flex flex-wrap gap-2">
-            {keywords.map((tag,i)=>(
-              <div key={i} className="bg-gray-100 px-2 py-1 rounded text-sm">
-                {tag}
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={handleSaveBusiness}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Save Business
-          </button>
-
+        <div className="flex flex-wrap gap-2">
+          {keywords.map((tag,index)=>(
+            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
+              {tag}
+              <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
+            </div>
+          ))}
         </div>
 
-        {/* LOGO */}
-        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-
-          <h2 className="font-semibold">Company Logo</h2>
-
-          {logoUrl && (
-            <img src={logoUrl} className="w-32 h-32 object-contain border"/>
-          )}
-
-          <input type="file" onChange={handleLogoUpload}/>
-
-          {uploadingLogo && <p>Uploading...</p>}
-
-        </div>
+        <button
+          onClick={handleSave}
+          className="bg-black text-white px-6 py-2 rounded"
+        >
+          Save Business
+        </button>
 
       </div>
 
-      {/* ROW 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* LOGO */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
 
-        {/* COMPANY */}
-        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        <h2 className="font-semibold">Company Logo</h2>
 
-          <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border p-2 w-full"/>
-          <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border p-2 w-full"/>
-
-          <button
-            onClick={handleSaveCompany}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Save Company
-          </button>
-
-        </div>
-
-        {/* CONTACT */}
-        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-
-          <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border p-2 w-full"/>
-          <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border p-2 w-full"/>
-          <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border p-2 w-full"/>
-
-        </div>
-
-      </div>
-
-      {/* ROW 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {subscription && (
-          <div className="bg-white p-6 rounded-xl shadow border">
-            Plan: {subscription.plan_type}
-          </div>
+        {logoUrl ? (
+          <img src={logoUrl} className="w-32 h-32 object-contain border rounded"/>
+        ) : (
+          <div className="text-gray-400">No logo uploaded</div>
         )}
 
-        {companyId && (
-          <div className="bg-white p-6 rounded-xl shadow border">
-            <SendNotification companyId={companyId}/>
-          </div>
+        <input type="file" onChange={handleLogoUpload}/>
+
+        {uploadingLogo && (
+          <p className="text-sm text-gray-500">Uploading logo...</p>
         )}
 
       </div>
 
     </div>
+
+    {/* 🔹 ROW 2 */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {/* COMPANY INFO */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+
+        <h2 className="font-semibold">Company Information</h2>
+
+        <input
+          value={displayName}
+          onChange={(e)=>setDisplayName(e.target.value)}
+          placeholder="Company Name"
+          className="border px-4 py-2 rounded w-full"
+        />
+
+        <textarea
+          value={address}
+          onChange={(e)=>setAddress(e.target.value)}
+          placeholder="Address"
+          className="border px-4 py-2 rounded w-full"
+        />
+
+        <button
+          onClick={handleSave}
+          className="bg-black text-white px-6 py-2 rounded"
+        >
+          Save Company
+        </button>
+
+      </div>
+
+      {/* CONTACT */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+
+        <h2 className="font-semibold">Contact Details</h2>
+
+        <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Phone" className="border px-4 py-2 rounded w-full"/>
+        <input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="Email" className="border px-4 py-2 rounded w-full"/>
+        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} placeholder="WhatsApp" className="border px-4 py-2 rounded w-full"/>
+
+      </div>
+
+    </div>
+
+    {/* 🔹 ROW 3 */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      {subscription && (
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold text-lg">Subscription</h2>
+          <p className="capitalize">{subscription.plan_type}</p>
+        </div>
+      )}
+
+      {companyId && (
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <h2 className="font-semibold mb-4">Send Notification</h2>
+          <SendNotification companyId={companyId}/>
+        </div>
+      )}
+
+    </div>
+
+  </div>
   )
 }
