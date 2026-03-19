@@ -9,6 +9,7 @@ export default function SettingsPage() {
   const supabase = supabaseBrowser
 
   const [companyId,setCompanyId] = useState('')
+  const [company,setCompany] = useState<any>(null)
   const [subscription,setSubscription] = useState<any>(null)
 
   const [displayName,setDisplayName] = useState('')
@@ -18,12 +19,14 @@ export default function SettingsPage() {
   const [address,setAddress] = useState('')
   const [logoUrl,setLogoUrl] = useState<string | null>(null)
 
+  /* ✅ NEW */
   const [description,setDescription] = useState('')
   const [keywords,setKeywords] = useState<string[]>([])
   const [generating,setGenerating] = useState(false)
 
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
+  const [subscriptionLoading,setSubscriptionLoading] = useState(false)
   const [uploadingLogo,setUploadingLogo] = useState(false)
 
   useEffect(()=>{
@@ -33,6 +36,7 @@ export default function SettingsPage() {
   async function loadData(){
 
     const { data:{ user } } = await supabase.auth.getUser()
+
     if(!user){
       setLoading(false)
       return
@@ -49,6 +53,7 @@ export default function SettingsPage() {
       return
     }
 
+    setCompany(company)
     setCompanyId(company.id)
 
     setDisplayName(company.display_name || '')
@@ -58,15 +63,18 @@ export default function SettingsPage() {
     setAddress(company.address || '')
     setLogoUrl(company.logo_url || null)
 
+    /* ✅ FIXED LOADING */
     setDescription(company.business_description || '')
 
-    if(Array.isArray(company.business_tags)){
-      setKeywords(company.business_tags)
-    } else if(typeof company.business_tags === 'string'){
-      setKeywords(company.business_tags.split(' '))
-    } else {
-      setKeywords([])
+    let loadedKeywords: string[] = []
+
+    if (Array.isArray(company.business_tags)) {
+      loadedKeywords = company.business_tags
+    } else if (typeof company.business_tags === 'string') {
+      loadedKeywords = company.business_tags.split(' ')
     }
+
+    setKeywords(loadedKeywords)
 
     const { data:subscription } = await supabase
       .from('subscriptions')
@@ -79,6 +87,7 @@ export default function SettingsPage() {
     setLoading(false)
   }
 
+  /* 🔥 AI */
   async function handleGenerate(){
 
     if(!description){
@@ -110,7 +119,7 @@ export default function SettingsPage() {
 
     setSaving(true)
 
-    await supabase
+    const { error } = await supabase
       .from('companies')
       .update({
         display_name:displayName,
@@ -126,7 +135,12 @@ export default function SettingsPage() {
 
     setSaving(false)
 
-    alert('Saved successfully')
+    if(error){
+      alert('Failed to save settings')
+      return
+    }
+
+    alert('Settings saved')
   }
 
   async function handleLogoUpload(e:any){
@@ -138,38 +152,71 @@ export default function SettingsPage() {
 
     const filePath = `${companyId}/logo_${Date.now()}.png`
 
-    await supabase.storage
+    const { error } = await supabase.storage
       .from('company-logos')
       .upload(filePath,file,{ upsert:true })
 
-    const { data } = supabase.storage
-      .from('company-logos')
-      .getPublicUrl(filePath)
+    if(error){
+      alert('Logo upload failed')
+      setUploadingLogo(false)
+      return
+    }
+
+    const { data } = supabase.storage.from('company-logos').getPublicUrl(filePath)
+
+    const publicUrl = data.publicUrl
 
     await supabase
       .from('companies')
-      .update({ logo_url:data.publicUrl })
+      .update({ logo_url:publicUrl })
       .eq('id',companyId)
 
-    setLogoUrl(data.publicUrl)
-
+    setLogoUrl(publicUrl)
     setUploadingLogo(false)
   }
 
+  async function handleSubscribe(planType:string){
+
+    if(subscriptionLoading) return
+
+    setSubscriptionLoading(true)
+
+    const res = await fetch('/api/create-subscription',{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ planType,companyId })
+    })
+
+    const data = await res.json()
+
+    if(!data.subscriptionId){
+      alert(data.error || 'Subscription failed')
+      setSubscriptionLoading(false)
+      return
+    }
+
+    const rzp = new (window as any).Razorpay({
+      key:data.key,
+      subscription_id:data.subscriptionId,
+      handler:function(){ window.location.reload() }
+    })
+
+    rzp.open()
+    setSubscriptionLoading(false)
+  }
+
   if(loading){
-    return <div>Loading...</div>
+    return <div>Loading settings...</div>
   }
 
   return (
 
-  <div className="max-w-6xl space-y-8">
+    <div className="max-w-4xl space-y-8">
 
-    <h1 className="text-2xl font-semibold">Settings</h1>
+      <h1 className="text-2xl font-semibold">Settings</h1>
 
-    {/* 🔹 ROW 1 */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* 🔥 DESCRIPTION + KEYWORDS */}
 
-      {/* BUSINESS */}
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
 
         <h2 className="font-semibold">Business Description & Keywords</h2>
@@ -197,99 +244,43 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        <button
-          onClick={handleSave}
-          className="bg-black text-white px-6 py-2 rounded"
-        >
-          Save Business
-        </button>
-
       </div>
 
       {/* LOGO */}
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-
         <h2 className="font-semibold">Company Logo</h2>
-
-        {logoUrl ? (
-          <img src={logoUrl} className="w-32 h-32 object-contain border rounded"/>
-        ) : (
-          <div className="text-gray-400">No logo uploaded</div>
-        )}
-
+        {logoUrl && <img src={logoUrl} className="w-32"/>}
         <input type="file" onChange={handleLogoUpload}/>
-
-        {uploadingLogo && (
-          <p className="text-sm text-gray-500">Uploading logo...</p>
-        )}
-
       </div>
-
-    </div>
-
-    {/* 🔹 ROW 2 */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       {/* COMPANY INFO */}
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-
-        <h2 className="font-semibold">Company Information</h2>
-
-        <input
-          value={displayName}
-          onChange={(e)=>setDisplayName(e.target.value)}
-          placeholder="Company Name"
-          className="border px-4 py-2 rounded w-full"
-        />
-
-        <textarea
-          value={address}
-          onChange={(e)=>setAddress(e.target.value)}
-          placeholder="Address"
-          className="border px-4 py-2 rounded w-full"
-        />
-
-        <button
-          onClick={handleSave}
-          className="bg-black text-white px-6 py-2 rounded"
-        >
-          Save Company
+        <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border p-2 w-full"/>
+        <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border p-2 w-full"/>
+        <button onClick={handleSave} className="bg-black text-white px-6 py-2 rounded">
+          {saving ? 'Saving...' : 'Save'}
         </button>
-
       </div>
 
       {/* CONTACT */}
       <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-
-        <h2 className="font-semibold">Contact Details</h2>
-
-        <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Phone" className="border px-4 py-2 rounded w-full"/>
-        <input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="Email" className="border px-4 py-2 rounded w-full"/>
-        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} placeholder="WhatsApp" className="border px-4 py-2 rounded w-full"/>
-
+        <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border p-2 w-full"/>
+        <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border p-2 w-full"/>
+        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border p-2 w-full"/>
       </div>
 
-    </div>
-
-    {/* 🔹 ROW 3 */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+      {/* SUBSCRIPTION */}
       {subscription && (
-        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-          <h2 className="font-semibold text-lg">Subscription</h2>
-          <p className="capitalize">{subscription.plan_type}</p>
+        <div className="bg-white p-6 rounded-xl shadow border">
+          {subscription.plan_type}
         </div>
       )}
 
+      {/* NOTIFICATIONS */}
       {companyId && (
-        <div className="bg-white p-6 rounded-xl shadow border">
-          <h2 className="font-semibold mb-4">Send Notification</h2>
-          <SendNotification companyId={companyId}/>
-        </div>
+        <SendNotification companyId={companyId}/>
       )}
 
     </div>
-
-  </div>
   )
 }
