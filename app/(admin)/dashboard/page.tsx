@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
     setSubscription(subscription)
 
-    /* 📊 Recent Activity (NO JOIN - FIXED) */
+    /* 📊 Activity */
     const { data: events } = await supabase
       .from('catalog_events')
       .select('*')
@@ -69,7 +69,6 @@ export default function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(20)
 
-    /* 🔁 Get product names */
     const productIds = [
       ...new Set(
         (events || [])
@@ -91,7 +90,6 @@ export default function DashboardPage() {
       )
     }
 
-    /* ✅ Merge */
     const enriched = (events || []).map((e: any) => ({
       ...e,
       product_name: productMap[e.product_id] || 'Product',
@@ -115,56 +113,55 @@ export default function DashboardPage() {
         <StatCard title="Products" value={stats.products} />
       </div>
 
-      {/* 🔹 Subscription */}
-      {subscription && (
-        <div className="bg-white rounded-xl shadow p-6 border">
-          <h2 className="text-lg font-semibold mb-2">
-            Subscription
-          </h2>
+      {/* 🔹 Subscription + Store Link */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>Plan: <strong>{subscription.plan_type}</strong></p>
-            <p>
-              Status:{' '}
-              <strong className={
-                subscription.status === 'active'
-                  ? 'text-green-600'
-                  : subscription.status === 'trialing'
-                  ? 'text-yellow-600'
-                  : 'text-red-600'
-              }>
-                {subscription.status}
-              </strong>
-            </p>
+        {subscription && (
+          <div className="bg-white rounded-xl shadow p-6 border">
+            <h2 className="text-lg font-semibold mb-2">Subscription</h2>
+
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>Plan: <strong>{subscription.plan_type}</strong></p>
+              <p>
+                Status:{' '}
+                <strong className={
+                  subscription.status === 'active'
+                    ? 'text-green-600'
+                    : subscription.status === 'trialing'
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }>
+                  {subscription.status}
+                </strong>
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 🔗 Store Link */}
-      {company && (
-        <div className="bg-white rounded-xl shadow p-6 border">
-          <h2 className="text-lg font-semibold mb-2">
-            Your Store Link
-          </h2>
+        {company && (
+          <div className="bg-white rounded-xl shadow p-6 border">
+            <h2 className="text-lg font-semibold mb-2">Your Store Link</h2>
 
-          <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded">
-            <span className="text-sm text-gray-700">
-              {process.env.NEXT_PUBLIC_SITE_URL}/{company.slug}
-            </span>
+            <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded">
+              <span className="text-sm text-gray-700 truncate">
+                {process.env.NEXT_PUBLIC_SITE_URL}/{company.slug}
+              </span>
 
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  `${process.env.NEXT_PUBLIC_SITE_URL}/${company.slug}`
-                )
-              }
-              className="text-sm text-black font-medium"
-            >
-              Copy
-            </button>
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    `${process.env.NEXT_PUBLIC_SITE_URL}/${company.slug}`
+                  )
+                }
+                className="text-sm text-black font-medium"
+              >
+                Copy
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
 
       {/* 📊 Recent Activity */}
       {recentActivity.length > 0 && (
@@ -180,8 +177,7 @@ export default function DashboardPage() {
                 className="flex justify-between text-sm text-gray-700 border-b pb-2"
               >
                 <div>
-                  <strong>{item.visitor_id}</strong>{' '}
-                  viewed{' '}
+                  <strong>{item.visitor_id}</strong> viewed{' '}
                   <strong>{item.product_name}</strong>
                 </div>
 
@@ -198,7 +194,6 @@ export default function DashboardPage() {
   )
 }
 
-/* 🔹 Stat Card */
 function StatCard({
   title,
   value,
