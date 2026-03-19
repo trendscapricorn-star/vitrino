@@ -5,116 +5,52 @@ import InstallButton from "./components/InstallButton"
 import VisitorGate from "./components/VisitorGate"
 import PushRegister from "./components/PushRegister"
 
-
 const PAGE_SIZE = 12
 
-type Company = {
-  id: string
-  display_name: string
-  phone: string | null
-  email: string | null
-  whatsapp: string | null
-  address: string | null
-}
-
-export default async function PublicCatalog(props: any) {
-
-  const params = await props.params
-  const searchParams = await props.searchParams
+export default async function PublicCatalog({ params, searchParams }: any) {
 
   const supabase = await createSupabaseServerClient()
-
-  const slug = params.slug
-
-  console.log("CATALOG DEBUG: slug =", slug)
+  const slug = params?.slug
 
   if (!slug) notFound()
 
   /* ---------------- COMPANY ---------------- */
 
-  const { data: companyData } = await supabase
+  const { data: company } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
-
-  const company = companyData as Company | null
-
-  console.log("CATALOG DEBUG: company =", company)
 
   if (!company) notFound()
 
   /* ---------------- SUBSCRIPTION ---------------- */
 
- /* 🔹 Subscription Check */
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("status, trial_ends_at, current_period_end")
+    .eq("company_id", company.id)
+    .maybeSingle()
 
-const { data: subscription } = await supabase
-  .from("subscriptions")
-  .select("status, trial_ends_at, current_period_end")
-  .eq("company_id", company.id)
-  .maybeSingle()
+  const now = new Date()
 
-const now = new Date()
+  const isValid =
+    (subscription?.status === "trialing" &&
+      subscription?.trial_ends_at &&
+      new Date(subscription.trial_ends_at) > now) ||
+    (subscription?.status === "active" &&
+      subscription?.current_period_end &&
+      new Date(subscription.current_period_end) > now)
 
-const isTrialValid =
-  subscription?.status === "trialing" &&
-  subscription?.trial_ends_at &&
-  new Date(subscription.trial_ends_at) > now
-
-const isActiveValid =
-  subscription?.status === "active" &&
-  subscription?.current_period_end &&
-  new Date(subscription.current_period_end) > now
-
-if (!isTrialValid && !isActiveValid) {
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-      <div className="bg-white p-10 rounded-xl shadow text-left max-w-xl">
-
-        <div className="text-xl font-semibold mb-4 text-red-600">
-          Account Suspended (DEBUG MODE)
+  if (!isValid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="bg-white p-8 rounded-xl shadow text-center">
+          <div className="text-lg font-semibold text-red-600">
+            Catalogue Not Available
+          </div>
         </div>
-
-        <div className="text-sm text-gray-700 space-y-2">
-
-          <div>
-            <strong>Company ID:</strong> {company.id}
-          </div>
-
-          <div>
-            <strong>Status:</strong> {subscription?.status ?? "NULL"}
-          </div>
-
-          <div>
-            <strong>Trial Ends:</strong>{" "}
-            {subscription?.trial_ends_at ?? "NULL"}
-          </div>
-
-          <div>
-            <strong>Current Period End:</strong>{" "}
-            {subscription?.current_period_end ?? "NULL"}
-          </div>
-
-          <div>
-            <strong>Server Time:</strong>{" "}
-            {now.toISOString()}
-          </div>
-
-          <div>
-            <strong>Trial Valid:</strong>{" "}
-            {String(isTrialValid)}
-          </div>
-
-          <div>
-            <strong>Active Valid:</strong>{" "}
-            {String(isActiveValid)}
-          </div>
-
-        </div>
-
       </div>
-    </div>
-  )
-}
+    )
+  }
 
   /* ---------------- CATEGORIES ---------------- */
 
@@ -124,7 +60,7 @@ if (!isTrialValid && !isActiveValid) {
     .eq("company_id", company.id)
     .order("sort_order", { ascending: true })
 
-  if (!categories || categories.length === 0) {
+  if (!categories?.length) {
     return <div className="p-10">No categories found.</div>
   }
 
@@ -155,86 +91,102 @@ if (!isTrialValid && !isActiveValid) {
     .select(`
       id,
       name,
-      attribute_options (
-        id,
-        value
-      )
+      attribute_options (id, value)
     `)
     .eq("category_id", selectedCategory)
     .order("sort_order", { ascending: true })
 
-  /* ---------------- PRODUCTS ---------------- */
-
-  let query = supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      slug,
-      base_price,
-      sort_order,
-      product_images (
-        image_url,
-        sort_order
-      )
-    `,{ count:"exact" })
-    .eq("company_id", company.id)
-    .eq("category_id", selectedCategory)
-    .eq("is_active", true)
-
-  if (selectedOptions.length > 0) {
-
-    const { data: productIds } = await supabase
-      .from("product_attribute_values")
-      .select("product_id")
-      .in("option_id", selectedOptions)
-
-    const ids = productIds?.map(p => p.product_id) ?? []
-
-    query =
-      ids.length > 0
-        ? query.in("id", ids)
-        : query.in("id", ["00000000-0000-0000-0000-000000000000"])
-  }
-
-  if (sort === "price_asc")
-    query = query.order("base_price", { ascending: true })
-
-  else if (sort === "price_desc")
-    query = query.order("base_price", { ascending: false })
-
-  else if (sort === "name_asc")
-    query = query.order("name", { ascending: true })
-
-  else if (sort === "name_desc")
-    query = query.order("name", { ascending: false })
-
-  else
-    query = query.order("sort_order", { ascending: true })
+  /* ---------------- PRODUCTS (RPC OPTIMIZED) ---------------- */
 
   const from = (page - 1) * PAGE_SIZE
-  const to = from + PAGE_SIZE - 1
 
-  const { data: products, count } = await query.range(from, to)
+  const { data: products } = await supabase.rpc("get_products_filtered", {
+    p_company_id: company.id,
+    p_category_id: selectedCategory,
+    p_option_ids: selectedOptions.length ? selectedOptions : null,
+    p_sort: sort,
+    p_limit: PAGE_SIZE,
+    p_offset: from
+  })
 
-  const selectedCategoryName =
-    categories.find(c => c.id === selectedCategory)?.name || ""
+  /* ---------------- UI ---------------- */
 
   return (
+    <VisitorGate companyId={company.id}>
+      <PushRegister companyId={company.id} />
 
-  <VisitorGate companyId={company.id}>
-<PushRegister companyId={company.id} />
-  <div className="bg-zinc-50">
+      <div className="bg-zinc-50 min-h-screen">
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* 🔥 HEADER (GROWTH CRITICAL) */}
+        <div className="sticky top-0 z-10 bg-white border-b">
 
-        <div className="text-sm text-gray-500 mb-6">
-          {company.display_name} / {selectedCategoryName}
+          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+
+            <div>
+              <div className="font-semibold text-lg">
+                {company.display_name}
+              </div>
+              <div className="text-xs text-gray-500">
+                Live Catalogue
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: company.display_name,
+                      url: window.location.href
+                    })
+                  }
+                }}
+                className="px-3 py-1 border rounded text-sm"
+              >
+                Share
+              </button>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href)
+                }}
+                className="px-3 py-1 bg-black text-white rounded text-sm"
+              >
+                Copy Link
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* 🔥 CATEGORY TABS (MOBILE POWER) */}
+          <div className="overflow-x-auto flex gap-2 px-4 pb-2">
+
+            {categories.map((c: any) => (
+              <a
+                key={c.id}
+                href={`/${slug}?category=${c.id}`}
+                className={`px-3 py-1 text-sm rounded-full whitespace-nowrap ${
+                  c.id === selectedCategory
+                    ? "bg-black text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                {c.name}
+              </a>
+            ))}
+
+          </div>
+
         </div>
 
-        <div className="grid grid-cols-12 gap-8">
+        {/* MAIN */}
 
-          <div className="col-span-3">
+        <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
+
+          {/* SIDEBAR (DESKTOP ONLY) */}
+          <div className="hidden md:block col-span-3">
             <FilterSidebar
               slug={slug}
               categories={categories}
@@ -242,57 +194,64 @@ if (!isTrialValid && !isActiveValid) {
               selectedCategory={selectedCategory}
               selectedOptions={selectedOptions}
               sort={sort}
-              totalProducts={count || 0}
             />
           </div>
 
-          <div className="col-span-9">
+          {/* PRODUCTS */}
+          <div className="col-span-12 md:col-span-9">
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
-              {products?.map((p:any)=>{
+              {products?.map((p: any) => {
 
-                const primaryImage =
-                  p.product_images?.find(
-                    (img:any)=>img.sort_order===0
-                  )?.image_url
+                const productUrl = `${slug}/${p.slug}`
+                const fullUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${productUrl}`
 
-                return(
-
-                  <a
+                return (
+                  <div
                     key={p.id}
-                    href={`/${slug}/${p.slug}`}
-                    className="border rounded bg-white overflow-hidden hover:shadow-md transition"
+                    className="bg-white rounded border overflow-hidden"
                   >
 
-                    {primaryImage ? (
+                    <a href={`/${productUrl}`}>
 
-                      <img
-                        src={primaryImage}
-                        alt={p.name}
-                        className="w-full h-64 object-cover"
-                      />
+                      {p.image_url ? (
+                        <img
+                          src={p.image_url}
+                          className="w-full h-56 object-cover"
+                        />
+                      ) : (
+                        <div className="h-56 bg-gray-100 flex items-center justify-center text-xs">
+                          No Image
+                        </div>
+                      )}
 
-                    ):(
-                      <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                        No Image
+                      <div className="p-2">
+
+                        <div className="text-sm font-medium truncate">
+                          {p.name}
+                        </div>
+
+                        <div className="text-xs text-gray-600">
+                          ₹ {p.base_price ?? "-"}
+                        </div>
+
                       </div>
-                    )}
 
-                    <div className="p-3">
+                    </a>
 
-                      <div className="font-medium truncate">
-                        {p.name}
-                      </div>
+                    {/* 🔥 WHATSAPP SHARE (GROWTH LOOP) */}
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(
+                        `${p.name} - ₹${p.base_price}\n${fullUrl}`
+                      )}`}
+                      target="_blank"
+                      className="block text-center text-xs py-2 border-t bg-green-50"
+                    >
+                      Share on WhatsApp
+                    </a>
 
-                      <div className="text-sm text-gray-600 mt-1">
-                        ₹ {p.base_price ?? "-"}
-                      </div>
-
-                    </div>
-
-                  </a>
-
+                  </div>
                 )
               })}
 
@@ -302,11 +261,19 @@ if (!isTrialValid && !isActiveValid) {
 
         </div>
 
+        {/* 🔥 STICKY CTA */}
+        {company.whatsapp && (
+          <a
+            href={`https://wa.me/${company.whatsapp}`}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg"
+          >
+            Contact on WhatsApp
+          </a>
+        )}
+
+        <InstallButton />
+
       </div>
-
-      <InstallButton />
-
-    </div>
-  </VisitorGate>
+    </VisitorGate>
   )
 }
