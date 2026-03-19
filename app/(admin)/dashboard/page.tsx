@@ -36,7 +36,6 @@ export default function DashboardPage() {
 
     setCompany(company)
 
-    /* 🔢 Fetch counts */
     const { count: categoryCount } = await supabase
       .from('categories')
       .select('*', { count: 'exact', head: true })
@@ -52,7 +51,6 @@ export default function DashboardPage() {
       products: productCount || 0,
     })
 
-    /* 💳 Subscription */
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('*')
@@ -61,13 +59,21 @@ export default function DashboardPage() {
 
     setSubscription(subscription)
 
-    /* 📊 Recent Activity with JOIN */
+    /* ✅ FIXED JOIN (important) */
     const { data: events } = await supabase
       .from('catalog_events')
-      .select('*')
+      .select(`
+        id,
+        event_type,
+        visitor_id,
+        created_at,
+        products:product_id (
+          name
+        )
+      `)
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(20)
 
     setRecentActivity(events || [])
 
@@ -95,10 +101,7 @@ export default function DashboardPage() {
           </h2>
 
           <div className="text-sm text-gray-600 space-y-1">
-            <p>
-              Plan: <strong>{subscription.plan_type}</strong>
-            </p>
-
+            <p>Plan: <strong>{subscription.plan_type}</strong></p>
             <p>
               Status:{' '}
               <strong className={
@@ -141,14 +144,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 📊 Recent Activity */}
+      {/* 📊 Recent Activity (FINAL) */}
       {recentActivity.length > 0 && (
-        <div className="bg-white rounded-xl shadow p-6 border">
+        <div className="bg-white rounded-xl shadow p-6 border max-w-2xl">
           <h2 className="text-lg font-semibold mb-4">
             Recent Activity
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
             {recentActivity.map((item) => (
               <div
                 key={item.id}
@@ -175,7 +178,6 @@ export default function DashboardPage() {
   )
 }
 
-/* 🔹 Stat Card */
 function StatCard({
   title,
   value,
@@ -185,12 +187,8 @@ function StatCard({
 }) {
   return (
     <div className="bg-white rounded-xl shadow p-6 border">
-      <div className="text-sm text-gray-500">
-        {title}
-      </div>
-      <div className="text-3xl font-bold mt-2">
-        {value}
-      </div>
+      <div className="text-sm text-gray-500">{title}</div>
+      <div className="text-3xl font-bold mt-2">{value}</div>
     </div>
   )
 }
