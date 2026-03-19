@@ -13,7 +13,7 @@ type Company = {
 type Connection = {
   id: string
   status: string
-  company: Company
+  company: Company | null
 }
 
 export default function CompaniesPage() {
@@ -46,7 +46,10 @@ export default function CompaniesPage() {
       .eq('auth_user_id', user.id)
       .maybeSingle()
 
-    if (!distributor) return
+    if (!distributor) {
+      setLoading(false)
+      return
+    }
 
     setDistributorId(distributor.id)
 
@@ -63,7 +66,15 @@ export default function CompaniesPage() {
       `)
       .eq('distributor_id', distributor.id)
 
-    setConnections(data || [])
+    /* ✅ FIX: Convert array → object */
+
+    const formatted: Connection[] = (data || []).map((item: any) => ({
+      id: item.id,
+      status: item.status,
+      company: item.company?.[0] || null,
+    }))
+
+    setConnections(formatted)
     setLoading(false)
   }
 
@@ -140,14 +151,14 @@ export default function CompaniesPage() {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => acceptInvite(c.company.id)}
+                    onClick={() => c.company && acceptInvite(c.company.id)}
                     className="bg-black text-white px-3 py-1 rounded"
                   >
                     Accept
                   </button>
 
                   <button
-                    onClick={() => rejectInvite(c.company.id)}
+                    onClick={() => c.company && rejectInvite(c.company.id)}
                     className="border px-3 py-1 rounded"
                   >
                     Reject
@@ -193,7 +204,7 @@ export default function CompaniesPage() {
                 </div>
 
                 <button
-                  onClick={() => router.push(`/${c.company.slug}`)}
+                  onClick={() => c.company && router.push(`/${c.company.slug}`)}
                   className="border px-3 py-1 rounded"
                 >
                   View
