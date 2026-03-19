@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const [address,setAddress] = useState('')
   const [logoUrl,setLogoUrl] = useState<string | null>(null)
 
-  /* ✅ NEW */
   const [description,setDescription] = useState('')
   const [keywords,setKeywords] = useState<string[]>([])
   const [generating,setGenerating] = useState(false)
@@ -29,9 +28,16 @@ export default function SettingsPage() {
   const [subscriptionLoading,setSubscriptionLoading] = useState(false)
   const [uploadingLogo,setUploadingLogo] = useState(false)
 
+  const [completion,setCompletion] = useState(0)
+  const [missing,setMissing] = useState<string[]>([])
+
   useEffect(()=>{
     loadData()
   },[])
+
+  useEffect(()=>{
+    calculateCompletion()
+  },[displayName,phone,email,whatsapp,address,logoUrl,description,keywords])
 
   async function loadData(){
 
@@ -63,11 +69,9 @@ export default function SettingsPage() {
     setAddress(company.address || '')
     setLogoUrl(company.logo_url || null)
 
-    /* ✅ FIXED LOADING */
     setDescription(company.business_description || '')
 
     let loadedKeywords: string[] = []
-
     if (Array.isArray(company.business_tags)) {
       loadedKeywords = company.business_tags
     } else if (typeof company.business_tags === 'string') {
@@ -87,7 +91,24 @@ export default function SettingsPage() {
     setLoading(false)
   }
 
-  /* 🔥 AI */
+  function calculateCompletion(){
+
+    let score = 0
+    const missingFields: string[] = []
+
+    if(displayName) score += 10; else missingFields.push('Company Name')
+    if(logoUrl) score += 15; else missingFields.push('Logo')
+    if(description) score += 20; else missingFields.push('Business Description')
+    if(keywords.length > 0) score += 20; else missingFields.push('Keywords')
+    if(phone) score += 10; else missingFields.push('Phone')
+    if(email) score += 10; else missingFields.push('Email')
+    if(whatsapp) score += 10; else missingFields.push('WhatsApp')
+    if(address) score += 5; else missingFields.push('Address')
+
+    setCompletion(score)
+    setMissing(missingFields)
+  }
+
   async function handleGenerate(){
 
     if(!description){
@@ -119,7 +140,7 @@ export default function SettingsPage() {
 
     setSaving(true)
 
-    const { error } = await supabase
+    await supabase
       .from('companies')
       .update({
         display_name:displayName,
@@ -135,12 +156,7 @@ export default function SettingsPage() {
 
     setSaving(false)
 
-    if(error){
-      alert('Failed to save settings')
-      return
-    }
-
-    alert('Settings saved')
+    alert('Saved')
   }
 
   async function handleLogoUpload(e:any){
@@ -152,134 +168,119 @@ export default function SettingsPage() {
 
     const filePath = `${companyId}/logo_${Date.now()}.png`
 
-    const { error } = await supabase.storage
+    await supabase.storage
       .from('company-logos')
       .upload(filePath,file,{ upsert:true })
 
-    if(error){
-      alert('Logo upload failed')
-      setUploadingLogo(false)
-      return
-    }
-
     const { data } = supabase.storage.from('company-logos').getPublicUrl(filePath)
-
-    const publicUrl = data.publicUrl
 
     await supabase
       .from('companies')
-      .update({ logo_url:publicUrl })
+      .update({ logo_url:data.publicUrl })
       .eq('id',companyId)
 
-    setLogoUrl(publicUrl)
+    setLogoUrl(data.publicUrl)
+
     setUploadingLogo(false)
   }
 
-  async function handleSubscribe(planType:string){
-
-    if(subscriptionLoading) return
-
-    setSubscriptionLoading(true)
-
-    const res = await fetch('/api/create-subscription',{
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body:JSON.stringify({ planType,companyId })
-    })
-
-    const data = await res.json()
-
-    if(!data.subscriptionId){
-      alert(data.error || 'Subscription failed')
-      setSubscriptionLoading(false)
-      return
-    }
-
-    const rzp = new (window as any).Razorpay({
-      key:data.key,
-      subscription_id:data.subscriptionId,
-      handler:function(){ window.location.reload() }
-    })
-
-    rzp.open()
-    setSubscriptionLoading(false)
-  }
-
   if(loading){
-    return <div>Loading settings...</div>
+    return <div>Loading...</div>
   }
 
   return (
 
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-6xl space-y-8">
 
       <h1 className="text-2xl font-semibold">Settings</h1>
 
-      {/* 🔥 DESCRIPTION + KEYWORDS */}
+      {/* 🔥 COMPLETION */}
+      <div className="bg-white p-6 rounded-xl shadow border space-y-2">
+        <div className="flex justify-between">
+          <span>Profile Completion</span>
+          <span className="font-semibold">{completion}%</span>
+        </div>
 
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        <div className="w-full bg-gray-200 rounded h-2">
+          <div
+            className="bg-black h-2 rounded"
+            style={{ width: `${completion}%` }}
+          />
+        </div>
 
-        <h2 className="font-semibold">Business Description & Keywords</h2>
+        {missing.length > 0 && (
+          <p className="text-sm text-red-500">
+            Missing: {missing.join(', ')}
+          </p>
+        )}
+      </div>
 
-        <textarea
-          value={description}
-          onChange={(e)=>setDescription(e.target.value)}
-          className="border px-4 py-2 rounded w-full"
-          rows={4}
-        />
+      {/* 🔹 ROW 1 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <button
-          onClick={handleGenerate}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          {generating ? 'Generating...' : 'Generate Keywords'}
-        </button>
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Business</h2>
 
-        <div className="flex flex-wrap gap-2">
-          {keywords.map((tag,index)=>(
-            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
-              {tag}
-              <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
-            </div>
-          ))}
+          <textarea value={description} onChange={(e)=>setDescription(e.target.value)} className="border w-full p-2"/>
+
+          <button onClick={handleGenerate} className="bg-black text-white px-4 py-2 rounded">
+            Generate Keywords
+          </button>
+
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((tag,i)=>(
+              <div key={i} className="bg-gray-100 px-2 py-1 rounded">
+                {tag}
+              </div>
+            ))}
+          </div>
+
+          <button onClick={handleSave} className="bg-black text-white px-4 py-2 rounded">
+            Save Business
+          </button>
+
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Logo</h2>
+          {logoUrl && <img src={logoUrl} className="w-32"/>}
+          <input type="file" onChange={handleLogoUpload}/>
         </div>
 
       </div>
 
-      {/* LOGO */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <h2 className="font-semibold">Company Logo</h2>
-        {logoUrl && <img src={logoUrl} className="w-32"/>}
-        <input type="file" onChange={handleLogoUpload}/>
-      </div>
+      {/* 🔹 ROW 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-      {/* COMPANY INFO */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border p-2 w-full"/>
-        <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border p-2 w-full"/>
-        <button onClick={handleSave} className="bg-black text-white px-6 py-2 rounded">
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-
-      {/* CONTACT */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border p-2 w-full"/>
-        <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border p-2 w-full"/>
-        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border p-2 w-full"/>
-      </div>
-
-      {/* SUBSCRIPTION */}
-      {subscription && (
-        <div className="bg-white p-6 rounded-xl shadow border">
-          {subscription.plan_type}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border w-full p-2"/>
+          <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border w-full p-2"/>
         </div>
-      )}
 
-      {/* NOTIFICATIONS */}
-      {companyId && (
-        <SendNotification companyId={companyId}/>
-      )}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border w-full p-2"/>
+          <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border w-full p-2"/>
+          <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border w-full p-2"/>
+        </div>
+
+      </div>
+
+      {/* 🔹 ROW 3 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {subscription && (
+          <div className="bg-white p-6 rounded-xl shadow border">
+            {subscription.plan_type}
+          </div>
+        )}
+
+        {companyId && (
+          <div className="bg-white p-6 rounded-xl shadow border">
+            <SendNotification companyId={companyId}/>
+          </div>
+        )}
+
+      </div>
 
     </div>
   )
