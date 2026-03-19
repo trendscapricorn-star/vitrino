@@ -64,15 +64,7 @@ export default function DashboardPage() {
     /* 📊 Recent Activity with JOIN */
     const { data: events } = await supabase
       .from('catalog_events')
-      .select(`
-        id,
-        event_type,
-        visitor_id,
-        created_at,
-        products (
-          name
-        )
-      `)
+      .select('*')
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
       .limit(10)
