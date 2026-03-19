@@ -31,11 +31,15 @@ export default async function PublicCatalog(props: any) {
 
   const { data: companyData } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
-    .maybeSingle()   // ✅ FIX: was .single()
+    .single()   // ✅ KEEP THIS
 
-  const company = companyData as Company | null
+  const company = companyData as Company
 
-  if (!company) notFound()
+  // ✅ Safe guard (no breaking change)
+  if (!company || !company.id) {
+    console.log("Company fetch failed:", companyData)
+    notFound()
+  }
 
   /* ---------------- SUBSCRIPTION ---------------- */
 
@@ -179,7 +183,7 @@ export default async function PublicCatalog(props: any) {
 
         <div className="max-w-7xl mx-auto px-6 py-8">
 
-          {/* 🔥 HEADER WITH SHARE */}
+          {/* HEADER */}
           <div className="flex justify-between items-center mb-6">
 
             <div className="text-sm text-gray-500">
