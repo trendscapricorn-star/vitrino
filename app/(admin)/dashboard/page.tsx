@@ -12,6 +12,7 @@ export default function DashboardPage() {
     products: 0,
   })
   const [subscription, setSubscription] = useState<any>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([]) // ✅ ADDED
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,6 +60,17 @@ export default function DashboardPage() {
       .single()
 
     setSubscription(subscription)
+
+    /* 📊 Recent Activity */ // ✅ ADDED
+    const { data: events } = await supabase
+      .from('catalog_events')
+      .select('*')
+      .eq('company_id', company.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    setRecentActivity(events || []) // ✅ ADDED
+
     setLoading(false)
   }
 
@@ -125,6 +137,37 @@ export default function DashboardPage() {
             >
               Copy
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 📊 Recent Activity */} {/* ✅ ADDED */}
+      {recentActivity.length > 0 && (
+        <div className="bg-white rounded-xl shadow p-6 border">
+          <h2 className="text-lg font-semibold mb-4">
+            Recent Activity
+          </h2>
+
+          <div className="space-y-3">
+            {recentActivity.map((item) => (
+              <div
+                key={item.id}
+                className="flex justify-between text-sm text-gray-700 border-b pb-2"
+              >
+                <div>
+                  <strong>{item.event_type}</strong>{' '}
+                  {item.product_id && (
+                    <span className="text-gray-500">
+                      (Product ID: {item.product_id})
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-gray-400">
+                  {new Date(item.created_at).toLocaleString()}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
