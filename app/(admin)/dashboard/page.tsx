@@ -36,6 +36,7 @@ export default function DashboardPage() {
 
     setCompany(company)
 
+    /* 🔢 Counts */
     const { count: categoryCount } = await supabase
       .from('categories')
       .select('*', { count: 'exact', head: true })
@@ -51,6 +52,7 @@ export default function DashboardPage() {
       products: productCount || 0,
     })
 
+    /* 💳 Subscription */
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('*')
@@ -59,23 +61,43 @@ export default function DashboardPage() {
 
     setSubscription(subscription)
 
-    /* ✅ FIXED JOIN (important) */
+    /* 📊 Recent Activity (NO JOIN - FIXED) */
     const { data: events } = await supabase
       .from('catalog_events')
-      .select(`
-        id,
-        event_type,
-        visitor_id,
-        created_at,
-        products:product_id (
-          name
-        )
-      `)
+      .select('*')
       .eq('company_id', company.id)
       .order('created_at', { ascending: false })
       .limit(20)
 
-    setRecentActivity(events || [])
+    /* 🔁 Get product names */
+    const productIds = [
+      ...new Set(
+        (events || [])
+          .map((e: any) => e.product_id)
+          .filter(Boolean)
+      ),
+    ]
+
+    let productMap: any = {}
+
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name')
+        .in('id', productIds)
+
+      productMap = Object.fromEntries(
+        (products || []).map((p: any) => [p.id, p.name])
+      )
+    }
+
+    /* ✅ Merge */
+    const enriched = (events || []).map((e: any) => ({
+      ...e,
+      product_name: productMap[e.product_id] || 'Product',
+    }))
+
+    setRecentActivity(enriched)
 
     setLoading(false)
   }
@@ -144,7 +166,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 📊 Recent Activity (FINAL) */}
+      {/* 📊 Recent Activity */}
       {recentActivity.length > 0 && (
         <div className="bg-white rounded-xl shadow p-6 border max-w-2xl">
           <h2 className="text-lg font-semibold mb-4">
@@ -160,9 +182,7 @@ export default function DashboardPage() {
                 <div>
                   <strong>{item.visitor_id}</strong>{' '}
                   viewed{' '}
-                  <strong>
-                    {item.products?.name || 'Product'}
-                  </strong>
+                  <strong>{item.product_name}</strong>
                 </div>
 
                 <div className="text-gray-400">
@@ -178,6 +198,7 @@ export default function DashboardPage() {
   )
 }
 
+/* 🔹 Stat Card */
 function StatCard({
   title,
   value,
