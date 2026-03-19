@@ -18,12 +18,12 @@ type Company = {
 
 export default async function PublicCatalog(props: any) {
 
-  const params = props.params
-  const searchParams = props.searchParams
+  const params = await props.params
+  const searchParams = await props.searchParams
 
   const supabase = await createSupabaseServerClient()
 
-  const slug = params?.slug
+  const slug = params.slug
 
   console.log("CATALOG DEBUG: slug =", slug)
 
@@ -62,6 +62,7 @@ export default async function PublicCatalog(props: any) {
     new Date(subscription.current_period_end) > now
 
   if (!isTrialValid && !isActiveValid) {
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
         <div className="bg-white p-10 rounded-xl shadow text-left max-w-xl">
@@ -71,13 +72,40 @@ export default async function PublicCatalog(props: any) {
           </div>
 
           <div className="text-sm text-gray-700 space-y-2">
-            <div><strong>Company ID:</strong> {company.id}</div>
-            <div><strong>Status:</strong> {subscription?.status ?? "NULL"}</div>
-            <div><strong>Trial Ends:</strong> {subscription?.trial_ends_at ?? "NULL"}</div>
-            <div><strong>Current Period End:</strong> {subscription?.current_period_end ?? "NULL"}</div>
-            <div><strong>Server Time:</strong> {now.toISOString()}</div>
-            <div><strong>Trial Valid:</strong> {String(isTrialValid)}</div>
-            <div><strong>Active Valid:</strong> {String(isActiveValid)}</div>
+
+            <div>
+              <strong>Company ID:</strong> {company.id}
+            </div>
+
+            <div>
+              <strong>Status:</strong> {subscription?.status ?? "NULL"}
+            </div>
+
+            <div>
+              <strong>Trial Ends:</strong>{" "}
+              {subscription?.trial_ends_at ?? "NULL"}
+            </div>
+
+            <div>
+              <strong>Current Period End:</strong>{" "}
+              {subscription?.current_period_end ?? "NULL"}
+            </div>
+
+            <div>
+              <strong>Server Time:</strong>{" "}
+              {now.toISOString()}
+            </div>
+
+            <div>
+              <strong>Trial Valid:</strong>{" "}
+              {String(isTrialValid)}
+            </div>
+
+            <div>
+              <strong>Active Valid:</strong>{" "}
+              {String(isActiveValid)}
+            </div>
+
           </div>
 
         </div>
@@ -146,12 +174,13 @@ export default async function PublicCatalog(props: any) {
         image_url,
         sort_order
       )
-    `, { count: "exact" })
+    `,{ count:"exact" })
     .eq("company_id", company.id)
     .eq("category_id", selectedCategory)
     .eq("is_active", true)
 
   if (selectedOptions.length > 0) {
+
     const { data: productIds } = await supabase
       .from("product_attribute_values")
       .select("product_id")
@@ -167,12 +196,16 @@ export default async function PublicCatalog(props: any) {
 
   if (sort === "price_asc")
     query = query.order("base_price", { ascending: true })
+
   else if (sort === "price_desc")
     query = query.order("base_price", { ascending: false })
+
   else if (sort === "name_asc")
     query = query.order("name", { ascending: true })
+
   else if (sort === "name_desc")
     query = query.order("name", { ascending: false })
+
   else
     query = query.order("sort_order", { ascending: true })
 
@@ -184,9 +217,8 @@ export default async function PublicCatalog(props: any) {
   const selectedCategoryName =
     categories.find(c => c.id === selectedCategory)?.name || ""
 
-  /* ---------------- UI ---------------- */
-
   return (
+
     <VisitorGate companyId={company.id}>
       <PushRegister companyId={company.id} />
 
@@ -216,14 +248,15 @@ export default async function PublicCatalog(props: any) {
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-                {products?.map((p: any) => {
+                {products?.map((p:any)=>{
 
                   const primaryImage =
                     p.product_images?.find(
-                      (img: any) => img.sort_order === 0
+                      (img:any)=>img.sort_order===0
                     )?.image_url
 
-                  return (
+                  return(
+
                     <a
                       key={p.id}
                       href={`/${slug}/${p.slug}`}
@@ -231,12 +264,14 @@ export default async function PublicCatalog(props: any) {
                     >
 
                       {primaryImage ? (
+
                         <img
                           src={primaryImage}
                           alt={p.name}
                           className="w-full h-64 object-cover"
                         />
-                      ) : (
+
+                      ):(
                         <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                           No Image
                         </div>
@@ -255,6 +290,7 @@ export default async function PublicCatalog(props: any) {
                       </div>
 
                     </a>
+
                   )
                 })}
 
