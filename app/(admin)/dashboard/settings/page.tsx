@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const [address,setAddress] = useState('')
   const [logoUrl,setLogoUrl] = useState<string | null>(null)
 
-  /* ✅ NEW */
   const [description,setDescription] = useState('')
   const [keywords,setKeywords] = useState<string[]>([])
   const [generating,setGenerating] = useState(false)
@@ -63,7 +62,6 @@ export default function SettingsPage() {
     setAddress(company.address || '')
     setLogoUrl(company.logo_url || null)
 
-    /* ✅ FIXED LOADING */
     setDescription(company.business_description || '')
 
     let loadedKeywords: string[] = []
@@ -87,7 +85,6 @@ export default function SettingsPage() {
     setLoading(false)
   }
 
-  /* 🔥 AI */
   async function handleGenerate(){
 
     if(!description){
@@ -109,7 +106,6 @@ export default function SettingsPage() {
     const data = await res.json()
 
     setKeywords(data.tags || [])
-
     setGenerating(false)
   }
 
@@ -175,111 +171,128 @@ export default function SettingsPage() {
     setUploadingLogo(false)
   }
 
-  async function handleSubscribe(planType:string){
-
-    if(subscriptionLoading) return
-
-    setSubscriptionLoading(true)
-
-    const res = await fetch('/api/create-subscription',{
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body:JSON.stringify({ planType,companyId })
-    })
-
-    const data = await res.json()
-
-    if(!data.subscriptionId){
-      alert(data.error || 'Subscription failed')
-      setSubscriptionLoading(false)
-      return
-    }
-
-    const rzp = new (window as any).Razorpay({
-      key:data.key,
-      subscription_id:data.subscriptionId,
-      handler:function(){ window.location.reload() }
-    })
-
-    rzp.open()
-    setSubscriptionLoading(false)
-  }
-
   if(loading){
     return <div>Loading settings...</div>
   }
 
   return (
 
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-6xl mx-auto p-4 space-y-8">
 
       <h1 className="text-2xl font-semibold">Settings</h1>
 
-      {/* 🔥 DESCRIPTION + KEYWORDS */}
+      {/* GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+        {/* LEFT COLUMN */}
 
-        <h2 className="font-semibold">Business Description & Keywords</h2>
+        {/* DESCRIPTION */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Business Description</h2>
 
-        <textarea
-          value={description}
-          onChange={(e)=>setDescription(e.target.value)}
-          className="border px-4 py-2 rounded w-full"
-          rows={4}
-        />
+          <textarea
+            value={description}
+            onChange={(e)=>setDescription(e.target.value)}
+            className="border px-4 py-2 rounded w-full"
+            rows={4}
+          />
 
-        <button
-          onClick={handleGenerate}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          {generating ? 'Generating...' : 'Generate Keywords'}
-        </button>
+          <button
+            onClick={handleGenerate}
+            className="bg-black text-white px-4 py-2 rounded w-full"
+          >
+            {generating ? 'Generating...' : 'Generate Keywords'}
+          </button>
 
-        <div className="flex flex-wrap gap-2">
-          {keywords.map((tag,index)=>(
-            <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
-              {tag}
-              <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
-            </div>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((tag,index)=>(
+              <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
+                {tag}
+                <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
+              </div>
+            ))}
+          </div>
         </div>
 
-      </div>
+        {/* LOGO */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Company Logo</h2>
 
-      {/* LOGO */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <h2 className="font-semibold">Company Logo</h2>
-        {logoUrl && <img src={logoUrl} className="w-32"/>}
-        <input type="file" onChange={handleLogoUpload}/>
-      </div>
+          {logoUrl && <img src={logoUrl} className="w-32"/>}
 
-      {/* COMPANY INFO */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="border p-2 w-full"/>
-        <textarea value={address} onChange={(e)=>setAddress(e.target.value)} className="border p-2 w-full"/>
-        <button onClick={handleSave} className="bg-black text-white px-6 py-2 rounded">
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
+          <input type="file" onChange={handleLogoUpload} />
 
-      {/* CONTACT */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-        <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="border p-2 w-full"/>
-        <input value={email} onChange={(e)=>setEmail(e.target.value)} className="border p-2 w-full"/>
-        <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="border p-2 w-full"/>
-      </div>
-
-      {/* SUBSCRIPTION */}
-      {subscription && (
-        <div className="bg-white p-6 rounded-xl shadow border">
-          {subscription.plan_type}
+          {uploadingLogo && <p>Uploading...</p>}
         </div>
-      )}
 
-      {/* NOTIFICATIONS */}
-      {companyId && (
-        <SendNotification companyId={companyId}/>
-      )}
+        {/* COMPANY INFO */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Company Info</h2>
+
+          <input
+            placeholder="Company Name"
+            value={displayName}
+            onChange={(e)=>setDisplayName(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <textarea
+            placeholder="Address"
+            value={address}
+            onChange={(e)=>setAddress(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <button
+            onClick={handleSave}
+            className="bg-black text-white px-6 py-2 rounded w-full"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+
+        {/* CONTACT */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Contact</h2>
+
+          <input
+            placeholder="Phone"
+            value={phone}
+            onChange={(e)=>setPhone(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <input
+            placeholder="Email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <input
+            placeholder="WhatsApp"
+            value={whatsapp}
+            onChange={(e)=>setWhatsapp(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+        </div>
+
+        {/* SUBSCRIPTION */}
+        {subscription && (
+          <div className="bg-white p-6 rounded-xl shadow border">
+            <h2 className="font-semibold mb-2">Subscription</h2>
+            {subscription.plan_type}
+          </div>
+        )}
+
+        {/* NOTIFICATIONS */}
+        {companyId && (
+          <div className="bg-white p-6 rounded-xl shadow border md:col-span-2">
+            <SendNotification companyId={companyId}/>
+          </div>
+        )}
+
+      </div>
 
     </div>
   )
