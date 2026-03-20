@@ -9,7 +9,6 @@ export default function SettingsPage() {
   const supabase = supabaseBrowser
 
   const [companyId,setCompanyId] = useState('')
-  const [company,setCompany] = useState<any>(null)
   const [subscription,setSubscription] = useState<any>(null)
 
   const [displayName,setDisplayName] = useState('')
@@ -24,9 +23,11 @@ export default function SettingsPage() {
   const [generating,setGenerating] = useState(false)
 
   const [loading,setLoading] = useState(true)
-  const [saving,setSaving] = useState(false)
-  const [subscriptionLoading,setSubscriptionLoading] = useState(false)
   const [uploadingLogo,setUploadingLogo] = useState(false)
+
+  const [savingInfo,setSavingInfo] = useState(false)
+  const [savingContact,setSavingContact] = useState(false)
+  const [savingDesc,setSavingDesc] = useState(false)
 
   useEffect(()=>{
     loadData()
@@ -52,7 +53,6 @@ export default function SettingsPage() {
       return
     }
 
-    setCompany(company)
     setCompanyId(company.id)
 
     setDisplayName(company.display_name || '')
@@ -85,6 +85,7 @@ export default function SettingsPage() {
     setLoading(false)
   }
 
+  /* 🔥 AI */
   async function handleGenerate(){
 
     if(!description){
@@ -109,34 +110,80 @@ export default function SettingsPage() {
     setGenerating(false)
   }
 
-  async function handleSave(){
+  /* ✅ SAVE FUNCTIONS */
+
+  async function saveCompanyInfo(){
 
     if(!companyId) return
 
-    setSaving(true)
+    setSavingInfo(true)
 
     const { error } = await supabase
       .from('companies')
       .update({
         display_name:displayName,
+        address
+      })
+      .eq('id',companyId)
+
+    setSavingInfo(false)
+
+    if(error){
+      alert('Failed to save company info')
+      return
+    }
+
+    alert('Company info saved')
+  }
+
+  async function saveContact(){
+
+    if(!companyId) return
+
+    setSavingContact(true)
+
+    const { error } = await supabase
+      .from('companies')
+      .update({
         phone,
         email,
-        whatsapp,
-        address,
+        whatsapp
+      })
+      .eq('id',companyId)
+
+    setSavingContact(false)
+
+    if(error){
+      alert('Failed to save contact')
+      return
+    }
+
+    alert('Contact saved')
+  }
+
+  async function saveDescription(){
+
+    if(!companyId) return
+
+    setSavingDesc(true)
+
+    const { error } = await supabase
+      .from('companies')
+      .update({
         business_description:description,
         business_tags:keywords,
         business_tags_text:keywords.join(' ')
       })
       .eq('id',companyId)
 
-    setSaving(false)
+    setSavingDesc(false)
 
     if(error){
-      alert('Failed to save settings')
+      alert('Failed to save description')
       return
     }
 
-    alert('Settings saved')
+    alert('Description saved')
   }
 
   async function handleLogoUpload(e:any){
@@ -181,10 +228,7 @@ export default function SettingsPage() {
 
       <h1 className="text-2xl font-semibold">Settings</h1>
 
-      {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* LEFT COLUMN */}
 
         {/* DESCRIPTION */}
         <div className="bg-white p-6 rounded-xl shadow border space-y-4">
@@ -199,7 +243,7 @@ export default function SettingsPage() {
 
           <button
             onClick={handleGenerate}
-            className="bg-black text-white px-4 py-2 rounded w-full"
+            className="bg-gray-800 text-white px-4 py-2 rounded w-full"
           >
             {generating ? 'Generating...' : 'Generate Keywords'}
           </button>
@@ -212,6 +256,13 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+
+          <button
+            onClick={saveDescription}
+            className="bg-black text-white px-4 py-2 rounded w-full"
+          >
+            {savingDesc ? 'Saving...' : 'Save'}
+          </button>
         </div>
 
         {/* LOGO */}
@@ -244,10 +295,10 @@ export default function SettingsPage() {
           />
 
           <button
-            onClick={handleSave}
+            onClick={saveCompanyInfo}
             className="bg-black text-white px-6 py-2 rounded w-full"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {savingInfo ? 'Saving...' : 'Save'}
           </button>
         </div>
 
@@ -275,6 +326,13 @@ export default function SettingsPage() {
             onChange={(e)=>setWhatsapp(e.target.value)}
             className="border p-2 w-full rounded"
           />
+
+          <button
+            onClick={saveContact}
+            className="bg-black text-white px-6 py-2 rounded w-full"
+          >
+            {savingContact ? 'Saving...' : 'Save'}
+          </button>
         </div>
 
         {/* SUBSCRIPTION */}
