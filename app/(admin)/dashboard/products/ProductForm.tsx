@@ -216,7 +216,9 @@ export default function ProductForm({
       const updatedValues: AttributeValueMap = { ...attributeValues }
       const updatedAiFilled = { ...aiFilled };
 
-for (const match of data.matched_attributes || []) {
+const matches = data.matched_attributes ?? []
+
+for (const match of matches) {
 
   // ✅ Prefer direct ID matching from AI (BEST METHOD)
   if (match.attribute_id && match.matched_option_id) {
