@@ -232,6 +232,7 @@ console.log("REQUEST BODY:", {
       }
 
       const data = await response.json()
+console.log("AI RESPONSE:", data)
 
       const updatedValues: AttributeValueMap = { ...attributeValues }
       const updatedAiFilled = { ...aiFilled };

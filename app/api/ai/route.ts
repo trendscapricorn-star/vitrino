@@ -135,11 +135,12 @@ Return ONLY JSON:
 RULES:
 
 1. You MUST choose ONLY from the given options
-2. You MUST return EXACT option text (no spelling change)
+2. You MUST return EXACT option text
 3. DO NOT create new values
 4. DO NOT modify options
 5. ALWAYS return one option per attribute
 6. If unsure, choose the closest available option
+7. NEVER return empty matched_attributes
 
 IMPORTANT:
 Use IMAGE as primary source.
@@ -219,9 +220,13 @@ ${description}
     const result = await response.json()
 
     const text =
-      result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+  result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
-    const parsed = extractJSON(text)
+console.log("RAW AI TEXT:", text)
+
+const parsed = extractJSON(text)
+
+console.log("PARSED JSON:", parsed)
 
     if (mode === "keyword_generate") {
       return NextResponse.json(
