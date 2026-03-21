@@ -202,16 +202,17 @@ const structuredAttributes = await Promise.all(
   })
 )
 
+      setAiStep("Matching attributes with AI...")
+
+      const categoryName =
+        categories.find(c => c.id === categoryId)?.name || ""
+
 console.log("STRUCTURED ATTRIBUTES:", structuredAttributes)
 console.log("CALLING AI API...")
 console.log("REQUEST BODY:", {
   categoryName,
   structuredAttributes
 })
-      setAiStep("Matching attributes with AI...")
-
-      const categoryName =
-        categories.find(c => c.id === categoryId)?.name || ""
 
       const response = await fetch("/api/ai", {
         method: "POST",
