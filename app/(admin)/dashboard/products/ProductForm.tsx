@@ -214,37 +214,27 @@ export default function ProductForm({
       const data = await response.json()
 
       const updatedValues: AttributeValueMap = { ...attributeValues }
-      const updatedAiFilled = { ...aiFilled };
+      const updatedAiFilled = { ...aiFilled }
 
-const matches = data.matched_attributes ?? []
+      const matches = data.matched_attributes ?? []
 
-for (const match of matches) {
+      for (const match of matches) {
 
-  const attr = structuredAttributes.find(
-    (a) => a.id === match.attribute_id
-  )
+        const attr = structuredAttributes.find(
+          (a) => a.id === match.attribute_id
+        )
 
-  if (!attr) continue
+        if (!attr) continue
 
-  const option = attr.options.find(
-    (o: any) => o.value === match.selected_option
-  )
+        const option = attr.options.find(
+          (o: any) => o.value === match.selected_option
+        )
 
-  if (option) {
-    updatedValues[attr.id] = option.id
-    updatedAiFilled[attr.id] = true
-  }
-}
-
-if (option) {
-  updatedValues[attr.id] = option.id
-  updatedAiFilled[attr.id] = true
-}
-
-  // 🔁 Fallback (if AI didn’t return IDs properly)
-  
-
-}
+        if (option) {
+          updatedValues[attr.id] = option.id
+          updatedAiFilled[attr.id] = true
+        }
+      }
 
       setAttributeValues(updatedValues)
       setAiFilled(updatedAiFilled)
@@ -358,188 +348,82 @@ if (option) {
       imageIndex++
     }
 
-setPendingImages([])
-setLoading(false)
+    setPendingImages([])
+    setLoading(false)
 
-onClose()
+    onClose()
   }
 
   return (
+    <form
+      onSubmit={handleSubmit}
+      className="border p-5 rounded bg-white max-w-6xl"
+    >
+      <div className="space-y-6">
 
-<form
-  onSubmit={handleSubmit}
-  className="border p-5 rounded bg-white max-w-6xl"
->
+        <div className="grid grid-cols-2 gap-4">
 
-<div className="space-y-6">
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Design name"
+            className="border px-3 py-2 w-full"
+          />
 
-{/* BASIC DETAILS */}
+          <select
+            required
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="border px-3 py-2 w-full"
+          >
+            <option value="">Select Category</option>
 
-<div className="grid grid-cols-2 gap-4">
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
 
-<input
-required
-value={name}
-onChange={(e) => setName(e.target.value)}
-placeholder="Design name"
-className="border px-3 py-2 w-full"
-/>
+          </select>
 
-<select
-required
-value={categoryId}
-onChange={(e) => setCategoryId(e.target.value)}
-className="border px-3 py-2 w-full"
->
-<option value="">Select Category</option>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="Base Price"
+            className="border px-3 py-2 w-full"
+          />
 
-{categories.map((cat) => (
-<option key={cat.id} value={cat.id}>
-{cat.name}
-</option>
-))}
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short description"
+            className="border px-3 py-2 w-full"
+          />
 
-</select>
+        </div>
 
-<input
-type="number"
-value={price}
-onChange={(e) => setPrice(e.target.value)}
-placeholder="Base Price"
-className="border px-3 py-2 w-full"
-/>
+        <div className="flex gap-3 pt-6">
 
-<textarea
-value={description}
-onChange={(e) => setDescription(e.target.value)}
-placeholder="Short description"
-className="border px-3 py-2 w-full"
-/>
+          <button
+            type="submit"
+            className="bg-black text-white px-6 py-2 rounded"
+          >
+            {product ? "Update" : "Save"}
+          </button>
 
-</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border px-6 py-2 rounded"
+          >
+            Cancel
+          </button>
 
-{/* ATTRIBUTES + IMAGES */}
+        </div>
 
-<div className="grid grid-cols-3 gap-6">
-
-{/* ATTRIBUTES */}
-
-<div className="col-span-2">
-
-{loading && (
-<div className="bg-blue-50 text-blue-700 text-sm px-3 py-2 rounded mb-3">
-🤖 {aiStep}
-</div>
-)}
-
-<div className="grid grid-cols-2 gap-4">
-
-{categoryAttributes.map((attr) => (
-
-<div key={attr.id}>
-
-<label className="block mb-1 text-sm font-medium flex items-center gap-2">
-
-{attr.name}
-
-{aiFilled[attr.id] && (
-<span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-AI
-</span>
-)}
-
-</label>
-
-<AttributeSelect
-attributeId={attr.id}
-value={attributeValues[attr.id] || ''}
-disabled={loading}
-onChange={(value) => {
-
-setAttributeValues(prev => ({
-...prev,
-[attr.id]: value
-}))
-
-setAiFilled(prev => ({
-...prev,
-[attr.id]: false
-}))
-
-}}
-/>
-
-</div>
-
-))}
-
-</div>
-</div>
-
-{/* IMAGES */}
-
-<div>
-
-<label className="block mb-2 font-medium">
-Product Images (Max 4)
-</label>
-
-<input
-type="file"
-accept="image/*"
-onChange={handleImageUpload}
-/>
-
-<div className="grid grid-cols-4 gap-4 mt-4">
-
-{images.map(img => (
-<img key={img.id} src={img.image_url} />
-))}
-
-</div>
-
-</div>
-
-</div>
-
-{/* AI BUTTON */}
-
-{(images.length > 0 || pendingImages.length > 0) && (
-
-<button
-type="button"
-onClick={handleAutoFill}
-className="bg-blue-600 text-white px-4 py-2 rounded"
->
-Generate Attributes
-</button>
-
-)}
-
-{/* BUTTONS */}
-
-<div className="flex gap-3 pt-6">
-
-<button
-type="submit"
-className="bg-black text-white px-6 py-2 rounded"
->
-{product ? "Update" : "Save"}
-</button>
-
-<button
-type="button"
-onClick={onClose}
-className="border px-6 py-2 rounded"
->
-Cancel
-</button>
-
-</div>
-
-</div>
-
-</form>
-
+      </div>
+    </form>
   )
 }
