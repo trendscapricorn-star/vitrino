@@ -370,6 +370,7 @@ setPendingImages([])
 setLoading(false)
 
 onClose()
+window.location.reload()
   }
 
   return (
