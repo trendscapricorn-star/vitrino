@@ -227,7 +227,112 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* SUBSCRIPTION */}
+        {/* DESCRIPTION */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Business Description</h2>
+
+          <textarea
+            value={description}
+            onChange={(e)=>setDescription(e.target.value)}
+            className="border px-4 py-2 rounded w-full"
+            rows={4}
+          />
+
+          <button
+            onClick={handleGenerate}
+            className="bg-gray-800 text-white px-4 py-2 rounded w-full"
+          >
+            {generating ? 'Generating...' : 'Generate Keywords'}
+          </button>
+
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((tag,index)=>(
+              <div key={index} className="bg-gray-100 px-3 py-1 rounded text-sm flex gap-2">
+                {tag}
+                <button onClick={()=>setKeywords(keywords.filter((_,i)=>i!==index))}>×</button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={saveDescription}
+            className="bg-black text-white px-4 py-2 rounded w-full"
+          >
+            {savingDesc ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+
+        {/* LOGO */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Company Logo</h2>
+
+          {logoUrl && <img src={logoUrl} className="w-32"/>}
+
+          <input type="file" onChange={handleLogoUpload} />
+
+          {uploadingLogo && <p>Uploading...</p>}
+        </div>
+
+        {/* COMPANY INFO */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Company Info</h2>
+
+          <input
+            placeholder="Company Name"
+            value={displayName}
+            onChange={(e)=>setDisplayName(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <textarea
+            placeholder="Address"
+            value={address}
+            onChange={(e)=>setAddress(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <button
+            onClick={saveCompanyInfo}
+            className="bg-black text-white px-6 py-2 rounded w-full"
+          >
+            {savingInfo ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+
+        {/* CONTACT */}
+        <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+          <h2 className="font-semibold">Contact</h2>
+
+          <input
+            placeholder="Phone"
+            value={phone}
+            onChange={(e)=>setPhone(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <input
+            placeholder="Email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <input
+            placeholder="WhatsApp"
+            value={whatsapp}
+            onChange={(e)=>setWhatsapp(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <button
+            onClick={saveContact}
+            className="bg-black text-white px-6 py-2 rounded w-full"
+          >
+            {savingContact ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+
+        {/* ✅ SUBSCRIPTION */}
         {subscription && (() => {
 
           const validTillRaw =
@@ -270,13 +375,21 @@ export default function SettingsPage() {
                 <p><b>Days Left:</b> {daysLeft >= 0 ? daysLeft : 0}</p>
               )}
 
+              {daysLeft !== null && daysLeft <= 2 && daysLeft >= 0 && (
+                <p className="text-yellow-600 text-sm">
+                  ⚠ Plan expiring soon
+                </p>
+              )}
+
               <button
                 onClick={() => {
-                  window.location.href = '/pricing'
+                  window.location.href = '/subscription'
                 }}
                 className="bg-black text-white px-4 py-2 rounded w-full mt-2"
               >
-                {status === 'expired' ? 'Renew Subscription' : 'Extend Plan'}
+                {status === 'expired'
+                  ? 'Renew Subscription'
+                  : 'Upgrade / Extend'}
               </button>
 
             </div>
@@ -284,8 +397,12 @@ export default function SettingsPage() {
 
         })()}
 
-        {/* KEEP REST SAME BELOW */}
-        {/* (you can paste your existing sections here unchanged) */}
+        {/* NOTIFICATIONS */}
+        {companyId && (
+          <div className="bg-white p-6 rounded-xl shadow border md:col-span-2">
+            <SendNotification companyId={companyId}/>
+          </div>
+        )}
 
       </div>
 
