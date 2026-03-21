@@ -214,7 +214,7 @@ export default function ProductForm({
       const data = await response.json()
 
       const updatedValues: AttributeValueMap = { ...attributeValues }
-      const updatedAiFilled = { ...aiFilled }
+      const updatedAiFilled = { ...aiFilled };
 
 for (const match of data.matched_attributes || []) {
 
