@@ -124,7 +124,6 @@ Return ONLY JSON:
 {
   "test": "working"
 }
-`
 
 RULES:
 
