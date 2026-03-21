@@ -203,7 +203,11 @@ const structuredAttributes = await Promise.all(
 )
 
 console.log("STRUCTURED ATTRIBUTES:", structuredAttributes)
-
+console.log("CALLING AI API...")
+console.log("REQUEST BODY:", {
+  categoryName,
+  structuredAttributes
+})
       setAiStep("Matching attributes with AI...")
 
       const categoryName =
