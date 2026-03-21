@@ -383,8 +383,8 @@ export default function SettingsPage() {
 
               <button
                 onClick={() => {
-                  window.location.href = '/subscription'
-                }}
+  window.location.href = '/pricing'
+}}
                 className="bg-black text-white px-4 py-2 rounded w-full mt-2"
               >
                 {status === 'expired'
