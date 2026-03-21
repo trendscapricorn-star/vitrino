@@ -41,7 +41,7 @@ async function imageToBase64(url: string) {
 
     const buffer = await res.arrayBuffer()
     return Buffer.from(buffer).toString("base64")
-  } catch (err) {
+  } catch {
     throw new Error("Image processing failed")
   }
 }
@@ -51,7 +51,8 @@ async function imageToBase64(url: string) {
 /* ============================= */
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies()
+    /* ✅ FIXED: cookies() is async in your setup */
+    const cookieStore = await cookies()
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -189,6 +190,7 @@ ${description}
 `
     }
 
+    /* ❌ INVALID MODE */
     else {
       return NextResponse.json(
         { error: "Invalid mode" },
@@ -198,7 +200,9 @@ ${description}
 
     let parts: any[] = [{ text: prompt }]
 
-    /* ADD IMAGE IF AVAILABLE */
+    /* ============================= */
+    /* ADD IMAGE (SAFE) */
+    /* ============================= */
     if (mode === "product_autofill" && imageUrl) {
       try {
         const base64Image = await imageToBase64(imageUrl)
@@ -210,7 +214,7 @@ ${description}
           },
         })
       } catch {
-        // ignore image failure, continue with text
+        // ignore image failure
       }
     }
 
