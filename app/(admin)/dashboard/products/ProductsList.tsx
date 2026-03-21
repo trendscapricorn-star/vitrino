@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation' // ✅ ADDED
 import { createClient } from '@supabase/supabase-js'
 import ProductForm from './ProductForm'
 import type { Product } from '@/types/product'
@@ -33,6 +34,8 @@ export default function ProductsList({
   attributes,
   companyId,
 }: ProductsListProps) {
+  const router = useRouter() // ✅ ADDED
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -50,10 +53,17 @@ export default function ProductsList({
   async function toggleProduct(product: Product) {
     const newStatus = !product.is_active
 
-    await supabase
+    // ✅ FIX: capture error
+    const { error } = await supabase
       .from('products')
       .update({ is_active: newStatus })
       .eq('id', product.id)
+
+    if (error) {
+      console.error('Update failed:', error)
+      alert('Failed to update product')
+      return
+    }
 
     setLocalProducts((prev) =>
       prev.map((p) =>
@@ -62,6 +72,9 @@ export default function ProductsList({
           : p
       )
     )
+
+    // ✅ CRITICAL FIX: refresh server data
+    router.refresh()
   }
 
   return (
@@ -118,9 +131,9 @@ export default function ProductsList({
           <tbody>
             {localProducts.map((p) => {
               const primaryImage =
-  p.product_images
-    ?.sort((a, b) => a.sort_order - b.sort_order)[0]
-    ?.image_url
+                p.product_images
+                  ?.sort((a, b) => a.sort_order - b.sort_order)[0]
+                  ?.image_url
 
               const imageCount =
                 p.product_images?.length || 0
