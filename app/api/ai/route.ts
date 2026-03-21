@@ -3,6 +3,9 @@ import { Buffer } from "buffer"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+/* ============================= */
+/* SAFE JSON EXTRACTOR */
+/* ============================= */
 function extractJSON(text: string) {
   try {
     const cleaned = text
@@ -21,25 +24,34 @@ function extractJSON(text: string) {
   }
 }
 
+/* ============================= */
+/* IMAGE → BASE64 */
+/* ============================= */
 async function imageToBase64(url: string) {
-  if (url.startsWith("data:image")) {
-    return url.split(",")[1]
+  try {
+    if (url.startsWith("data:image")) {
+      return url.split(",")[1]
+    }
+
+    const res = await fetch(url)
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch image")
+    }
+
+    const buffer = await res.arrayBuffer()
+    return Buffer.from(buffer).toString("base64")
+  } catch (err) {
+    throw new Error("Image processing failed")
   }
-
-  const res = await fetch(url)
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch image")
-  }
-
-  const buffer = await res.arrayBuffer()
-
-  return Buffer.from(buffer).toString("base64")
 }
 
+/* ============================= */
+/* MAIN API */
+/* ============================= */
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,11 +115,9 @@ Existing: ${JSON.stringify(existingAttributes)}
     /* ============================= */
     /* PRODUCT AUTO FILL */
     /* ============================= */
-if (mode === "product_autofill") {
-prompt = `
+    else if (mode === "product_autofill") {
+      prompt = `
 You are an AI product intelligence engine.
-
-You MUST match attributes strictly using provided options.
 
 Return ONLY JSON:
 
@@ -123,62 +133,45 @@ Return ONLY JSON:
 }
 
 RULES:
-
-- You are given attributes with options (each option has id + value)
-- You MUST select ONLY from those options
+- Match ONLY from given options
 - DO NOT create new values
-- DO NOT guess outside options
-- If no suitable option exists → skip attribute
-
-- Always return matched_option_id EXACTLY from input
+- If no match → skip
 
 INPUT:
 Category: ${category}
 Attributes: ${JSON.stringify(existingAttributes)}
 Name: ${productName || ""}
 Description: ${description || ""}
-}`
+`
+    }
 
     /* ============================= */
-    /* 🔥 SEARCH PARSER */
+    /* SEARCH PARSER */
     /* ============================= */
-    if (mode === "search_parse") {
+    else if (mode === "search_parse") {
       prompt = `
-You are a marketplace search parser.
-
 Return ONLY JSON:
 
 {
-  "search": "main keyword",
+  "search": "",
   "tags": [],
   "city": null
 }
 
 Rules:
-- Fix spelling (denm → denim)
+- Fix spelling
 - Extract intent
-- Keep tags generic (multi-industry)
-
-Examples:
-"denm jaipur"
-→ {"search":"denim","tags":["denim"],"city":"jaipur"}
-
-"steel utensils delhi"
-→ {"search":"utensils","tags":["kitchen","steel"],"city":"delhi"}
+- Keep tags generic
 
 Query: ${query}
 `
     }
 
     /* ============================= */
-    /* 🔥 KEYWORD GENERATOR */
+    /* KEYWORD GENERATOR */
     /* ============================= */
-    if (mode === "keyword_generate") {
+    else if (mode === "keyword_generate") {
       prompt = `
-You are helping a B2B manufacturer improve discoverability.
-
-Based on the business description, generate search keywords.
-
 Return ONLY JSON:
 
 {
@@ -187,29 +180,43 @@ Return ONLY JSON:
 }
 
 Rules:
-- Tags should be short (1-2 words)
-- Include product types, categories, materials, audience
-- Minimum 5, maximum 15 tags
-- Keep them generic and searchable
+- 5–15 tags
+- Short keywords
+- Include product, material, audience
 
-Business Description:
+Description:
 ${description}
 `
     }
 
-    let parts: any[] = [{ text: prompt }]
-
-    if (mode === "product_autofill" && imageUrl) {
-      const base64Image = await imageToBase64(imageUrl)
-
-      parts.push({
-        inlineData: {
-          mimeType: "image/*",
-          data: base64Image,
-        },
-      })
+    else {
+      return NextResponse.json(
+        { error: "Invalid mode" },
+        { status: 400 }
+      )
     }
 
+    let parts: any[] = [{ text: prompt }]
+
+    /* ADD IMAGE IF AVAILABLE */
+    if (mode === "product_autofill" && imageUrl) {
+      try {
+        const base64Image = await imageToBase64(imageUrl)
+
+        parts.push({
+          inlineData: {
+            mimeType: "image/*",
+            data: base64Image,
+          },
+        })
+      } catch {
+        // ignore image failure, continue with text
+      }
+    }
+
+    /* ============================= */
+    /* GEMINI CALL */
+    /* ============================= */
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -228,38 +235,35 @@ ${description}
 
     const parsed = extractJSON(text)
 
-    /* 🔥 KEYWORD RESPONSE */
+    /* ============================= */
+    /* RESPONSES */
+    /* ============================= */
+
     if (mode === "keyword_generate") {
       return NextResponse.json(
-        parsed || {
-          tags: [],
-          tags_text: "",
-        }
+        parsed || { tags: [], tags_text: "" }
       )
     }
 
-    /* 🔥 SEARCH RESPONSE */
     if (mode === "search_parse") {
       return NextResponse.json(
-        parsed || {
-          search: query,
-          tags: [],
-          city: null,
-        }
+        parsed || { search: query, tags: [], city: null }
       )
     }
 
     if (mode === "attribute_suggestion") {
-      return NextResponse.json(parsed || { suggested_attributes: [] })
+      return NextResponse.json(
+        parsed || { suggested_attributes: [] }
+      )
     }
 
-    return NextResponse.json(
-      parsed || {
-        moderation: { allowed: true, reason: "" },
-        matched_attributes: [],
-        new_option_suggestions: [],
-      }
-    )
+    if (mode === "product_autofill") {
+      return NextResponse.json(
+        parsed || { matched_attributes: [] }
+      )
+    }
+
+    return NextResponse.json({ error: "Unhandled mode" })
   } catch (err: any) {
     return NextResponse.json(
       { error: "AI failed", message: err?.message },
