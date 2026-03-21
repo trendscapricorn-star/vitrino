@@ -63,6 +63,28 @@ export default function AttributesList({
     window.location.reload()
   }
 
+  /* 🔥 DELETE FUNCTION ADDED */
+  async function deleteAttribute(attr: Attribute) {
+    const confirmDelete = confirm(
+      `Delete attribute "${attr.name}"?\n\nThis cannot be undone.`
+    )
+
+    if (!confirmDelete) return
+
+    const { error } = await supabase
+      .from('attributes')
+      .delete()
+      .eq('id', attr.id)
+
+    if (error) {
+      console.error(error)
+      alert("Delete failed. It may be used in products or options.")
+      return
+    }
+
+    window.location.reload()
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-6">
@@ -103,9 +125,7 @@ export default function AttributesList({
               <div
                 key={attr.id}
                 className={`border p-4 rounded ${
-                  !attr.is_active
-                    ? 'opacity-50'
-                    : ''
+                  !attr.is_active ? 'opacity-50' : ''
                 }`}
               >
                 <div className="flex justify-between">
@@ -113,6 +133,7 @@ export default function AttributesList({
                     {attr.name}
                   </div>
 
+                  {/* 🔥 ACTION BUTTONS */}
                   <div className="flex gap-3 text-sm">
                     <button
                       onClick={() =>
@@ -127,11 +148,20 @@ export default function AttributesList({
                       onClick={() =>
                         toggleAttribute(attr)
                       }
-                      className="text-red-600"
+                      className="text-yellow-600"
                     >
                       {attr.is_active
                         ? 'Disable'
                         : 'Enable'}
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        deleteAttribute(attr)
+                      }
+                      className="text-red-600"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>
