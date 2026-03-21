@@ -108,7 +108,7 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* 🔥 PRODUCT AUTO FILL */
+    /* 🔥 PRODUCT AUTO FILL (FINAL FIX) */
     /* ============================= */
     else if (mode === "product_autofill") {
 
@@ -121,11 +121,21 @@ Existing: ${JSON.stringify(existingAttributes)}
             .filter(Boolean)
             .join(", ")
 
+          // 🔥 CRITICAL FIX → skip empty attributes
+          if (!options) return null
+
           return `Attribute: ${attr.name}\nOptions: ${options}`
         })
+        .filter(Boolean)
         .join("\n\n")
 
       console.log("🧠 SIMPLIFIED ATTRIBUTES:\n", simplifiedAttributes)
+
+      // 🔥 If no valid attributes → stop early
+      if (!simplifiedAttributes) {
+        console.log("❌ NO VALID ATTRIBUTES SENT TO AI")
+        return NextResponse.json({ matched_attributes: [] })
+      }
 
       prompt = `
 You are an AI product attribute matcher.
@@ -165,8 +175,6 @@ Description: ${description || ""}
     /* ============================= */
     else if (mode === "search_parse") {
       prompt = `
-You are a marketplace search parser.
-
 Return ONLY JSON:
 
 {
@@ -245,20 +253,13 @@ ${description}
 
     if (mode === "keyword_generate") {
       return NextResponse.json(
-        parsed || {
-          tags: [],
-          tags_text: "",
-        }
+        parsed || { tags: [], tags_text: "" }
       )
     }
 
     if (mode === "search_parse") {
       return NextResponse.json(
-        parsed || {
-          search: query,
-          tags: [],
-          city: null,
-        }
+        parsed || { search: query, tags: [], city: null }
       )
     }
 
@@ -267,9 +268,7 @@ ${description}
     }
 
     return NextResponse.json(
-      parsed || {
-        matched_attributes: [],
-      }
+      parsed || { matched_attributes: [] }
     )
 
   } catch (err: any) {
