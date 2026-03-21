@@ -68,6 +68,8 @@ export async function POST(req: Request) {
 
     const body = await req.json()
 
+    console.log("📥 REQUEST BODY:", JSON.stringify(body, null, 2))
+
     const {
       mode,
       category,
@@ -106,27 +108,27 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* 🔥 PRODUCT AUTO FILL (FIXED) */
+    /* 🔥 PRODUCT AUTO FILL */
     /* ============================= */
     else if (mode === "product_autofill") {
-      const simplifiedAttributes = existingAttributes
-        ?.map((attr: any) => {
-          const options = attr.options?.map((o: any) => o.value).join(", ")
+
+      const simplifiedAttributes = (existingAttributes || [])
+        .map((attr: any) => {
+          const optionsArray = attr.options || []
+
+          const options = optionsArray
+            .map((o: any) => o.value)
+            .filter(Boolean)
+            .join(", ")
+
           return `Attribute: ${attr.name}\nOptions: ${options}`
         })
         .join("\n\n")
 
+      console.log("🧠 SIMPLIFIED ATTRIBUTES:\n", simplifiedAttributes)
+
       prompt = `
 You are an AI product attribute matcher.
-
-You will receive:
-- Product image (if available)
-- Product name
-- Description
-- Attributes with options
-
-Your job:
-Select the BEST matching option for each attribute.
 
 Return ONLY JSON:
 
@@ -141,17 +143,10 @@ Return ONLY JSON:
 
 RULES:
 
-- ONLY choose from given options
+- ONLY choose from given options EXACTLY
 - DO NOT create new values
-- Use closest match (not exact required)
-
-Examples:
-- "blue" → "Blue"
-- "light blue" → "Blue"
-- "denim" → "Denim Fabric"
-
-- Prefer image first, then text
-- Skip only if completely unrelated
+- DO NOT modify option text
+- Return exact option string from list
 
 INPUT:
 Category: ${category}
@@ -161,10 +156,12 @@ ${simplifiedAttributes}
 Name: ${productName || ""}
 Description: ${description || ""}
 `
+
+      console.log("🧾 FINAL PROMPT:\n", prompt)
     }
 
     /* ============================= */
-    /* 🔍 SEARCH PARSER */
+    /* SEARCH PARSER */
     /* ============================= */
     else if (mode === "search_parse") {
       prompt = `
@@ -178,35 +175,21 @@ Return ONLY JSON:
   "city": null
 }
 
-Rules:
-- Fix spelling (denm → denim)
-- Extract intent
-- Keep tags generic (multi-industry)
-
 Query: ${query}
 `
     }
 
     /* ============================= */
-    /* 🔥 KEYWORD GENERATOR */
+    /* KEYWORD GENERATOR */
     /* ============================= */
     else if (mode === "keyword_generate") {
       prompt = `
-You are helping a B2B manufacturer improve discoverability.
-
-Based on the business description, generate search keywords.
-
 Return ONLY JSON:
 
 {
   "tags": [],
   "tags_text": ""
 }
-
-Rules:
-- Tags should be short (1-2 words)
-- Include product types, categories, materials, audience
-- Minimum 5, maximum 15 tags
 
 Business Description:
 ${description}
@@ -220,6 +203,8 @@ ${description}
     let parts: any[] = [{ text: prompt }]
 
     if (mode === "product_autofill" && imageUrl) {
+      console.log("🖼 IMAGE URL:", imageUrl)
+
       const base64Image = await imageToBase64(imageUrl)
 
       parts.push({
@@ -243,10 +228,16 @@ ${description}
 
     const result = await response.json()
 
+    console.log("🤖 GEMINI RAW RESPONSE:", JSON.stringify(result, null, 2))
+
     const text =
       result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
+    console.log("📝 AI TEXT OUTPUT:", text)
+
     const parsed = extractJSON(text)
+
+    console.log("✅ PARSED JSON:", JSON.stringify(parsed, null, 2))
 
     /* ============================= */
     /* RESPONSES */
@@ -282,6 +273,7 @@ ${description}
     )
 
   } catch (err: any) {
+    console.error("❌ ERROR:", err)
     return NextResponse.json(
       { error: "AI failed", message: err?.message },
       { status: 500 }
