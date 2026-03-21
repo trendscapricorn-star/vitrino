@@ -128,7 +128,6 @@ Return ONLY JSON:
 }
 
 RULES:
-
 - Choose ONLY from given options
 - Return EXACT option text
 - ALWAYS return one option per attribute
@@ -180,6 +179,36 @@ ${description}
     }
 
     /* ============================= */
+    /* BUILD MESSAGES (WITH IMAGE) */
+    /* ============================= */
+
+    let messages: any = [
+      {
+        role: "user",
+        content: prompt
+      }
+    ]
+
+    if (mode === "product_autofill" && imageUrl) {
+      const base64Image = await imageToBase64(imageUrl)
+
+      messages = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/png;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    /* ============================= */
     /* OPENROUTER REQUEST */
     /* ============================= */
 
@@ -192,13 +221,8 @@ ${description}
         "X-Title": "Vitrino AI"
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-7b-instruct",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
+        model: "openai/gpt-4o-mini", // ✅ supports image
+        messages
       })
     })
 
