@@ -177,28 +177,32 @@ console.log("pendingImages:", pendingImages)
 
       setAiStep("Preparing attributes...")
 
-categoryAttributes.map(async (attr) => {
+const structuredAttributes = await Promise.all(
+  categoryAttributes.map(async (attr) => {
 
-  console.log("FETCHING OPTIONS FOR:", attr.name)
+    console.log("FETCHING OPTIONS FOR:", attr.name)
 
-  const { data: options, error } = await supabase
-    .from("attribute_options")
-    .select("id, value")
-    .eq("attribute_id", attr.id)
+    const { data: options, error } = await supabase
+      .from("attribute_options")
+      .select("id, value")
+      .eq("attribute_id", attr.id)
 
-  if (error) {
-    console.error("OPTIONS ERROR:", error)
-  }
+    if (error) {
+      console.error("OPTIONS ERROR:", error)
+    }
 
-  console.log("OPTIONS:", options)
+    console.log("OPTIONS:", options)
 
-  return {
-    id: attr.id,
-    name: attr.name,
-    options: options || [],
-  }
+    return {
+      id: attr.id,
+      name: attr.name,
+      options: options || [],
+    }
 
-})
+  })
+)
+
+console.log("STRUCTURED ATTRIBUTES:", structuredAttributes)
 
       setAiStep("Matching attributes with AI...")
 
