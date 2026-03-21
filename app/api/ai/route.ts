@@ -137,7 +137,7 @@ Category: ${category}
 Attributes: ${JSON.stringify(existingAttributes)}
 Name: ${productName || ""}
 Description: ${description || ""}
-`
+}`
 
     /* ============================= */
     /* 🔥 SEARCH PARSER */
