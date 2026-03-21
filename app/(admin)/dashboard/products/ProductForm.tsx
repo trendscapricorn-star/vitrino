@@ -231,7 +231,11 @@ const option = attr.options.find((o: any) => {
   const dbValue = o.value.toLowerCase().trim()
   const aiValue = (match.matched_option_value || "").toLowerCase().trim()
 
-  return dbValue === aiValue
+  if (dbValue === aiValue) return true
+  if (dbValue.includes(aiValue)) return true
+  if (aiValue.includes(dbValue)) return true
+
+  return false
 })
 
 if (option) {
