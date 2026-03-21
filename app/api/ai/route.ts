@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { Buffer } from "buffer"
 import { createClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
 
 /* ---------------- JSON EXTRACT ---------------- */
 
@@ -44,12 +43,10 @@ async function imageToBase64(url: string) {
 
 export async function POST(req: Request) {
   try {
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-    
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     const body = await req.json()
 
@@ -63,9 +60,9 @@ const supabase = createClient(
       query,
     } = body
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.OPENROUTER_API_KEY) {
       return NextResponse.json(
-        { error: "Missing GEMINI_API_KEY" },
+        { error: "Missing OPENROUTER_API_KEY" },
         { status: 500 }
       )
     }
@@ -91,7 +88,7 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* ✅ PRODUCT AUTO FILL (STRICT FIX) */
+    /* PRODUCT AUTO FILL */
     /* ============================= */
     else if (mode === "product_autofill") {
 
@@ -102,14 +99,12 @@ Existing: ${JSON.stringify(existingAttributes)}
           if (!optionsArray.length) return null
 
           const options = optionsArray
-            .map((o: any, i: number) => `${i + 1}. ${o.value}`)
-            .join("\n")
+            .map((o: any) => o.value)
+            .join(", ")
 
           return `ATTRIBUTE ID: ${attr.id}
 ATTRIBUTE NAME: ${attr.name}
-
-OPTIONS (choose EXACTLY one):
-${options}`
+OPTIONS: ${options}`
         })
         .filter(Boolean)
         .join("\n\n")
@@ -118,25 +113,27 @@ ${options}`
         return NextResponse.json({ matched_attributes: [] })
       }
 
-     prompt = `
+      prompt = `
+You are a product attribute selector.
+
 Return ONLY JSON:
 
 {
-  "test": "working"
+  "matched_attributes": [
+    {
+      "attribute_id": "",
+      "selected_option": ""
+    }
+  ]
 }
 
 RULES:
 
-1. You MUST choose ONLY from the given options
-2. You MUST return EXACT option text
-3. DO NOT create new values
-4. DO NOT modify options
-5. ALWAYS return one option per attribute
-6. If unsure, choose the closest available option
-7. NEVER return empty matched_attributes
-
-IMPORTANT:
-Use IMAGE as primary source.
+- Choose ONLY from given options
+- Return EXACT option text
+- ALWAYS return one option per attribute
+- NEVER skip any attribute
+- If unsure, choose closest option
 
 INPUT:
 Category: ${category}
@@ -183,43 +180,40 @@ ${description}
     }
 
     /* ============================= */
-    /* GEMINI REQUEST */
+    /* OPENROUTER REQUEST */
     /* ============================= */
 
-    let parts: any[] = [{ text: prompt }]
-
-    if (mode === "product_autofill" && imageUrl) {
-      const base64Image = await imageToBase64(imageUrl)
-
-      parts.push({
-        inlineData: {
-          mimeType: "image/*",
-          data: base64Image,
-        },
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://www.vitrino.in",
+        "X-Title": "Vitrino AI"
+      },
+      body: JSON.stringify({
+        model: "mistralai/mistral-7b-instruct",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
       })
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts }],
-        }),
-      }
-    )
+    })
 
     const result = await response.json()
-console.log("FULL GEMINI RESPONSE:", result)
+
+    console.log("FULL OPENROUTER RESPONSE:", result)
+
     const text =
-  result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+      result?.choices?.[0]?.message?.content || ""
 
-console.log("RAW AI TEXT:", text)
+    console.log("AI TEXT:", text)
 
-const parsed = extractJSON(text)
+    const parsed = extractJSON(text)
 
-console.log("PARSED JSON:", parsed)
+    console.log("PARSED JSON:", parsed)
 
     if (mode === "keyword_generate") {
       return NextResponse.json(
