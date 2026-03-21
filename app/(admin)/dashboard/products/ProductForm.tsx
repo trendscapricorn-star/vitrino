@@ -149,6 +149,8 @@ export default function ProductForm({
 
   async function handleAutoFill() {
 console.log("AUTO FILL CLICKED")
+console.log("images:", images)
+console.log("pendingImages:", pendingImages)
     if (loading) return
 
     if (!images.length && !pendingImages.length) {
