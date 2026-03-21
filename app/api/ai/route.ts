@@ -118,19 +118,13 @@ ${options}`
         return NextResponse.json({ matched_attributes: [] })
       }
 
-      prompt = `
-You are a STRICT product attribute selector.
-
+     prompt = `
 Return ONLY JSON:
 
 {
-  "matched_attributes": [
-    {
-      "attribute_id": "",
-      "selected_option": ""
-    }
-  ]
+  "test": "working"
 }
+`
 
 RULES:
 
