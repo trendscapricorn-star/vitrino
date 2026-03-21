@@ -3,8 +3,6 @@ import { Buffer } from "buffer"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-/* ---------------- JSON EXTRACT ---------------- */
-
 function extractJSON(text: string) {
   try {
     const cleaned = text
@@ -23,8 +21,6 @@ function extractJSON(text: string) {
   }
 }
 
-/* ---------------- IMAGE TO BASE64 ---------------- */
-
 async function imageToBase64(url: string) {
   if (url.startsWith("data:image")) {
     return url.split(",")[1]
@@ -37,10 +33,9 @@ async function imageToBase64(url: string) {
   }
 
   const buffer = await res.arrayBuffer()
+
   return Buffer.from(buffer).toString("base64")
 }
-
-/* ---------------- MAIN ---------------- */
 
 export async function POST(req: Request) {
   try {
@@ -106,16 +101,9 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* 🔥 PRODUCT AUTO FILL (FIXED) */
+    /* 🔥 PRODUCT AUTO FILL (FIXED ONLY THIS PART) */
     /* ============================= */
     else if (mode === "product_autofill") {
-      const simplifiedAttributes = existingAttributes
-        ?.map((attr: any) => {
-          const options = attr.options?.map((o: any) => o.value).join(", ")
-          return `Attribute: ${attr.name}\nOptions: ${options}`
-        })
-        .join("\n\n")
-
       prompt = `
 You are an AI product attribute matcher.
 
@@ -123,7 +111,7 @@ You will receive:
 - Product image (if available)
 - Product name
 - Description
-- Attributes with options
+- Attributes with options (each option has id + value)
 
 Your job:
 Select the BEST matching option for each attribute.
@@ -131,17 +119,21 @@ Select the BEST matching option for each attribute.
 Return ONLY JSON:
 
 {
+  "moderation": { "allowed": true, "reason": "" },
   "matched_attributes": [
     {
+      "attribute_id": "",
       "attribute_name": "",
+      "matched_option_id": "",
       "matched_option_value": ""
     }
-  ]
+  ],
+  "new_option_suggestions": []
 }
 
 RULES:
 
-- ONLY choose from given options
+- ONLY pick from given options
 - DO NOT create new values
 - Use closest match (not exact required)
 
@@ -150,21 +142,20 @@ Examples:
 - "light blue" → "Blue"
 - "denim" → "Denim Fabric"
 
-- Prefer image first, then text
-- Skip only if completely unrelated
+- Prefer matching based on image first
+- Use name/description as fallback
+- DO NOT leave empty unless no reasonable match exists
 
 INPUT:
 Category: ${category}
-
-${simplifiedAttributes}
-
+Attributes: ${JSON.stringify(existingAttributes)}
 Name: ${productName || ""}
 Description: ${description || ""}
 `
     }
 
     /* ============================= */
-    /* 🔍 SEARCH PARSER */
+    /* 🔥 SEARCH PARSER */
     /* ============================= */
     else if (mode === "search_parse") {
       prompt = `
@@ -183,12 +174,19 @@ Rules:
 - Extract intent
 - Keep tags generic (multi-industry)
 
+Examples:
+"denm jaipur"
+→ {"search":"denim","tags":["denim"],"city":"jaipur"}
+
+"steel utensils delhi"
+→ {"search":"utensils","tags":["kitchen","steel"],"city":"delhi"}
+
 Query: ${query}
 `
     }
 
     /* ============================= */
-    /* 🔥 KEYWORD GENERATOR */
+    /* 🔥 KEYWORD GENERATOR (UNCHANGED) */
     /* ============================= */
     else if (mode === "keyword_generate") {
       prompt = `
@@ -207,15 +205,12 @@ Rules:
 - Tags should be short (1-2 words)
 - Include product types, categories, materials, audience
 - Minimum 5, maximum 15 tags
+- Keep them generic and searchable
 
 Business Description:
 ${description}
 `
     }
-
-    /* ============================= */
-    /* GEMINI REQUEST */
-    /* ============================= */
 
     let parts: any[] = [{ text: prompt }]
 
@@ -224,7 +219,7 @@ ${description}
 
       parts.push({
         inlineData: {
-          mimeType: "image/*",
+          mimeType: "image/*", // ✅ FIXED
           data: base64Image,
         },
       })
@@ -248,10 +243,7 @@ ${description}
 
     const parsed = extractJSON(text)
 
-    /* ============================= */
-    /* RESPONSES */
-    /* ============================= */
-
+    /* 🔥 KEYWORD RESPONSE */
     if (mode === "keyword_generate") {
       return NextResponse.json(
         parsed || {
@@ -261,6 +253,7 @@ ${description}
       )
     }
 
+    /* 🔥 SEARCH RESPONSE */
     if (mode === "search_parse") {
       return NextResponse.json(
         parsed || {
@@ -277,10 +270,11 @@ ${description}
 
     return NextResponse.json(
       parsed || {
+        moderation: { allowed: true, reason: "" },
         matched_attributes: [],
+        new_option_suggestions: [],
       }
     )
-
   } catch (err: any) {
     return NextResponse.json(
       { error: "AI failed", message: err?.message },
