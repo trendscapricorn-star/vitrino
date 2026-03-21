@@ -221,36 +221,26 @@ const matches = data.matched_attributes ?? []
 for (const match of matches) {
 
   // ✅ Prefer direct ID matching from AI (BEST METHOD)
-  if (match.attribute_id && match.matched_option_id) {
+  const attr = structuredAttributes.find(
+  a => a.name.toLowerCase() === match.attribute_name?.toLowerCase()
+)
 
-    updatedValues[match.attribute_id] = match.matched_option_id
-    updatedAiFilled[match.attribute_id] = true
-    continue
-  }
+if (!attr) continue
+
+const option = attr.options.find((o: any) => {
+  const dbValue = o.value.toLowerCase().trim()
+  const aiValue = (match.matched_option_value || "").toLowerCase().trim()
+
+  return dbValue === aiValue
+})
+
+if (option) {
+  updatedValues[attr.id] = option.id
+  updatedAiFilled[attr.id] = true
+}
 
   // 🔁 Fallback (if AI didn’t return IDs properly)
-  const attr = structuredAttributes.find(
-    a =>
-      a.id === match.attribute_id ||
-      a.name.toLowerCase() === match.attribute_name?.toLowerCase()
-  )
-
-  if (!attr) continue
-
-  const option = attr.options.find((o: any) => {
-    const dbValue = o.value.toLowerCase()
-    const aiValue =
-      match.matched_option_value?.toLowerCase() ||
-      match.matched_option?.toLowerCase() ||
-      ""
-
-    return dbValue === aiValue
-  })
-
-  if (option) {
-    updatedValues[attr.id] = option.id
-    updatedAiFilled[attr.id] = true
-  }
+  
 
 }
 
