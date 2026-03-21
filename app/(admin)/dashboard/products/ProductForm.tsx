@@ -347,10 +347,10 @@ export default function ProductForm({
       imageIndex++
     }
 
-    setPendingImages([])
-    setLoading(false)
+setPendingImages([])
+setLoading(false)
 
-    window.location.reload()
+onClose()
   }
 
   return (
