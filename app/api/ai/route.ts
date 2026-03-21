@@ -68,8 +68,6 @@ export async function POST(req: Request) {
 
     const body = await req.json()
 
-    console.log("📥 REQUEST BODY:", JSON.stringify(body, null, 2))
-
     const {
       mode,
       category,
@@ -108,7 +106,7 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* 🔥 PRODUCT AUTO FILL (FINAL FIX) */
+    /* ✅ PRODUCT AUTO FILL (STRICT FIX) */
     /* ============================= */
     else if (mode === "product_autofill") {
 
@@ -116,47 +114,50 @@ Existing: ${JSON.stringify(existingAttributes)}
         .map((attr: any) => {
           const optionsArray = attr.options || []
 
+          if (!optionsArray.length) return null
+
           const options = optionsArray
-            .map((o: any) => o.value)
-            .filter(Boolean)
-            .join(", ")
+            .map((o: any, i: number) => `${i + 1}. ${o.value}`)
+            .join("\n")
 
-          // 🔥 CRITICAL FIX → skip empty attributes
-          if (!options) return null
+          return `ATTRIBUTE ID: ${attr.id}
+ATTRIBUTE NAME: ${attr.name}
 
-          return `Attribute: ${attr.name}\nOptions: ${options}`
+OPTIONS (choose EXACTLY one):
+${options}`
         })
         .filter(Boolean)
         .join("\n\n")
 
-      console.log("🧠 SIMPLIFIED ATTRIBUTES:\n", simplifiedAttributes)
-
-      // 🔥 If no valid attributes → stop early
       if (!simplifiedAttributes) {
-        console.log("❌ NO VALID ATTRIBUTES SENT TO AI")
         return NextResponse.json({ matched_attributes: [] })
       }
 
       prompt = `
-You are an AI product attribute matcher.
+You are a STRICT product attribute selector.
 
 Return ONLY JSON:
 
 {
   "matched_attributes": [
     {
-      "attribute_name": "",
-      "matched_option_value": ""
+      "attribute_id": "",
+      "selected_option": ""
     }
   ]
 }
 
 RULES:
 
-- ONLY choose from given options EXACTLY
-- DO NOT create new values
-- DO NOT modify option text
-- Return exact option string from list
+1. You MUST choose ONLY from the given options
+2. You MUST return EXACT option text (no spelling change)
+3. DO NOT create new values
+4. DO NOT modify options
+5. ALWAYS return one option per attribute
+6. If unsure, choose the closest available option
+
+IMPORTANT:
+Use IMAGE as primary source.
 
 INPUT:
 Category: ${category}
@@ -166,8 +167,6 @@ ${simplifiedAttributes}
 Name: ${productName || ""}
 Description: ${description || ""}
 `
-
-      console.log("🧾 FINAL PROMPT:\n", prompt)
     }
 
     /* ============================= */
@@ -211,8 +210,6 @@ ${description}
     let parts: any[] = [{ text: prompt }]
 
     if (mode === "product_autofill" && imageUrl) {
-      console.log("🖼 IMAGE URL:", imageUrl)
-
       const base64Image = await imageToBase64(imageUrl)
 
       parts.push({
@@ -236,20 +233,10 @@ ${description}
 
     const result = await response.json()
 
-    console.log("🤖 GEMINI RAW RESPONSE:", JSON.stringify(result, null, 2))
-
     const text =
       result?.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
-    console.log("📝 AI TEXT OUTPUT:", text)
-
     const parsed = extractJSON(text)
-
-    console.log("✅ PARSED JSON:", JSON.stringify(parsed, null, 2))
-
-    /* ============================= */
-    /* RESPONSES */
-    /* ============================= */
 
     if (mode === "keyword_generate") {
       return NextResponse.json(

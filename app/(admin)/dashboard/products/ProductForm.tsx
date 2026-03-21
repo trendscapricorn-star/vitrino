@@ -220,23 +220,21 @@ const matches = data.matched_attributes ?? []
 
 for (const match of matches) {
 
-  // ✅ Prefer direct ID matching from AI (BEST METHOD)
   const attr = structuredAttributes.find(
-  a => a.name.toLowerCase() === match.attribute_name?.toLowerCase()
-)
+    (a) => a.id === match.attribute_id
+  )
 
-if (!attr) continue
+  if (!attr) continue
 
-const option = attr.options.find((o: any) => {
-  const dbValue = o.value.toLowerCase().trim()
-  const aiValue = (match.matched_option_value || "").toLowerCase().trim()
+  const option = attr.options.find(
+    (o: any) => o.value === match.selected_option
+  )
 
-  if (dbValue === aiValue) return true
-  if (dbValue.includes(aiValue)) return true
-  if (aiValue.includes(dbValue)) return true
-
-  return false
-})
+  if (option) {
+    updatedValues[attr.id] = option.id
+    updatedAiFilled[attr.id] = true
+  }
+}
 
 if (option) {
   updatedValues[attr.id] = option.id
