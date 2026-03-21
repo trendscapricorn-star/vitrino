@@ -104,78 +104,40 @@ Existing: ${JSON.stringify(existingAttributes)}
     /* PRODUCT AUTO FILL */
     /* ============================= */
 if (mode === "product_autofill") {
-  prompt = `
-You are an AI product intelligence engine for a multi-category marketplace.
+prompt = `
+You are an AI product intelligence engine.
 
-You may receive:
-- Product image (important)
-- Product name (optional)
-- Description (optional)
-- Existing attributes
-
-Your goal is to identify and structure product data for ANY industry.
+You MUST match attributes strictly using provided options.
 
 Return ONLY JSON:
 
 {
-  "moderation": {
-    "allowed": true,
-    "reason": ""
-  },
-  "product_type": "",
-  "category_guess": "",
-  "brand": "",
-  "color": "",
-  "material": "",
-  "usage": "",
-  "target_audience": "",
-  "key_features": [],
-  "suggested_title": "",
-  "suggested_description": "",
-  "matched_attributes": [],
-  "new_option_suggestions": []
+  "matched_attributes": [
+    {
+      "attribute_id": "",
+      "attribute_name": "",
+      "matched_option_id": "",
+      "matched_option_value": ""
+    }
+  ]
 }
 
-INSTRUCTIONS:
+RULES:
 
-1. Use IMAGE as primary source if available
-2. If no image → use text
-3. Be INDUSTRY AGNOSTIC (no garment bias)
+- You are given attributes with options (each option has id + value)
+- You MUST select ONLY from those options
+- DO NOT create new values
+- DO NOT guess outside options
+- If no suitable option exists → skip attribute
 
-4. Detect:
-- product_type → specific (e.g., laptop, kurti, toy car, drill machine)
-- category_guess → broad (electronics, clothing, hardware, toys, furniture, etc.)
-- brand → if visible or inferable
-- color → simple (black, blue, red)
-- material → if visible (plastic, wood, metal, cotton, etc.)
-- usage → what it is used for
-- target_audience → men, women, kids, universal, professionals, etc.
-
-5. key_features:
-- 3–6 short bullet features
-- Based on visual + text
-
-6. suggested_title:
-- Clean, marketplace-ready
-- Not too long
-
-7. suggested_description:
-- 1–2 lines
-- Generic, not marketing fluff
-
-8. matched_attributes:
-- Match with given attributes if possible
-
-9. new_option_suggestions:
-- Suggest missing useful attributes
+- Always return matched_option_id EXACTLY from input
 
 INPUT:
 Category: ${category}
-Existing Attributes: ${JSON.stringify(existingAttributes)}
+Attributes: ${JSON.stringify(existingAttributes)}
 Name: ${productName || ""}
 Description: ${description || ""}
 `
-}
 
     /* ============================= */
     /* 🔥 SEARCH PARSER */

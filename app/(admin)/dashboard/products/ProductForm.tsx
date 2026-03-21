@@ -216,24 +216,41 @@ export default function ProductForm({
       const updatedValues: AttributeValueMap = { ...attributeValues }
       const updatedAiFilled = { ...aiFilled }
 
-      for (const match of data.matched_attributes || []) {
+for (const match of data.matched_attributes || []) {
 
-        const attr = structuredAttributes.find(
-          a => a.name === match.attribute_name
-        )
+  // ✅ Prefer direct ID matching from AI (BEST METHOD)
+  if (match.attribute_id && match.matched_option_id) {
 
-        if (!attr) continue
+    updatedValues[match.attribute_id] = match.matched_option_id
+    updatedAiFilled[match.attribute_id] = true
+    continue
+  }
 
-        const option = attr.options.find(
-          (o: any) => o.value === match.matched_option
-        )
+  // 🔁 Fallback (if AI didn’t return IDs properly)
+  const attr = structuredAttributes.find(
+    a =>
+      a.id === match.attribute_id ||
+      a.name.toLowerCase() === match.attribute_name?.toLowerCase()
+  )
 
-        if (option) {
-          updatedValues[attr.id] = option.id
-          updatedAiFilled[attr.id] = true
-        }
+  if (!attr) continue
 
-      }
+  const option = attr.options.find((o: any) => {
+    const dbValue = o.value.toLowerCase()
+    const aiValue =
+      match.matched_option_value?.toLowerCase() ||
+      match.matched_option?.toLowerCase() ||
+      ""
+
+    return dbValue === aiValue
+  })
+
+  if (option) {
+    updatedValues[attr.id] = option.id
+    updatedAiFilled[attr.id] = true
+  }
+
+}
 
       setAttributeValues(updatedValues)
       setAiFilled(updatedAiFilled)
