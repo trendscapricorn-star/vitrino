@@ -156,10 +156,6 @@ console.log("pendingImages:", pendingImages)
 
     if (loading) return
 
-    if (!images.length && !pendingImages.length) {
-      alert("Upload at least one image first")
-      return
-    }
 
     if (!categoryId) {
       alert("Select category first")
@@ -167,7 +163,7 @@ console.log("pendingImages:", pendingImages)
     }
 
     setLoading(true)
-    setAiStep("Analyzing product image...")
+    setAiStep("Analyzing product description...")
 
     try {
 
@@ -424,9 +420,13 @@ className="border px-3 py-2 w-full"
 <textarea
 value={description}
 onChange={(e) => setDescription(e.target.value)}
-placeholder="Short description"
+placeholder="e.g. Red floral cotton kurti with 3/4 sleeve and round neck"
 className="border px-3 py-2 w-full"
 />
+
+<div className="text-xs text-gray-500 mt-1">
+🤖 AI Tip: Describe color, fabric, pattern, sleeve, etc. for best results
+</div>
 
 </div>
 
@@ -516,14 +516,13 @@ onChange={handleImageUpload}
 
 {/* AI BUTTON */}
 
-{(images.length > 0 || pendingImages.length > 0) && (
-
+{categoryId && (
 <button
 type="button"
 onClick={handleAutoFill}
 className="bg-blue-600 text-white px-4 py-2 rounded"
 >
-Generate Attributes
+Auto Fill Attributes (AI)
 </button>
 
 )}

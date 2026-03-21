@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { Buffer } from "buffer"
 import { createClient } from "@supabase/supabase-js"
 
 /* ---------------- JSON EXTRACT ---------------- */
@@ -22,23 +21,6 @@ function extractJSON(text: string) {
   }
 }
 
-/* ---------------- IMAGE TO BASE64 ---------------- */
-
-async function imageToBase64(url: string) {
-  if (url.startsWith("data:image")) {
-    return url.split(",")[1]
-  }
-
-  const res = await fetch(url)
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch image")
-  }
-
-  const buffer = await res.arrayBuffer()
-  return Buffer.from(buffer).toString("base64")
-}
-
 /* ---------------- MAIN ---------------- */
 
 export async function POST(req: Request) {
@@ -54,15 +36,14 @@ export async function POST(req: Request) {
       mode,
       category,
       existingAttributes,
-      imageUrl,
       productName,
       description,
       query,
     } = body
 
-    if (!process.env.OPENROUTER_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: "Missing OPENROUTER_API_KEY" },
+        { error: "Missing GROQ_API_KEY" },
         { status: 500 }
       )
     }
@@ -88,7 +69,7 @@ Existing: ${JSON.stringify(existingAttributes)}
     }
 
     /* ============================= */
-    /* PRODUCT AUTO FILL */
+    /* PRODUCT AUTO FILL (DESCRIPTION BASED) */
     /* ============================= */
     else if (mode === "product_autofill") {
 
@@ -127,20 +108,19 @@ Return ONLY JSON:
   ]
 }
 
-RULES:
+STRICT RULES:
 - Choose ONLY from given options
-- Return EXACT option text
+- Return EXACT option text (case-sensitive)
+- DO NOT create new values
 - ALWAYS return one option per attribute
 - NEVER skip any attribute
-- If unsure, choose closest option
+- If unsure, choose closest match
 
-INPUT:
-Category: ${category}
+PRODUCT DESCRIPTION:
+${description || productName || ""}
 
+AVAILABLE ATTRIBUTES:
 ${simplifiedAttributes}
-
-Name: ${productName || ""}
-Description: ${description || ""}
 `
     }
 
@@ -179,56 +159,33 @@ ${description}
     }
 
     /* ============================= */
-    /* BUILD MESSAGES (WITH IMAGE) */
+    /* GROQ REQUEST */
     /* ============================= */
 
-    let messages: any = [
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
       {
-        role: "user",
-        content: prompt
-      }
-    ]
-
-    if (mode === "product_autofill" && imageUrl) {
-      const base64Image = await imageToBase64(imageUrl)
-
-      messages = [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192", // ✅ best free model
+          messages: [
             {
-              type: "image_url",
-              image_url: {
-                url: `data:image/png;base64,${base64Image}`
-              }
+              role: "user",
+              content: prompt
             }
-          ]
-        }
-      ]
-    }
-
-    /* ============================= */
-    /* OPENROUTER REQUEST */
-    /* ============================= */
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://www.vitrino.in",
-        "X-Title": "Vitrino AI"
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-4o-mini", // ✅ supports image
-        messages
-      })
-    })
+          ],
+          temperature: 0.2
+        })
+      }
+    )
 
     const result = await response.json()
 
-    console.log("FULL OPENROUTER RESPONSE:", result)
+    console.log("FULL GROQ RESPONSE:", result)
 
     const text =
       result?.choices?.[0]?.message?.content || ""
