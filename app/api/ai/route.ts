@@ -103,22 +103,79 @@ Existing: ${JSON.stringify(existingAttributes)}
     /* ============================= */
     /* PRODUCT AUTO FILL */
     /* ============================= */
-    if (mode === "product_autofill") {
-      prompt = `
+if (mode === "product_autofill") {
+  prompt = `
+You are an AI product intelligence engine for a multi-category marketplace.
+
+You may receive:
+- Product image (important)
+- Product name (optional)
+- Description (optional)
+- Existing attributes
+
+Your goal is to identify and structure product data for ANY industry.
+
 Return ONLY JSON:
 
 {
-  "moderation": { "allowed": true, "reason": "" },
+  "moderation": {
+    "allowed": true,
+    "reason": ""
+  },
+  "product_type": "",
+  "category_guess": "",
+  "brand": "",
+  "color": "",
+  "material": "",
+  "usage": "",
+  "target_audience": "",
+  "key_features": [],
+  "suggested_title": "",
+  "suggested_description": "",
   "matched_attributes": [],
   "new_option_suggestions": []
 }
 
+INSTRUCTIONS:
+
+1. Use IMAGE as primary source if available
+2. If no image → use text
+3. Be INDUSTRY AGNOSTIC (no garment bias)
+
+4. Detect:
+- product_type → specific (e.g., laptop, kurti, toy car, drill machine)
+- category_guess → broad (electronics, clothing, hardware, toys, furniture, etc.)
+- brand → if visible or inferable
+- color → simple (black, blue, red)
+- material → if visible (plastic, wood, metal, cotton, etc.)
+- usage → what it is used for
+- target_audience → men, women, kids, universal, professionals, etc.
+
+5. key_features:
+- 3–6 short bullet features
+- Based on visual + text
+
+6. suggested_title:
+- Clean, marketplace-ready
+- Not too long
+
+7. suggested_description:
+- 1–2 lines
+- Generic, not marketing fluff
+
+8. matched_attributes:
+- Match with given attributes if possible
+
+9. new_option_suggestions:
+- Suggest missing useful attributes
+
+INPUT:
 Category: ${category}
-Attributes: ${JSON.stringify(existingAttributes)}
+Existing Attributes: ${JSON.stringify(existingAttributes)}
 Name: ${productName || ""}
 Description: ${description || ""}
 `
-    }
+}
 
     /* ============================= */
     /* 🔥 SEARCH PARSER */
@@ -185,7 +242,7 @@ ${description}
 
       parts.push({
         inlineData: {
-          mimeType: "image/jpeg",
+          mimeType: "image/*",
           data: base64Image,
         },
       })
