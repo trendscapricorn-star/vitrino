@@ -172,7 +172,7 @@ ${description}
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "model: "llama-3.3-70b-versatile",", // ✅ best free model
+          model: "llama-3.3-70b-versatile",
           messages: [
             {
               role: "user",
