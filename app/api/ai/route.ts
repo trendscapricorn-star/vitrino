@@ -110,11 +110,12 @@ Return ONLY JSON:
 
 STRICT RULES:
 - Choose ONLY from given options
-- Return EXACT option text (case-sensitive)
+- Match even if spelling is incorrect or approximate
+- Understand abbreviations (e.g. "st." = straight, "3 quater" = 3/4)
+- Return the closest matching option from the list
 - DO NOT create new values
 - ALWAYS return one option per attribute
 - NEVER skip any attribute
-- If unsure, choose closest match
 
 PRODUCT DESCRIPTION:
 ${description || productName || ""}
