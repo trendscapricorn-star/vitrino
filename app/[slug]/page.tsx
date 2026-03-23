@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
-import FilterSidebar from "./components/FilterSidebar"
 import InstallButton from "./components/InstallButton"
 import VisitorGate from "./components/VisitorGate"
 import PushRegister from "./components/PushRegister"
@@ -25,9 +24,6 @@ export default async function PublicCatalog(props: any) {
   const supabase = await createSupabaseServerClient()
 
   const slug = params.slug
-
-  console.log("CATALOG DEBUG: slug =", slug)
-
   if (!slug) notFound()
 
   /* ---------------- COMPANY ---------------- */
@@ -37,9 +33,6 @@ export default async function PublicCatalog(props: any) {
     .single()
 
   const company = companyData as Company | null
-
-  console.log("CATALOG DEBUG: company =", company)
-
   if (!company) notFound()
 
   /* ---------------- SUBSCRIPTION ---------------- */
@@ -63,52 +56,12 @@ export default async function PublicCatalog(props: any) {
     new Date(subscription.current_period_end) > now
 
   if (!isTrialValid && !isActiveValid) {
-
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
         <div className="bg-white p-10 rounded-xl shadow text-left max-w-xl">
-
           <div className="text-xl font-semibold mb-4 text-red-600">
-            Account Suspended (DEBUG MODE)
+            Account Suspended
           </div>
-
-          <div className="text-sm text-gray-700 space-y-2">
-
-            <div>
-              <strong>Company ID:</strong> {company.id}
-            </div>
-
-            <div>
-              <strong>Status:</strong> {subscription?.status ?? "NULL"}
-            </div>
-
-            <div>
-              <strong>Trial Ends:</strong>{" "}
-              {subscription?.trial_ends_at ?? "NULL"}
-            </div>
-
-            <div>
-              <strong>Current Period End:</strong>{" "}
-              {subscription?.current_period_end ?? "NULL"}
-            </div>
-
-            <div>
-              <strong>Server Time:</strong>{" "}
-              {now.toISOString()}
-            </div>
-
-            <div>
-              <strong>Trial Valid:</strong>{" "}
-              {String(isTrialValid)}
-            </div>
-
-            <div>
-              <strong>Active Valid:</strong>{" "}
-              {String(isActiveValid)}
-            </div>
-
-          </div>
-
         </div>
       </div>
     )
@@ -175,13 +128,12 @@ export default async function PublicCatalog(props: any) {
         image_url,
         sort_order
       )
-    `,{ count:"exact" })
+    `, { count: "exact" })
     .eq("company_id", company.id)
     .eq("category_id", selectedCategory)
     .eq("is_active", true)
 
   if (selectedOptions.length > 0) {
-
     const { data: productIds } = await supabase
       .from("product_attribute_values")
       .select("product_id")
@@ -197,16 +149,12 @@ export default async function PublicCatalog(props: any) {
 
   if (sort === "price_asc")
     query = query.order("base_price", { ascending: true })
-
   else if (sort === "price_desc")
     query = query.order("base_price", { ascending: false })
-
   else if (sort === "name_asc")
     query = query.order("name", { ascending: true })
-
   else if (sort === "name_desc")
     query = query.order("name", { ascending: false })
-
   else
     query = query.order("sort_order", { ascending: true })
 
@@ -219,12 +167,10 @@ export default async function PublicCatalog(props: any) {
     categories.find(c => c.id === selectedCategory)?.name || ""
 
   return (
-
     <VisitorGate companyId={company.id}>
       <PushRegister companyId={company.id} />
 
       <div className="bg-zinc-50">
-
         <div className="max-w-7xl mx-auto px-6 py-8">
 
           <div className="text-sm text-gray-500 mb-6">
@@ -234,63 +180,57 @@ export default async function PublicCatalog(props: any) {
           <div className="grid grid-cols-12 gap-8">
 
             <FilterWrapper
-  slug={slug}
-  categories={categories}
-  attributes={attributes}
-  selectedCategory={selectedCategory}
-  selectedOptions={selectedOptions}
-  sort={sort}
-  totalProducts={count || 0}
-/>
+              slug={slug}
+              categories={categories}
+              attributes={attributes}
+              selectedCategory={selectedCategory}
+              selectedOptions={selectedOptions}
+              sort={sort}
+              totalProducts={count || 0}
+            />
+
             <div className="col-span-9">
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-                {products?.map((p:any)=>{
+                {products?.map((p: any) => {
 
                   const primaryImage =
                     p.product_images?.find(
-                      (img:any)=>img.sort_order===0
+                      (img: any) => img.sort_order === 0
                     )?.image_url
 
-                  return(
+                  return (
+                    <a
+                      key={p.id}
+                      href={`/${slug}/${p.slug}`}
+                      className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                    >
 
-<a
-  key={p.id}
-  href={`/${slug}/${p.slug}`}
-  className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
->
+                      <div className="w-full h-64 flex items-center justify-center bg-gray-50">
+                        {primaryImage ? (
+                          <img
+                            src={primaryImage}
+                            alt={p.name}
+                            className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="text-gray-400 text-sm">
+                            No Image
+                          </div>
+                        )}
+                      </div>
 
-  {/* IMAGE */}
-  <div className="w-full h-64 flex items-center justify-center bg-gray-50">
-    {primaryImage ? (
-      <img
-        src={primaryImage}
-        alt={p.name}
-        className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-      />
-    ) : (
-      <div className="text-gray-400 text-sm">
-        No Image
-      </div>
-    )}
-  </div>
+                      <div className="p-4 space-y-1">
+                        <div className="text-sm font-medium text-gray-800 line-clamp-2 leading-tight">
+                          {p.name}
+                        </div>
+                        <div className="text-base font-semibold text-black">
+                          ₹ {p.base_price ?? "-"}
+                        </div>
+                      </div>
 
-  {/* CONTENT */}
-  <div className="p-4 space-y-1">
-
-    <div className="text-sm font-medium text-gray-800 line-clamp-2 leading-tight">
-      {p.name}
-    </div>
-
-    <div className="text-base font-semibold text-black">
-      ₹ {p.base_price ?? "-"}
-    </div>
-
-  </div>
-
-</a>
-
+                    </a>
                   )
                 })}
 
@@ -303,7 +243,6 @@ export default async function PublicCatalog(props: any) {
         </div>
 
         <InstallButton />
-
       </div>
 
     </VisitorGate>
