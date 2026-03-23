@@ -12,7 +12,9 @@ export default function PdfControls({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([])
   const [pdfSort, setPdfSort] = useState('default')
 
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+
   const [includeName, setIncludeName] = useState(true)
   const [includePrice, setIncludePrice] = useState(true)
   const [includeAttributes, setIncludeAttributes] = useState(false)
@@ -29,44 +31,70 @@ export default function PdfControls({
 
   async function handleGeneratePDF(config: any) {
 
-    let sorted = [...selectedProducts]
+    try {
+      setLoading(true)
 
-    if (pdfSort === 'price_asc') {
-      sorted.sort((a,b)=> (a.base_price||0)-(b.base_price||0))
-    } else if (pdfSort === 'price_desc') {
-      sorted.sort((a,b)=> (b.base_price||0)-(a.base_price||0))
-    } else if (pdfSort === 'name') {
-      sorted.sort((a,b)=> a.name.localeCompare(b.name))
-    }
+      let sorted = [...selectedProducts]
 
-    const res = await fetch('/api/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        products: sorted,
-        config
+      if (pdfSort === 'price_asc') {
+        sorted.sort((a,b)=> (a.base_price||0)-(b.base_price||0))
+      } else if (pdfSort === 'price_desc') {
+        sorted.sort((a,b)=> (b.base_price||0)-(a.base_price||0))
+      } else if (pdfSort === 'name') {
+        sorted.sort((a,b)=> a.name.localeCompare(b.name))
+      }
+
+      const res = await fetch('/api/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          products: sorted,
+          config
+        })
       })
-    })
 
-    const blob = await res.blob()
+      const blob = await res.blob()
 
-    if (blob.size === 0) {
-      alert('PDF generation failed')
-      return
+      if (blob.size === 0) {
+        alert('PDF generation failed')
+        return
+      }
+
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'catalog.pdf'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+
+    } catch (err) {
+      alert('Something went wrong')
+    } finally {
+      setLoading(false)
     }
-
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'catalog.pdf'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-  } // ✅ IMPORTANT: FUNCTION CLOSED HERE
+  }
 
   return (
     <div>
+
+      {/* 🔒 FULL SCREEN LOADER */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 text-white">
+
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent mb-4"></div>
+
+          <div className="text-lg font-medium">
+            Generating PDF...
+          </div>
+
+          <div className="text-sm opacity-80 mt-1">
+            Please wait, do not close
+          </div>
+
+        </div>
+      )}
 
       {/* TOP BAR */}
       <div className="mb-4 space-y-3">
@@ -110,7 +138,7 @@ export default function PdfControls({
 
           <button
             onClick={() => setShowModal(true)}
-            disabled={selectedProducts.length === 0}
+            disabled={selectedProducts.length === 0 || loading}
             className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
           >
             Generate PDF
@@ -121,7 +149,7 @@ export default function PdfControls({
 
       {/* MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40">
 
           <div className="bg-white p-6 rounded-lg w-80 space-y-4">
 
@@ -173,7 +201,8 @@ export default function PdfControls({
                     includeAttributes
                   })
                 }}
-                className="bg-black text-white px-3 py-1 rounded"
+                disabled={loading}
+                className="bg-black text-white px-3 py-1 rounded disabled:opacity-50"
               >
                 Generate
               </button>
