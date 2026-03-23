@@ -16,7 +16,7 @@ type Company = {
   address: string | null
 }
 
-export default async function PublicCatalog(props: any) {
+export default function PublicCatalog(props: any) {
 
   const params = await props.params
   const searchParams = await props.searchParams
@@ -229,10 +229,17 @@ export default async function PublicCatalog(props: any) {
           <div className="text-sm text-gray-500 mb-6">
             {company.display_name} / {selectedCategoryName}
           </div>
-
+<div className="mb-4 md:hidden">
+  <button
+    onClick={() => setShowFilters(true)}
+    className="w-full border py-2 rounded-lg bg-white shadow-sm"
+  >
+    Filters
+  </button>
+</div>
           <div className="grid grid-cols-12 gap-8">
 
-            <div className="col-span-3">
+            <div className="hidden md:block md:col-span-3">
               <FilterSidebar
                 slug={slug}
                 categories={categories}
@@ -257,39 +264,41 @@ export default async function PublicCatalog(props: any) {
 
                   return(
 
-                    <a
-                      key={p.id}
-                      href={`/${slug}/${p.slug}`}
-                      className="border rounded bg-white overflow-hidden hover:shadow-md transition"
-                    >
+<a
+  key={p.id}
+  href={`/${slug}/${p.slug}`}
+  className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+>
 
-                      {primaryImage ? (
+  {/* IMAGE */}
+  <div className="w-full h-64 flex items-center justify-center bg-gray-50">
+    {primaryImage ? (
+      <img
+        src={primaryImage}
+        alt={p.name}
+        className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+      />
+    ) : (
+      <div className="text-gray-400 text-sm">
+        No Image
+      </div>
+    )}
+  </div>
 
-                        <img
-                          src={primaryImage}
-                          alt={p.name}
-                          className="w-full h-64 object-cover"
-                        />
+  {/* CONTENT */}
+  <div className="p-4 space-y-1">
 
-                      ):(
-                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                          No Image
-                        </div>
-                      )}
+    <div className="text-sm font-medium text-gray-800 line-clamp-2 leading-tight">
+      {p.name}
+    </div>
 
-                      <div className="p-3">
+    <div className="text-base font-semibold text-black">
+      ₹ {p.base_price ?? "-"}
+    </div>
 
-                        <div className="font-medium truncate">
-                          {p.name}
-                        </div>
+  </div>
 
-                        <div className="text-sm text-gray-600 mt-1">
-                          ₹ {p.base_price ?? "-"}
-                        </div>
-
-                      </div>
-
-                    </a>
+</a>
 
                   )
                 })}
@@ -305,6 +314,35 @@ export default async function PublicCatalog(props: any) {
         <InstallButton />
 
       </div>
+{showFilters && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex">
+
+    <div className="w-4/5 max-w-sm bg-white h-full p-4 overflow-y-auto">
+
+      <div className="flex justify-between items-center mb-4">
+        <div className="font-semibold text-lg">Filters</div>
+        <button onClick={() => setShowFilters(false)}>✕</button>
+      </div>
+
+      <FilterSidebar
+        slug={slug}
+        categories={categories}
+        attributes={attributes}
+        selectedCategory={selectedCategory}
+        selectedOptions={selectedOptions}
+        sort={sort}
+        totalProducts={count || 0}
+      />
+
+    </div>
+
+    <div
+      className="flex-1"
+      onClick={() => setShowFilters(false)}
+    />
+
+  </div>
+)}
     </VisitorGate>
   )
 }

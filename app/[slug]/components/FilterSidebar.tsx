@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 
 export default function FilterSidebar({
   categories,
@@ -11,19 +11,30 @@ export default function FilterSidebar({
   sort,
   totalProducts,
 }: any) {
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+
+  // ✅ NEW: collapsible sections
+  const [openSections, setOpenSections] = useState<any>({
+    category: true,
+    sort: true,
+  })
+
+  function toggleSection(key: string) {
+    setOpenSections((prev: any) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
 
   function updateParams(newParams: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
 
     Object.entries(newParams).forEach(([key, value]) => {
-      if (!value) {
-        params.delete(key)
-      } else {
-        params.set(key, value)
-      }
+      if (!value) params.delete(key)
+      else params.set(key, value)
     })
 
     startTransition(() => {
@@ -43,7 +54,7 @@ export default function FilterSidebar({
 
     updateParams({
       attr: updated.length ? updated.join(',') : null,
-      page: null, // reset page
+      page: null,
     })
   }
 
@@ -52,95 +63,125 @@ export default function FilterSidebar({
 
       {/* PRODUCT COUNT */}
       <div className="text-sm text-gray-500">
-        {totalProducts} Products Found
+        {totalProducts} Products
       </div>
 
       {/* CATEGORY */}
-      <div>
-        <div className="font-semibold mb-2">
-          Category
-        </div>
-        <select
-          value={selectedCategory}
-          onChange={(e) =>
-            updateParams({
-              category: e.target.value,
-              attr: null,
-              page: null,
-            })
-          }
-          className="border px-3 py-2 w-full"
+      <div className="border rounded-lg p-3">
+
+        <button
+          onClick={() => toggleSection('category')}
+          className="w-full flex justify-between items-center font-semibold"
         >
-          {categories.map((cat: any) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+          Category
+          <span>{openSections.category ? '−' : '+'}</span>
+        </button>
+
+        {openSections.category && (
+          <select
+            value={selectedCategory}
+            onChange={(e) =>
+              updateParams({
+                category: e.target.value,
+                attr: null,
+                page: null,
+              })
+            }
+            className="mt-3 border px-3 py-2 w-full rounded"
+          >
+            {categories.map((cat: any) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* ATTRIBUTES */}
-      {attributes?.map((attr: any) => (
-        <div key={attr.id}>
-          <div className="font-semibold mb-2">
-            {attr.name}
-          </div>
+      {attributes?.map((attr: any) => {
 
-          {attr.attribute_options?.map((opt: any) => (
-            <label
-              key={opt.id}
-              className="flex items-center gap-2 text-sm mb-1"
+        const key = `attr_${attr.id}`
+
+        return (
+          <div key={attr.id} className="border rounded-lg p-3">
+
+            <button
+              onClick={() => toggleSection(key)}
+              className="w-full flex justify-between items-center font-semibold"
             >
-              <input
-                type="checkbox"
-                checked={selectedOptions.includes(opt.id)}
-                onChange={() => toggleOption(opt.id)}
-              />
-              {opt.value}
-            </label>
-          ))}
-        </div>
-      ))}
+              {attr.name}
+              <span>{openSections[key] ? '−' : '+'}</span>
+            </button>
+
+            {openSections[key] && (
+              <div className="mt-3 space-y-2">
+
+                {attr.attribute_options?.map((opt: any) => {
+
+                  const active = selectedOptions.includes(opt.id)
+
+                  return (
+                    <label
+                      key={opt.id}
+                      className={`flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded ${
+                        active ? 'bg-gray-100 font-medium' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={active}
+                        onChange={() => toggleOption(opt.id)}
+                      />
+                      {opt.value}
+                    </label>
+                  )
+                })}
+
+              </div>
+            )}
+
+          </div>
+        )
+      })}
 
       {/* SORT */}
-      <div>
-        <div className="font-semibold mb-2">
-          Sort By
-        </div>
-        <select
-          value={sort}
-          onChange={(e) =>
-            updateParams({
-              sort: e.target.value,
-              page: null,
-            })
-          }
-          className="border px-3 py-2 w-full"
+      <div className="border rounded-lg p-3">
+
+        <button
+          onClick={() => toggleSection('sort')}
+          className="w-full flex justify-between items-center font-semibold"
         >
-          <option value="default">
-            Default
-          </option>
-          <option value="price_asc">
-            Price: Low → High
-          </option>
-          <option value="price_desc">
-            Price: High → Low
-          </option>
-          <option value="name_asc">
-            Name A → Z
-          </option>
-          <option value="name_desc">
-            Name Z → A
-          </option>
-        </select>
+          Sort By
+          <span>{openSections.sort ? '−' : '+'}</span>
+        </button>
+
+        {openSections.sort && (
+          <select
+            value={sort}
+            onChange={(e) =>
+              updateParams({
+                sort: e.target.value,
+                page: null,
+              })
+            }
+            className="mt-3 border px-3 py-2 w-full rounded"
+          >
+            <option value="default">Default</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="name_asc">Name A → Z</option>
+            <option value="name_desc">Name Z → A</option>
+          </select>
+        )}
       </div>
 
-      {/* CLEAR FILTERS */}
+      {/* CLEAR */}
       <button
         onClick={() =>
           router.push(`?category=${selectedCategory}`)
         }
-        className="text-sm text-red-500 underline"
+        className="w-full text-sm text-red-500 border border-red-200 py-2 rounded hover:bg-red-50 transition"
       >
         Clear Filters
       </button>
