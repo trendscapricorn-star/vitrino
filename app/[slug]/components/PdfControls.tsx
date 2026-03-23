@@ -4,7 +4,8 @@ import { useState } from 'react'
 
 export default function PdfControls({
   products,
-  attributes
+  attributes,
+  slug
 }: any) {
 
   const [selectedProducts, setSelectedProducts] = useState<any[]>([])
@@ -22,8 +23,6 @@ export default function PdfControls({
   }
 
   async function handleGeneratePDF() {
-
-    if (selectedProducts.length === 0) return
 
     let sorted = [...selectedProducts]
 
@@ -54,58 +53,60 @@ export default function PdfControls({
   }
 
   return (
+    <div>
 
-    <div className="mb-4 space-y-3">
+      {/* TOP BAR */}
+      <div className="mb-4 space-y-3">
 
-      {/* SETTINGS */}
-      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-wrap gap-3 items-center">
 
-        <select
-          multiple
-          value={selectedAttributes}
-          onChange={(e) =>
-            setSelectedAttributes(
-              Array.from(e.target.selectedOptions, o => o.value)
-            )
-          }
-          className="border px-2 py-1 rounded text-sm"
-        >
-          {attributes?.map((a:any) => (
-            <option key={a.id} value={a.name}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+          <select
+            multiple
+            value={selectedAttributes}
+            onChange={(e) =>
+              setSelectedAttributes(
+                Array.from(e.target.selectedOptions, o => o.value)
+              )
+            }
+            className="border px-2 py-1 rounded text-sm"
+          >
+            {attributes?.map((a:any) => (
+              <option key={a.id} value={a.name}>
+                {a.name}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={pdfSort}
-          onChange={(e) => setPdfSort(e.target.value)}
-          className="border px-2 py-1 rounded text-sm"
-        >
-          <option value="default">Default</option>
-          <option value="price_asc">Price ↑</option>
-          <option value="price_desc">Price ↓</option>
-          <option value="name">Name</option>
-        </select>
+          <select
+            value={pdfSort}
+            onChange={(e) => setPdfSort(e.target.value)}
+            className="border px-2 py-1 rounded text-sm"
+          >
+            <option value="default">Default</option>
+            <option value="price_asc">Price ↑</option>
+            <option value="price_desc">Price ↓</option>
+            <option value="name">Name</option>
+          </select>
 
-      </div>
-
-      {/* BUTTON */}
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-500">
-          {selectedProducts.length} selected
         </div>
 
-        <button
-          onClick={handleGeneratePDF}
-          disabled={selectedProducts.length === 0}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          Generate PDF
-        </button>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            {selectedProducts.length} selected
+          </div>
+
+          <button
+            onClick={handleGeneratePDF}
+            disabled={selectedProducts.length === 0}
+            className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Generate PDF
+          </button>
+        </div>
+
       </div>
 
-      {/* PRODUCT GRID WITH CHECKBOX */}
+      {/* PRODUCT GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
         {products?.map((p:any)=>{
@@ -119,7 +120,9 @@ export default function PdfControls({
 
             <div
               key={p.id}
-              className="relative bg-white border rounded-xl p-2"
+              className={`relative bg-white border rounded-xl overflow-hidden ${
+                selectedIds.includes(p.id) ? 'ring-2 ring-black' : ''
+              }`}
             >
 
               {/* CHECKBOX */}
@@ -130,21 +133,26 @@ export default function PdfControls({
                 className="absolute top-2 left-2 z-10"
               />
 
-              {/* IMAGE */}
-              <div className="h-48 flex items-center justify-center bg-gray-50">
-                {primaryImage && (
-                  <img
-                    src={primaryImage}
-                    className="max-h-full object-contain"
-                  />
-                )}
-              </div>
+              {/* CLICKABLE LINK */}
+              <a href={`/${slug}/${p.slug}`}>
 
-              {/* TEXT */}
-              <div className="text-sm mt-2">{p.name}</div>
-              <div className="font-semibold text-sm">
-                ₹ {p.base_price ?? '-'}
-              </div>
+                <div className="h-64 flex items-center justify-center bg-gray-50">
+                  {primaryImage && (
+                    <img
+                      src={primaryImage}
+                      className="max-h-full object-contain"
+                    />
+                  )}
+                </div>
+
+                <div className="p-3">
+                  <div className="text-sm font-medium">{p.name}</div>
+                  <div className="text-sm font-semibold">
+                    ₹ {p.base_price ?? '-'}
+                  </div>
+                </div>
+
+              </a>
 
             </div>
 

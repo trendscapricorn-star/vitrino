@@ -167,6 +167,8 @@ export default async function PublicCatalog(props: any) {
   const selectedCategoryName =
     categories.find(c => c.id === selectedCategory)?.name || ""
 
+  /* ---------------- UI ---------------- */
+
   return (
     <VisitorGate companyId={company.id}>
       <PushRegister companyId={company.id} />
@@ -177,10 +179,7 @@ export default async function PublicCatalog(props: any) {
           <div className="text-sm text-gray-500 mb-6">
             {company.display_name} / {selectedCategoryName}
           </div>
-<PdfControls
-  products={products}
-  attributes={attributes}
-/>
+
           <div className="grid grid-cols-12 gap-8">
 
             <FilterWrapper
@@ -195,50 +194,11 @@ export default async function PublicCatalog(props: any) {
 
             <div className="col-span-9">
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-
-                {products?.map((p: any) => {
-
-                  const primaryImage =
-                    p.product_images?.find(
-                      (img: any) => img.sort_order === 0
-                    )?.image_url
-
-                  return (
-                    <a
-                      key={p.id}
-                      href={`/${slug}/${p.slug}`}
-                      className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
-                    >
-
-                      <div className="w-full h-64 flex items-center justify-center bg-gray-50">
-                        {primaryImage ? (
-                          <img
-                            src={primaryImage}
-                            alt={p.name}
-                            className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="text-gray-400 text-sm">
-                            No Image
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 space-y-1">
-                        <div className="text-sm font-medium text-gray-800 line-clamp-2 leading-tight">
-                          {p.name}
-                        </div>
-                        <div className="text-base font-semibold text-black">
-                          ₹ {p.base_price ?? "-"}
-                        </div>
-                      </div>
-
-                    </a>
-                  )
-                })}
-
-              </div>
+              <PdfControls
+                products={products}
+                attributes={attributes}
+                slug={slug}
+              />
 
             </div>
 
