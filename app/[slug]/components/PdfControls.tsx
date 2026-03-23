@@ -40,24 +40,31 @@ export default function PdfControls({
       sorted.sort((a,b)=> a.name.localeCompare(b.name))
     }
 
-    const res = await fetch('/api/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        products: sorted,
-        attributes: selectedAttributes,
-        config
-      })
-    })
+const res = await fetch('/api/pdf', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    products: sorted,
+    config
+  })
+})
 
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
+const blob = await res.blob()
 
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'catalog.pdf'
-    a.click()
-  }
+// ✅ IMPORTANT FIX
+if (blob.size === 0) {
+  alert('PDF generation failed')
+  return
+}
+
+const url = URL.createObjectURL(blob)
+
+const a = document.createElement('a')
+a.href = url
+a.download = 'catalog.pdf'
+document.body.appendChild(a)
+a.click()
+a.remove()
 
   return (
     <div>
