@@ -12,6 +12,12 @@ export default function PdfControls({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([])
   const [pdfSort, setPdfSort] = useState('default')
 
+  // ✅ NEW (modal config)
+  const [showModal, setShowModal] = useState(false)
+  const [includeName, setIncludeName] = useState(true)
+  const [includePrice, setIncludePrice] = useState(true)
+  const [includeAttributes, setIncludeAttributes] = useState(false)
+
   const selectedIds = selectedProducts.map(p => p.id)
 
   function toggleSelect(product: any) {
@@ -22,7 +28,7 @@ export default function PdfControls({
     })
   }
 
-  async function handleGeneratePDF() {
+  async function handleGeneratePDF(config: any) {
 
     let sorted = [...selectedProducts]
 
@@ -39,7 +45,8 @@ export default function PdfControls({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         products: sorted,
-        attributes: selectedAttributes
+        attributes: selectedAttributes,
+        config
       })
     })
 
@@ -96,7 +103,7 @@ export default function PdfControls({
           </div>
 
           <button
-            onClick={handleGeneratePDF}
+            onClick={() => setShowModal(true)}
             disabled={selectedProducts.length === 0}
             className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
           >
@@ -105,6 +112,71 @@ export default function PdfControls({
         </div>
 
       </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white p-6 rounded-lg w-80 space-y-4">
+
+            <div className="font-semibold text-lg">
+              PDF Settings
+            </div>
+
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={includeName}
+                onChange={() => setIncludeName(!includeName)}
+              />
+              Show Name
+            </label>
+
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={includePrice}
+                onChange={() => setIncludePrice(!includePrice)}
+              />
+              Show Price
+            </label>
+
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                checked={includeAttributes}
+                onChange={() => setIncludeAttributes(!includeAttributes)}
+              />
+              Show Attributes
+            </label>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowModal(false)
+                  handleGeneratePDF({
+                    includeName,
+                    includePrice,
+                    includeAttributes
+                  })
+                }}
+                className="bg-black text-white px-3 py-1 rounded"
+              >
+                Generate
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
       {/* PRODUCT GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -125,7 +197,6 @@ export default function PdfControls({
               }`}
             >
 
-              {/* CHECKBOX */}
               <input
                 type="checkbox"
                 checked={selectedIds.includes(p.id)}
@@ -133,7 +204,6 @@ export default function PdfControls({
                 className="absolute top-2 left-2 z-10"
               />
 
-              {/* CLICKABLE LINK */}
               <a href={`/${slug}/${p.slug}`}>
 
                 <div className="h-64 flex items-center justify-center bg-gray-50">
