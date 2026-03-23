@@ -1,28 +1,59 @@
-import PDFDocument from 'pdfkit'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function POST(req: Request) {
 
-  const doc = new PDFDocument()
+  const { products, config } = await req.json()
 
-  const stream = new ReadableStream({
-    start(controller) {
+  const pdfDoc = await PDFDocument.create()
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
 
-      doc.on('data', chunk => controller.enqueue(chunk))
-      doc.on('end', () => controller.close())
-      doc.on('error', err => controller.error(err))
+  let page = pdfDoc.addPage([595, 842]) // A4
+  let { width, height } = page.getSize()
 
-      // ✅ SIMPLE TEST CONTENT
-      doc.fontSize(20).text('PDF TEST WORKING', 100, 100)
+  let y = height - 40
 
-      doc.end()
+  for (const p of products) {
+
+    // 🏷️ NAME
+    if (config?.includeName) {
+      page.drawText(p.name || '', {
+        x: 40,
+        y,
+        size: 12,
+        font,
+        color: rgb(0, 0, 0),
+      })
+      y -= 20
     }
-  })
 
-  return new Response(stream, {
+    // 💰 PRICE
+    if (config?.includePrice) {
+      page.drawText(`₹ ${p.base_price ?? '-'}`, {
+        x: 40,
+        y,
+        size: 10,
+        font,
+      })
+      y -= 20
+    }
+
+    y -= 20
+
+    // 📄 NEW PAGE
+    if (y < 50) {
+      page = pdfDoc.addPage([595, 842])
+      y = height - 40
+    }
+  }
+
+  const pdfBytes = await pdfDoc.save()
+
+  return new Response(pdfBytes, {
     headers: {
       'Content-Type': 'application/pdf',
-    }
+      'Content-Disposition': 'attachment; filename=catalog.pdf',
+    },
   })
 }
