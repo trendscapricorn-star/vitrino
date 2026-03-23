@@ -12,7 +12,6 @@ export default function PdfControls({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([])
   const [pdfSort, setPdfSort] = useState('default')
 
-  // ✅ NEW (modal config)
   const [showModal, setShowModal] = useState(false)
   const [includeName, setIncludeName] = useState(true)
   const [includePrice, setIncludePrice] = useState(true)
@@ -40,31 +39,31 @@ export default function PdfControls({
       sorted.sort((a,b)=> a.name.localeCompare(b.name))
     }
 
-const res = await fetch('/api/pdf', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    products: sorted,
-    config
-  })
-})
+    const res = await fetch('/api/pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        products: sorted,
+        config
+      })
+    })
 
-const blob = await res.blob()
+    const blob = await res.blob()
 
-// ✅ IMPORTANT FIX
-if (blob.size === 0) {
-  alert('PDF generation failed')
-  return
-}
+    if (blob.size === 0) {
+      alert('PDF generation failed')
+      return
+    }
 
-const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob)
 
-const a = document.createElement('a')
-a.href = url
-a.download = 'catalog.pdf'
-document.body.appendChild(a)
-a.click()
-a.remove()
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'catalog.pdf'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } // ✅ IMPORTANT: FUNCTION CLOSED HERE
 
   return (
     <div>
