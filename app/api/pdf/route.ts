@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     doc.on('end', () => resolve(Buffer.concat(chunks)))
   })
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename=catalog.pdf'
