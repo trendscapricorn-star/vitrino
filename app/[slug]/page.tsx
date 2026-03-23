@@ -17,7 +17,7 @@ type Company = {
   address: string | null
 }
 
-export default function PublicCatalog(props: any) {
+export default async function PublicCatalog(props: any) {
 
   const params = await props.params
   const searchParams = await props.searchParams
