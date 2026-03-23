@@ -4,6 +4,7 @@ import InstallButton from "./components/InstallButton"
 import VisitorGate from "./components/VisitorGate"
 import PushRegister from "./components/PushRegister"
 import FilterWrapper from "./components/FilterWrapper"
+import PdfControls from "./components/PdfControls"
 
 const PAGE_SIZE = 12
 
@@ -176,7 +177,10 @@ export default async function PublicCatalog(props: any) {
           <div className="text-sm text-gray-500 mb-6">
             {company.display_name} / {selectedCategoryName}
           </div>
-
+<PdfControls
+  products={products}
+  attributes={attributes}
+/>
           <div className="grid grid-cols-12 gap-8">
 
             <FilterWrapper
