@@ -45,29 +45,36 @@ export default function PdfControls({
       }
 
       const res = await fetch('/api/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          products: sorted,
-          config
-        })
-      })
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    products: sorted,
+    config
+  })
+})
 
-      const blob = await res.blob()
+if (!res.ok) {
+  alert('Server error')
+  return
+}
 
-      if (blob.size === 0) {
-        alert('PDF generation failed')
-        return
-      }
+const blob = await res.blob()
 
-      const url = URL.createObjectURL(blob)
+console.log('blob size:', blob.size)
 
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'catalog.pdf'
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
+if (blob.size < 100) {
+  alert('PDF failed (invalid file)')
+  return
+}
+
+const url = URL.createObjectURL(blob)
+
+const a = document.createElement('a')
+a.href = url
+a.download = 'catalog.pdf'
+document.body.appendChild(a)
+a.click()
+a.remove()
 
     } catch (err) {
       alert('Something went wrong')
