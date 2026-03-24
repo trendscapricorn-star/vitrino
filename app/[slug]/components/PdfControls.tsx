@@ -50,6 +50,7 @@ export default function PdfControls({
   body: JSON.stringify({
     products: sorted,
     config
+attributes: selectedAttributes
   })
 })
 
