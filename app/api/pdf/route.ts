@@ -4,17 +4,16 @@ export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
 
-  const { products = [] } = await req.json()
+  const { products = [], config = {}, attributes = [] } = await req.json()
 
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   const pageWidth = 595
-  const pageHeight = 300
+  const pageHeight = 320
   const margin = 30
 
-  const cardWidth = (pageWidth - margin * 3) / 2
   const totalPages = Math.ceil(products.length / 2)
 
   for (let i = 0; i < products.length; i += 2) {
@@ -30,7 +29,10 @@ export async function POST(req: Request) {
       const p = products[i + j]
       if (!p) continue
 
-      // 🖼️ IMAGE (SHARP FIX)
+      let drawWidth = 240
+      let drawHeight = 160
+
+      // 🖼️ IMAGE WITH AUTO WIDTH FIT
       try {
         if (p.product_images?.[0]?.image_url) {
 
@@ -41,46 +43,66 @@ export async function POST(req: Request) {
             pdfDoc.embedPng(imgBytes)
           )
 
-          // 🔥 maintain aspect ratio
-          const imgWidth = img.width
-          const imgHeight = img.height
+          const imgW = img.width
+          const imgH = img.height
 
-          const ratio = Math.min(
-            cardWidth / imgWidth,
-            170 / imgHeight
-          )
+          // 🔥 auto scale (fit inside half page)
+          const maxWidth = (pageWidth - margin * 3) / 2
+          const maxHeight = 170
 
-          const drawWidth = imgWidth * ratio
-          const drawHeight = imgHeight * ratio
+          const ratio = Math.min(maxWidth / imgW, maxHeight / imgH)
+
+          drawWidth = imgW * ratio
+          drawHeight = imgH * ratio
+
+          // center image inside column
+          const offsetX = (maxWidth - drawWidth) / 2
 
           page.drawImage(img, {
-            x,
+            x: x + offsetX,
             y: y - drawHeight,
             width: drawWidth,
             height: drawHeight,
           })
-
-          // 🏷️ TEXT BELOW IMAGE
-          const textY = y - drawHeight - 12
-
-          page.drawText(p.name || '', {
-            x,
-            y: textY,
-            size: 11,
-            font: boldFont,
-          })
-
-          page.drawText(`Rs. ${p.base_price ?? '-'}`, {
-            x,
-            y: textY - 14,
-            size: 11,
-            font,
-          })
         }
       } catch {}
 
+      let textY = y - drawHeight - 12
+
+      // 🏷️ NAME
+      if (config?.includeName) {
+        page.drawText(p.name || '', {
+          x,
+          y: textY,
+          size: 11,
+          font: boldFont,
+        })
+        textY -= 14
+      }
+
+      // 🧾 ATTRIBUTES
+      if (config?.includeAttributes && attributes.length) {
+        page.drawText(attributes.join(' | '), {
+          x,
+          y: textY,
+          size: 9,
+          font,
+        })
+        textY -= 12
+      }
+
+      // 💰 PRICE
+      if (config?.includePrice) {
+        page.drawText(`Rs. ${p.base_price ?? '-'}`, {
+          x,
+          y: textY,
+          size: 11,
+          font,
+        })
+      }
+
       // ➡️ next column
-      x = margin * 2 + cardWidth
+      x = margin * 2 + (pageWidth - margin * 3) / 2
     }
 
     // 🔢 PAGE NUMBER
