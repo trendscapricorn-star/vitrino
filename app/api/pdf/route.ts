@@ -4,7 +4,7 @@ export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
 
-  const { products = [], config = {}, attributes = [] } = await req.json()
+  const { products = [], config = {} } = await req.json()
 
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const pageHeight = 320
   const margin = 30
 
+  const columnWidth = (pageWidth - margin * 3) / 2
   const totalPages = Math.ceil(products.length / 2)
 
   for (let i = 0; i < products.length; i += 2) {
@@ -29,10 +30,12 @@ export async function POST(req: Request) {
       const p = products[i + j]
       if (!p) continue
 
-      let drawWidth = 240
+      let drawWidth = columnWidth
       let drawHeight = 160
 
-      // 🖼️ IMAGE WITH AUTO WIDTH FIT
+      let imageX = x
+
+      // 🖼️ IMAGE
       try {
         if (p.product_images?.[0]?.image_url) {
 
@@ -46,8 +49,7 @@ export async function POST(req: Request) {
           const imgW = img.width
           const imgH = img.height
 
-          // 🔥 auto scale (fit inside half page)
-          const maxWidth = (pageWidth - margin * 3) / 2
+          const maxWidth = columnWidth
           const maxHeight = 170
 
           const ratio = Math.min(maxWidth / imgW, maxHeight / imgH)
@@ -55,11 +57,11 @@ export async function POST(req: Request) {
           drawWidth = imgW * ratio
           drawHeight = imgH * ratio
 
-          // center image inside column
-          const offsetX = (maxWidth - drawWidth) / 2
+          // ✅ center image
+          imageX = x + (columnWidth - drawWidth) / 2
 
           page.drawImage(img, {
-            x: x + offsetX,
+            x: imageX,
             y: y - drawHeight,
             width: drawWidth,
             height: drawHeight,
@@ -67,12 +69,15 @@ export async function POST(req: Request) {
         }
       } catch {}
 
-      let textY = y - drawHeight - 12
+      let textY = y - drawHeight - 10
+
+      // ✅ CENTER TEXT WITH IMAGE
+      const textX = imageX
 
       // 🏷️ NAME
       if (config?.includeName) {
         page.drawText(p.name || '', {
-          x,
+          x: textX,
           y: textY,
           size: 11,
           font: boldFont,
@@ -80,21 +85,28 @@ export async function POST(req: Request) {
         textY -= 14
       }
 
-      // 🧾 ATTRIBUTES
-      if (config?.includeAttributes && attributes.length) {
-        page.drawText(attributes.join(' | '), {
-          x,
-          y: textY,
-          size: 9,
-          font,
-        })
-        textY -= 12
+      // 🧾 ATTRIBUTE VALUES (FIXED)
+      if (config?.includeAttributes && p.product_attribute_values?.length) {
+
+        const values = p.product_attribute_values
+          .map((av: any) => av.attribute_options?.value)
+          .filter(Boolean)
+
+        if (values.length) {
+          page.drawText(values.join(' | '), {
+            x: textX,
+            y: textY,
+            size: 9,
+            font,
+          })
+          textY -= 12
+        }
       }
 
       // 💰 PRICE
       if (config?.includePrice) {
         page.drawText(`Rs. ${p.base_price ?? '-'}`, {
-          x,
+          x: textX,
           y: textY,
           size: 11,
           font,
@@ -102,7 +114,7 @@ export async function POST(req: Request) {
       }
 
       // ➡️ next column
-      x = margin * 2 + (pageWidth - margin * 3) / 2
+      x = margin * 2 + columnWidth
     }
 
     // 🔢 PAGE NUMBER
