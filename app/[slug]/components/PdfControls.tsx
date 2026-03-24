@@ -49,7 +49,7 @@ export default function PdfControls({
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     products: sorted,
-    config
+    config,
 attributes: selectedAttributes
   })
 })
