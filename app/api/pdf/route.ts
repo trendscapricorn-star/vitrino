@@ -8,26 +8,29 @@ export async function POST(req: Request) {
 
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   const pageWidth = 595
-  const pageHeight = 300 // ✅ only enough for 1 row
+  const pageHeight = 300
   const margin = 30
 
   const cardWidth = (pageWidth - margin * 3) / 2
+  const totalPages = Math.ceil(products.length / 2)
 
   for (let i = 0; i < products.length; i += 2) {
 
+    const pageIndex = Math.floor(i / 2) + 1
     const page = pdfDoc.addPage([pageWidth, pageHeight])
 
     let x = margin
-    let y = pageHeight - margin
+    let y = pageHeight - 20
 
     for (let j = 0; j < 2; j++) {
 
       const p = products[i + j]
       if (!p) continue
 
-      // 🖼️ IMAGE
+      // 🖼️ IMAGE (SHARP FIX)
       try {
         if (p.product_images?.[0]?.image_url) {
 
@@ -38,35 +41,55 @@ export async function POST(req: Request) {
             pdfDoc.embedPng(imgBytes)
           )
 
+          // 🔥 maintain aspect ratio
+          const imgWidth = img.width
+          const imgHeight = img.height
+
+          const ratio = Math.min(
+            cardWidth / imgWidth,
+            170 / imgHeight
+          )
+
+          const drawWidth = imgWidth * ratio
+          const drawHeight = imgHeight * ratio
+
           page.drawImage(img, {
             x,
-            y: y - 120,
-            width: cardWidth,
-            height: 120,
+            y: y - drawHeight,
+            width: drawWidth,
+            height: drawHeight,
+          })
+
+          // 🏷️ TEXT BELOW IMAGE
+          const textY = y - drawHeight - 12
+
+          page.drawText(p.name || '', {
+            x,
+            y: textY,
+            size: 11,
+            font: boldFont,
+          })
+
+          page.drawText(`Rs. ${p.base_price ?? '-'}`, {
+            x,
+            y: textY - 14,
+            size: 11,
+            font,
           })
         }
       } catch {}
 
-      // 🏷️ NAME
-      page.drawText(p.name || '', {
-        x,
-        y: y - 135,
-        size: 10,
-        font,
-        maxWidth: cardWidth
-      })
-
-      // 💰 PRICE
-      page.drawText(`Rs. ${p.base_price ?? '-'}`, {
-        x,
-        y: y - 150,
-        size: 10,
-        font,
-      })
-
-      // ➡️ move to right column
+      // ➡️ next column
       x = margin * 2 + cardWidth
     }
+
+    // 🔢 PAGE NUMBER
+    page.drawText(`${pageIndex} / ${totalPages}`, {
+      x: pageWidth / 2 - 15,
+      y: 8,
+      size: 10,
+      font,
+    })
   }
 
   const pdfBytes = await pdfDoc.save()
