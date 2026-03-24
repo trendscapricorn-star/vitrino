@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
       y -= 20
 
-      page.drawText(`₹ ${p?.base_price ?? '-'}`, {
+      page.drawText(`Rs. ${p?.base_price ?? '-'}`, {
         x: 40,
         y,
         size: 10,
