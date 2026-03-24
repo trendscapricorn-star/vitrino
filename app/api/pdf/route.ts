@@ -9,14 +9,20 @@ export async function POST(req: Request) {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
 
-  let page = pdfDoc.addPage([595, 842])
-  const pageWidth = 595
-
   const margin = 30
+  const pageWidth = 595
+  const cardHeight = 180 // height per row
+  const rows = Math.ceil(products.length / 2)
+
+  // ✅ dynamic page height
+  const pageHeight = margin * 2 + rows * cardHeight
+
+  const page = pdfDoc.addPage([pageWidth, pageHeight])
+
   const cardWidth = (pageWidth - margin * 3) / 2
 
   let x = margin
-  let y = 800
+  let y = pageHeight - margin
 
   for (let i = 0; i < products.length; i++) {
 
@@ -32,8 +38,6 @@ export async function POST(req: Request) {
         const img = await pdfDoc.embedJpg(imgBytes).catch(() =>
           pdfDoc.embedPng(imgBytes)
         )
-
-        const dims = img.scale(0.5)
 
         page.drawImage(img, {
           x,
@@ -61,18 +65,12 @@ export async function POST(req: Request) {
       font,
     })
 
-    // ➡️ POSITIONING
+    // ➡️ POSITION
     if (x === margin) {
       x = margin * 2 + cardWidth
     } else {
       x = margin
-      y -= 180
-    }
-
-    // 📄 NEW PAGE
-    if (y < 100) {
-      page = pdfDoc.addPage([595, 842])
-      y = 800
+      y -= cardHeight
     }
   }
 
