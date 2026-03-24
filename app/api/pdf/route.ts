@@ -9,68 +9,63 @@ export async function POST(req: Request) {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
 
-  const margin = 30
   const pageWidth = 595
-  const cardHeight = 180 // height per row
-  const rows = Math.ceil(products.length / 2)
-
-  // ✅ dynamic page height
-  const pageHeight = margin * 2 + rows * cardHeight
-
-  const page = pdfDoc.addPage([pageWidth, pageHeight])
+  const pageHeight = 300 // ✅ only enough for 1 row
+  const margin = 30
 
   const cardWidth = (pageWidth - margin * 3) / 2
 
-  let x = margin
-  let y = pageHeight - margin
+  for (let i = 0; i < products.length; i += 2) {
 
-  for (let i = 0; i < products.length; i++) {
+    const page = pdfDoc.addPage([pageWidth, pageHeight])
 
-    const p = products[i]
+    let x = margin
+    let y = pageHeight - margin
 
-    // 🖼️ IMAGE
-    try {
-      if (p.product_images?.[0]?.image_url) {
+    for (let j = 0; j < 2; j++) {
 
-        const res = await fetch(p.product_images[0].image_url)
-        const imgBytes = await res.arrayBuffer()
+      const p = products[i + j]
+      if (!p) continue
 
-        const img = await pdfDoc.embedJpg(imgBytes).catch(() =>
-          pdfDoc.embedPng(imgBytes)
-        )
+      // 🖼️ IMAGE
+      try {
+        if (p.product_images?.[0]?.image_url) {
 
-        page.drawImage(img, {
-          x,
-          y: y - 120,
-          width: cardWidth,
-          height: 120,
-        })
-      }
-    } catch {}
+          const res = await fetch(p.product_images[0].image_url)
+          const imgBytes = await res.arrayBuffer()
 
-    // 🏷️ NAME
-    page.drawText(p.name || '', {
-      x,
-      y: y - 135,
-      size: 10,
-      font,
-      maxWidth: cardWidth
-    })
+          const img = await pdfDoc.embedJpg(imgBytes).catch(() =>
+            pdfDoc.embedPng(imgBytes)
+          )
 
-    // 💰 PRICE
-    page.drawText(`Rs. ${p.base_price ?? '-'}`, {
-      x,
-      y: y - 150,
-      size: 10,
-      font,
-    })
+          page.drawImage(img, {
+            x,
+            y: y - 120,
+            width: cardWidth,
+            height: 120,
+          })
+        }
+      } catch {}
 
-    // ➡️ POSITION
-    if (x === margin) {
+      // 🏷️ NAME
+      page.drawText(p.name || '', {
+        x,
+        y: y - 135,
+        size: 10,
+        font,
+        maxWidth: cardWidth
+      })
+
+      // 💰 PRICE
+      page.drawText(`Rs. ${p.base_price ?? '-'}`, {
+        x,
+        y: y - 150,
+        size: 10,
+        font,
+      })
+
+      // ➡️ move to right column
       x = margin * 2 + cardWidth
-    } else {
-      x = margin
-      y -= cardHeight
     }
   }
 
