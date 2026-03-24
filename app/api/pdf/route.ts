@@ -7,6 +7,9 @@ export async function POST(req: Request) {
   try {
 
     const body = await req.json()
+
+    console.log('PDF BODY:', body) // 👈 ADD THIS
+
     const products = body.products || []
 
     const pdfDoc = await PDFDocument.create()
@@ -17,10 +20,7 @@ export async function POST(req: Request) {
 
     for (const p of products) {
 
-      const name = p?.name || 'Product'
-      const price = p?.base_price ?? '-'
-
-      page.drawText(name, {
+      page.drawText(String(p?.name || 'Product'), {
         x: 40,
         y,
         size: 12,
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
       y -= 20
 
-      page.drawText(`₹ ${price}`, {
+      page.drawText(`₹ ${p?.base_price ?? '-'}`, {
         x: 40,
         y,
         size: 10,
@@ -46,21 +46,18 @@ export async function POST(req: Request) {
 
     const pdfBytes = await pdfDoc.save()
 
-    // ✅ CRITICAL FIX (NO TYPE ISSUE)
-    return new Response(Buffer.from(pdfBytes), {
-      status: 200,
+    return new Response(new Uint8Array(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="catalog.pdf"',
       },
     })
 
-  } catch (err) {
+  } catch (err: any) {
 
-    console.error('PDF ERROR:', err)
+    console.error('PDF ERROR FULL:', err) // 👈 IMPORTANT
 
     return new Response(
-      JSON.stringify({ error: 'PDF failed' }),
+      JSON.stringify({ error: err?.message || 'PDF failed' }),
       { status: 500 }
     )
   }
