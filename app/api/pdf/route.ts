@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   const pageWidth = 595
-  const pageHeight = 320
+  const pageHeight = 340   // ⬆️ slightly taller for bigger images
   const margin = 30
 
   const columnWidth = (pageWidth - margin * 3) / 2
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       if (!p) continue
 
       let drawWidth = columnWidth
-      let drawHeight = 160
+      let drawHeight = 200   // ⬆️ BIGGER IMAGE
 
       let imageX = x
 
@@ -50,14 +50,13 @@ export async function POST(req: Request) {
           const imgH = img.height
 
           const maxWidth = columnWidth
-          const maxHeight = 170
+          const maxHeight = 200   // ⬆️ BIGGER
 
           const ratio = Math.min(maxWidth / imgW, maxHeight / imgH)
 
           drawWidth = imgW * ratio
           drawHeight = imgH * ratio
 
-          // ✅ center image
           imageX = x + (columnWidth - drawWidth) / 2
 
           page.drawImage(img, {
@@ -70,35 +69,39 @@ export async function POST(req: Request) {
       } catch {}
 
       let textY = y - drawHeight - 10
-
-      // ✅ CENTER TEXT WITH IMAGE
-      const textX = imageX
+      const textX = x
 
       // 🏷️ NAME
       if (config?.includeName) {
         page.drawText(p.name || '', {
           x: textX,
           y: textY,
-          size: 11,
+          size: 12,
           font: boldFont,
         })
-        textY -= 14
+        textY -= 16
       }
 
-      // 🧾 ATTRIBUTE VALUES (FIXED)
+      // 🧾 ATTRIBUTES (3 PER LINE FIX)
       if (config?.includeAttributes && p.product_attribute_values?.length) {
 
         const values = p.product_attribute_values
           .map((av: any) => av.attribute_options?.value)
           .filter(Boolean)
 
-        if (values.length) {
-          page.drawText(values.join(' | '), {
+        // split into chunks of 3
+        for (let k = 0; k < values.length; k += 3) {
+
+          const line = values.slice(k, k + 3).join(' | ')
+
+          page.drawText(line, {
             x: textX,
             y: textY,
             size: 9,
             font,
+            maxWidth: columnWidth
           })
+
           textY -= 12
         }
       }
@@ -113,7 +116,7 @@ export async function POST(req: Request) {
         })
       }
 
-      // ➡️ next column
+      // ➡️ NEXT COLUMN
       x = margin * 2 + columnWidth
     }
 
