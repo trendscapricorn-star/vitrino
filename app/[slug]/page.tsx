@@ -117,22 +117,32 @@ export default async function PublicCatalog(props: any) {
 
   /* ---------------- PRODUCTS ---------------- */
 
-  let query = supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      slug,
-      base_price,
-      sort_order,
-      product_images (
-        image_url,
-        sort_order
+let query = supabase
+  .from("products")
+  .select(`
+    id,
+    name,
+    slug,
+    base_price,
+    sort_order,
+
+    product_images (
+      image_url,
+      sort_order
+    ),
+
+    product_attribute_values (
+      attribute_options (
+        value
+      ),
+      attributes (
+        name
       )
-    `, { count: "exact" })
-    .eq("company_id", company.id)
-    .eq("category_id", selectedCategory)
-    .eq("is_active", true)
+    )
+  `, { count: "exact" })
+  .eq("company_id", company.id)
+  .eq("category_id", selectedCategory)
+  .eq("is_active", true)
 
   if (selectedOptions.length > 0) {
     const { data: productIds } = await supabase
