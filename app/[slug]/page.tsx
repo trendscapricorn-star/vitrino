@@ -5,20 +5,10 @@ import VisitorGate from "./components/VisitorGate"
 import PushRegister from "./components/PushRegister"
 import FilterWrapper from "./components/FilterWrapper"
 import PdfControls from "./components/PdfControls"
-
+import DistributorClient from "./DistributorClient"
 const PAGE_SIZE = 12
 
-type Company = {
-  id: string
-  display_name: string
-  phone: string | null
-  email: string | null
-  whatsapp: string | null
-  address: string | null
-}
-
 export default async function PublicCatalog(props: any) {
-
   const params = await props.params
   const searchParams = await props.searchParams
 
@@ -27,198 +17,250 @@ export default async function PublicCatalog(props: any) {
   const slug = params.slug
   if (!slug) notFound()
 
-  /* ---------------- COMPANY ---------------- */
+  /* ===============================
+     🔹 1. CHECK MANUFACTURER
+  =============================== */
 
   const { data: companyData } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
 
-  const company = companyData as Company | null
-  if (!company) notFound()
+  if (companyData) {
+    const company = companyData
 
-  /* ---------------- SUBSCRIPTION ---------------- */
+    /* ---------------- SUBSCRIPTION ---------------- */
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, trial_ends_at, current_period_end")
-    .eq("company_id", company.id)
-    .maybeSingle()
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("status, trial_ends_at, current_period_end")
+      .eq("company_id", company.id)
+      .maybeSingle()
 
-  const now = new Date()
+    const now = new Date()
 
-  const isTrialValid =
-    subscription?.status === "trialing" &&
-    subscription?.trial_ends_at &&
-    new Date(subscription.trial_ends_at) > now
+    const isTrialValid =
+      subscription?.status === "trialing" &&
+      subscription?.trial_ends_at &&
+      new Date(subscription.trial_ends_at) > now
 
-  const isActiveValid =
-    subscription?.status === "active" &&
-    subscription?.current_period_end &&
-    new Date(subscription.current_period_end) > now
+    const isActiveValid =
+      subscription?.status === "active" &&
+      subscription?.current_period_end &&
+      new Date(subscription.current_period_end) > now
 
-  if (!isTrialValid && !isActiveValid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <div className="bg-white p-10 rounded-xl shadow text-left max-w-xl">
-          <div className="text-xl font-semibold mb-4 text-red-600">
-            Account Suspended
+    if (!isTrialValid && !isActiveValid) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+          <div className="bg-white p-10 rounded-xl shadow max-w-xl">
+            <div className="text-xl font-semibold text-red-600">
+              Account Suspended
+            </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  /* ---------------- CATEGORIES ---------------- */
+    /* ---------------- CATEGORIES ---------------- */
 
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name")
-    .eq("company_id", company.id)
-    .order("sort_order", { ascending: true })
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id, name")
+      .eq("company_id", company.id)
+      .order("sort_order", { ascending: true })
 
-  if (!categories || categories.length === 0) {
-    return <div className="p-10">No categories found.</div>
-  }
+    if (!categories || categories.length === 0) {
+      return <div className="p-10">No categories found.</div>
+    }
 
-  const selectedCategory =
-    typeof searchParams?.category === "string"
-      ? searchParams.category
-      : categories[0].id
+    const selectedCategory =
+      typeof searchParams?.category === "string"
+        ? searchParams.category
+        : categories[0].id
 
-  const selectedOptions =
-    typeof searchParams?.attr === "string"
-      ? searchParams.attr.split(",")
-      : []
+    const selectedOptions =
+      typeof searchParams?.attr === "string"
+        ? searchParams.attr.split(",")
+        : []
 
-  const sort =
-    typeof searchParams?.sort === "string"
-      ? searchParams.sort
-      : "default"
+    const sort =
+      typeof searchParams?.sort === "string"
+        ? searchParams.sort
+        : "default"
 
-  const page =
-    typeof searchParams?.page === "string"
-      ? Number(searchParams.page)
-      : 1
+    const page =
+      typeof searchParams?.page === "string"
+        ? Number(searchParams.page)
+        : 1
 
-  /* ---------------- ATTRIBUTES ---------------- */
+    /* ---------------- ATTRIBUTES ---------------- */
 
-  const { data: attributes } = await supabase
-    .from("attributes")
-    .select(`
-      id,
-      name,
-      attribute_options (
+    const { data: attributes } = await supabase
+      .from("attributes")
+      .select(`
         id,
-        value
-      )
-    `)
-    .eq("category_id", selectedCategory)
-    .order("sort_order", { ascending: true })
+        name,
+        attribute_options (
+          id,
+          value
+        )
+      `)
+      .eq("category_id", selectedCategory)
+      .order("sort_order", { ascending: true })
 
-  /* ---------------- PRODUCTS ---------------- */
+    /* ---------------- PRODUCTS ---------------- */
 
-let query = supabase
-  .from("products")
-  .select(`
-    id,
-    name,
-    slug,
-    base_price,
-    sort_order,
+    let query = supabase
+      .from("products")
+      .select(`
+        id,
+        name,
+        slug,
+        base_price,
+        sort_order,
+        product_images (
+          image_url,
+          sort_order
+        ),
+        product_attribute_values (
+          attribute_options (
+            value
+          ),
+          attributes (
+            name
+          )
+        )
+      `, { count: "exact" })
+      .eq("company_id", company.id)
+      .eq("category_id", selectedCategory)
+      .eq("is_active", true)
 
-    product_images (
-      image_url,
-      sort_order
-    ),
+    if (selectedOptions.length > 0) {
+      const { data: productIds } = await supabase
+        .from("product_attribute_values")
+        .select("product_id")
+        .in("option_id", selectedOptions)
 
-    product_attribute_values (
-      attribute_options (
-        value
-      ),
-      attributes (
-        name
-      )
-    )
-  `, { count: "exact" })
-  .eq("company_id", company.id)
-  .eq("category_id", selectedCategory)
-  .eq("is_active", true)
+      const ids = productIds?.map(p => p.product_id) ?? []
 
-  if (selectedOptions.length > 0) {
-    const { data: productIds } = await supabase
-      .from("product_attribute_values")
-      .select("product_id")
-      .in("option_id", selectedOptions)
+      query =
+        ids.length > 0
+          ? query.in("id", ids)
+          : query.in("id", ["00000000-0000-0000-0000-000000000000"])
+    }
 
-    const ids = productIds?.map(p => p.product_id) ?? []
+    if (sort === "price_asc")
+      query = query.order("base_price", { ascending: true })
+    else if (sort === "price_desc")
+      query = query.order("base_price", { ascending: false })
+    else if (sort === "name_asc")
+      query = query.order("name", { ascending: true })
+    else if (sort === "name_desc")
+      query = query.order("name", { ascending: false })
+    else
+      query = query.order("sort_order", { ascending: true })
 
-    query =
-      ids.length > 0
-        ? query.in("id", ids)
-        : query.in("id", ["00000000-0000-0000-0000-000000000000"])
-  }
+    const from = (page - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
 
-  if (sort === "price_asc")
-    query = query.order("base_price", { ascending: true })
-  else if (sort === "price_desc")
-    query = query.order("base_price", { ascending: false })
-  else if (sort === "name_asc")
-    query = query.order("name", { ascending: true })
-  else if (sort === "name_desc")
-    query = query.order("name", { ascending: false })
-  else
-    query = query.order("sort_order", { ascending: true })
+    const { data: products, count } = await query.range(from, to)
 
-  const from = (page - 1) * PAGE_SIZE
-  const to = from + PAGE_SIZE - 1
+    const selectedCategoryName =
+      categories.find(c => c.id === selectedCategory)?.name || ""
 
-  const { data: products, count } = await query.range(from, to)
+    /* ---------------- UI ---------------- */
 
-  const selectedCategoryName =
-    categories.find(c => c.id === selectedCategory)?.name || ""
+    return (
+      <VisitorGate companyId={company.id}>
+        <PushRegister companyId={company.id} />
 
-  /* ---------------- UI ---------------- */
+        <div className="bg-zinc-50">
+          <div className="max-w-7xl mx-auto px-6 py-8">
 
-  return (
-    <VisitorGate companyId={company.id}>
-      <PushRegister companyId={company.id} />
+            <div className="text-sm text-gray-500 mb-6">
+              {company.display_name} / {selectedCategoryName}
+            </div>
 
-      <div className="bg-zinc-50">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="grid grid-cols-12 gap-8">
 
-          <div className="text-sm text-gray-500 mb-6">
-            {company.display_name} / {selectedCategoryName}
-          </div>
-
-          <div className="grid grid-cols-12 gap-8">
-
-            <FilterWrapper
-              slug={slug}
-              categories={categories}
-              attributes={attributes}
-              selectedCategory={selectedCategory}
-              selectedOptions={selectedOptions}
-              sort={sort}
-              totalProducts={count || 0}
-            />
-
-            <div className="col-span-9">
-
-              <PdfControls
-                products={products}
-                attributes={attributes}
+              <FilterWrapper
                 slug={slug}
+                categories={categories}
+                attributes={attributes}
+                selectedCategory={selectedCategory}
+                selectedOptions={selectedOptions}
+                sort={sort}
+                totalProducts={count || 0}
               />
+
+              <div className="col-span-9">
+
+                <PdfControls
+                  products={products}
+                  attributes={attributes}
+                  slug={slug}
+                />
+
+              </div>
 
             </div>
 
           </div>
 
+          <InstallButton />
         </div>
+      </VisitorGate>
+    )
+  }
 
-        <InstallButton />
+  /* ===============================
+   🔹 2. DISTRIBUTOR FLOW
+=============================== */
+
+// 🔹 DISTRIBUTOR FETCH
+const { data: distributor } = await supabase
+  .from("distributors")
+  .select("*")
+  .eq("slug", slug)
+  .single()
+
+if (!distributor) notFound()
+
+// 🔹 APPROVED RELATION
+const { data: access } = await supabase
+  .from("distributor_company_access")
+  .select("company_id")
+  .eq("distributor_id", distributor.id)
+  .eq("status", "approved")
+
+const companyIds = access?.map(a => a.company_id) || []
+
+// 🔹 EMPTY STATE
+if (companyIds.length === 0) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+      <div className="text-center">
+        <h1 className="text-xl font-semibold mb-2">
+          {distributor.name}
+        </h1>
+        <p className="text-zinc-500">
+          No brands available yet
+        </p>
       </div>
-
-    </VisitorGate>
+    </div>
   )
+}
+
+// 🔹 FETCH COMPANIES
+const { data: companies } = await supabase
+  .from("companies")
+  .select("id, display_name, logo_url")
+  .in("id", companyIds)
+
+// 🔥 FINAL RETURN
+return (
+  <DistributorClient
+    distributor={distributor}
+    companies={companies || []}
+  />
+)
 }
