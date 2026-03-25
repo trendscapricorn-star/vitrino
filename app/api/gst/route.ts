@@ -12,7 +12,7 @@ export async function GET(req: Request) {
       {
         method: "GET",
         headers: {
-          "X-API-KEY": process.env.APPYFLOW_KEY!,
+          key_secret: process.env.APPYFLOW_KEY!,
         },
       }
     )
@@ -21,9 +21,6 @@ export async function GET(req: Request) {
 
     return Response.json(data)
   } catch (err: any) {
-    return Response.json(
-      { error: err.message },
-      { status: 500 }
-    )
+    return Response.json({ error: err.message }, { status: 500 })
   }
 }
