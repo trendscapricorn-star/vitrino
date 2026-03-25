@@ -6,7 +6,17 @@ import PushRegister from "./components/PushRegister"
 import FilterWrapper from "./components/FilterWrapper"
 import PdfControls from "./components/PdfControls"
 import DistributorClient from "./DistributorClient"
+
 const PAGE_SIZE = 12
+
+/* ---------------- TYPES ---------------- */
+
+type Company = {
+  id: string
+  display_name: string
+}
+
+/* ---------------- PAGE ---------------- */
 
 export default async function PublicCatalog(props: any) {
   const params = await props.params
@@ -25,8 +35,9 @@ export default async function PublicCatalog(props: any) {
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
 
-  if (companyData) {
-    const company = companyData
+  const company = companyData as Company | null
+
+  if (company) {
 
     /* ---------------- SUBSCRIPTION ---------------- */
 
@@ -213,54 +224,49 @@ export default async function PublicCatalog(props: any) {
   }
 
   /* ===============================
-   🔹 2. DISTRIBUTOR FLOW
-=============================== */
+     🔹 2. DISTRIBUTOR FLOW
+  =============================== */
 
-// 🔹 DISTRIBUTOR FETCH
-const { data: distributor } = await supabase
-  .from("distributors")
-  .select("*")
-  .eq("slug", slug)
-  .single()
+  const { data: distributor } = await supabase
+    .from("distributors")
+    .select("*")
+    .eq("slug", slug)
+    .single()
 
-if (!distributor) notFound()
+  if (!distributor) notFound()
 
-// 🔹 APPROVED RELATION
-const { data: access } = await supabase
-  .from("distributor_company_access")
-  .select("company_id")
-  .eq("distributor_id", distributor.id)
-  .eq("status", "approved")
+  const { data: access } = await supabase
+    .from("distributor_company_access")
+    .select("company_id")
+    .eq("distributor_id", distributor.id)
+    .eq("status", "approved")
 
-const companyIds = access?.map(a => a.company_id) || []
+  const companyIds = access?.map(a => a.company_id) || []
 
-// 🔹 EMPTY STATE
-if (companyIds.length === 0) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-      <div className="text-center">
-        <h1 className="text-xl font-semibold mb-2">
-          {distributor.name}
-        </h1>
-        <p className="text-zinc-500">
-          No brands available yet
-        </p>
+  if (companyIds.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold mb-2">
+            {distributor.name}
+          </h1>
+          <p className="text-zinc-500">
+            No brands available yet
+          </p>
+        </div>
       </div>
-    </div>
+    )
+  }
+
+  const { data: companies } = await supabase
+    .from("companies")
+    .select("id, display_name, logo_url")
+    .in("id", companyIds)
+
+  return (
+    <DistributorClient
+      distributor={distributor}
+      companies={companies || []}
+    />
   )
-}
-
-// 🔹 FETCH COMPANIES
-const { data: companies } = await supabase
-  .from("companies")
-  .select("id, display_name, logo_url")
-  .in("id", companyIds)
-
-// 🔥 FINAL RETURN
-return (
-  <DistributorClient
-    distributor={distributor}
-    companies={companies || []}
-  />
-)
 }
