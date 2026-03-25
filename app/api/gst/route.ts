@@ -8,12 +8,9 @@ export async function GET(req: Request) {
 
   try {
     const response = await fetch(
-      `https://appyflow.in/api/verifyGST?gstin=${gstin}`,
+      `https://appyflow.in/api/verifyGST?gstNo=${gstin}&key_secret=${process.env.APPYFLOW_KEY}`,
       {
         method: "GET",
-        headers: {
-          key_secret: process.env.APPYFLOW_KEY!,
-        },
       }
     )
 
