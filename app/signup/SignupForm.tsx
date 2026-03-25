@@ -8,9 +8,7 @@ export default function SignupForm() {
   const supabase = getSupabaseClient()
   const router = useRouter()
 
-  const [role, setRole] = useState<"manufacturer" | "distributor">(
-    "manufacturer"
-  )
+  const [role, setRole] = useState<"manufacturer" | "distributor">("manufacturer")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -19,21 +17,40 @@ export default function SignupForm() {
   const [phone, setPhone] = useState("")
   const [gstin, setGstin] = useState("")
 
+  // 🔥 NEW FIELDS
+  const [address, setAddress] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+  const [gstLoading, setGstLoading] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /* 🔹 GST FETCH */
-  async function fetchGSTDetails(gstin: string) {
+  /* 🔹 GST FETCH (WITH BUTTON) */
+  async function fetchGSTDetails() {
+    if (gstin.length !== 15) return
+
+    setGstLoading(true)
+
     try {
       const res = await fetch(`/api/gst?gstin=${gstin}`)
       const data = await res.json()
 
-      if (data?.legal_name) {
-        setDisplayName(data.legal_name)
+      if (data) {
+        setDisplayName(data.legal_name || "")
+
+        setAddress(
+          `${data.address_line1 || ""} ${data.address_line2 || ""}`
+        )
+
+        setCity(data.city || "")
+        setState(data.state || "")
       }
     } catch (err) {
       console.error("GST fetch failed", err)
     }
+
+    setGstLoading(false)
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -41,8 +58,6 @@ export default function SignupForm() {
 
     setLoading(true)
     setError(null)
-
-    /* ---------- CREATE AUTH USER ---------- */
 
     const { data: authData, error: authError } =
       await supabase.auth.signUp({
@@ -71,6 +86,9 @@ export default function SignupForm() {
             slug: slug.toLowerCase().trim(),
             email,
             gstin: gstin || null,
+            address,
+            city,
+            state,
             subscription_status: "trial",
           })
           .select()
@@ -85,9 +103,7 @@ export default function SignupForm() {
       await fetch("/api/create-trial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyId: company.id,
-        }),
+        body: JSON.stringify({ companyId: company.id }),
       })
     }
 
@@ -103,6 +119,9 @@ export default function SignupForm() {
             name: displayName,
             phone,
             gstin: gstin || null,
+            address,
+            city,
+            state,
           })
 
       if (distributorError) {
@@ -119,7 +138,7 @@ export default function SignupForm() {
   return (
     <form onSubmit={handleSignup} className="space-y-4">
 
-      {/* ROLE SELECTOR */}
+      {/* ROLE */}
       <div className="flex gap-3">
         <button
           type="button"
@@ -142,35 +161,64 @@ export default function SignupForm() {
         </button>
       </div>
 
+      {/* GST + BUTTON */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Enter GSTIN"
+          value={gstin}
+          onChange={(e) => setGstin(e.target.value.toUpperCase())}
+          className="w-full border px-3 py-2 rounded"
+        />
+
+        <button
+          type="button"
+          onClick={fetchGSTDetails}
+          className="bg-black text-white px-4 rounded"
+        >
+          {gstLoading ? "..." : "Check"}
+        </button>
+      </div>
+
       {/* NAME */}
       <input
         type="text"
-        placeholder={
-          role === "manufacturer"
-            ? "Company Name"
-            : "Distributor Name"
-        }
+        placeholder="Business Name"
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         className="w-full border px-3 py-2 rounded"
         required
       />
 
-      {/* ✅ GST FIELD (FOR BOTH) */}
+      {/* ADDRESS */}
       <input
         type="text"
-        placeholder="GSTIN (optional)"
-        value={gstin}
-        onChange={(e) => setGstin(e.target.value.toUpperCase())}
-        onBlur={() => {
-          if (gstin.length === 15) {
-            fetchGSTDetails(gstin)
-          }
-        }}
+        placeholder="Address"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
         className="w-full border px-3 py-2 rounded"
       />
 
-      {/* SLUG (ONLY MANUFACTURER) */}
+      {/* CITY + STATE */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="City"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
+
+        <input
+          type="text"
+          placeholder="State"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
+      </div>
+
+      {/* SLUG */}
       {role === "manufacturer" && (
         <input
           type="text"
@@ -189,7 +237,7 @@ export default function SignupForm() {
         />
       )}
 
-      {/* PHONE (ONLY DISTRIBUTOR) */}
+      {/* PHONE */}
       {role === "distributor" && (
         <input
           type="text"
@@ -230,9 +278,7 @@ export default function SignupForm() {
       </button>
 
       {error && (
-        <p className="text-red-500 text-sm text-center">
-          {error}
-        </p>
+        <p className="text-red-500 text-sm text-center">{error}</p>
       )}
 
     </form>
