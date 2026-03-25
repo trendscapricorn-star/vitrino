@@ -27,31 +27,39 @@ export default function SignupForm() {
   const [error, setError] = useState<string | null>(null)
 
   /* 🔹 GST FETCH (WITH BUTTON) */
-  async function fetchGSTDetails() {
-    if (gstin.length !== 15) return
+async function fetchGSTDetails() {
+  if (gstin.length !== 15) return
 
-    setGstLoading(true)
+  setGstLoading(true)
 
-    try {
-      const res = await fetch(`/api/gst?gstin=${gstin}`)
-      const data = await res.json()
+  try {
+    const res = await fetch(`/api/gst?gstin=${gstin}`)
+    const data = await res.json()
 
-      if (data) {
-        setDisplayName(data.legal_name || "")
+    const info = data?.taxpayerInfo
 
+    if (info) {
+      // ✅ BUSINESS NAME
+      setDisplayName(info.tradeNam || info.lgnm || "")
+
+      // ✅ ADDRESS
+      const addr = info.pradr?.addr
+
+      if (addr) {
         setAddress(
-          `${data.address_line1 || ""} ${data.address_line2 || ""}`
+          `${addr.bno || ""} ${addr.st || ""}`.trim()
         )
 
-        setCity(data.city || "")
-        setState(data.state || "")
+        setCity(addr.dst || "")
+        setState(addr.stcd || "")
       }
-    } catch (err) {
-      console.error("GST fetch failed", err)
     }
-
-    setGstLoading(false)
+  } catch (err) {
+    console.error("GST fetch failed", err)
   }
+
+  setGstLoading(false)
+}
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
