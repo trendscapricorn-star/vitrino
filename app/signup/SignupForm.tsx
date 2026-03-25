@@ -17,9 +17,24 @@ export default function SignupForm() {
   const [displayName, setDisplayName] = useState("")
   const [slug, setSlug] = useState("")
   const [phone, setPhone] = useState("")
+  const [gstin, setGstin] = useState("")
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /* 🔹 GST FETCH */
+  async function fetchGSTDetails(gstin: string) {
+    try {
+      const res = await fetch(`/api/gst?gstin=${gstin}`)
+      const data = await res.json()
+
+      if (data?.legal_name) {
+        setDisplayName(data.legal_name)
+      }
+    } catch (err) {
+      console.error("GST fetch failed", err)
+    }
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -43,7 +58,7 @@ export default function SignupForm() {
 
     const user = authData.user
 
-    /* ---------- MANUFACTURER FLOW ---------- */
+    /* ---------- MANUFACTURER ---------- */
 
     if (role === "manufacturer") {
 
@@ -55,6 +70,7 @@ export default function SignupForm() {
             display_name: displayName.trim(),
             slug: slug.toLowerCase().trim(),
             email,
+            gstin: gstin || null,
             subscription_status: "trial",
           })
           .select()
@@ -66,8 +82,6 @@ export default function SignupForm() {
         return
       }
 
-      /* ---------- CREATE TRIAL ---------- */
-
       await fetch("/api/create-trial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,7 +91,7 @@ export default function SignupForm() {
       })
     }
 
-    /* ---------- DISTRIBUTOR FLOW ---------- */
+    /* ---------- DISTRIBUTOR ---------- */
 
     if (role === "distributor") {
 
@@ -88,6 +102,7 @@ export default function SignupForm() {
             auth_user_id: user.id,
             name: displayName,
             phone,
+            gstin: gstin || null,
           })
 
       if (distributorError) {
@@ -98,7 +113,6 @@ export default function SignupForm() {
     }
 
     setLoading(false)
-
     router.push("/dashboard")
   }
 
@@ -106,16 +120,12 @@ export default function SignupForm() {
     <form onSubmit={handleSignup} className="space-y-4">
 
       {/* ROLE SELECTOR */}
-
       <div className="flex gap-3">
-
         <button
           type="button"
           onClick={() => setRole("manufacturer")}
           className={`flex-1 border py-2 rounded ${
-            role === "manufacturer"
-              ? "bg-black text-white"
-              : ""
+            role === "manufacturer" ? "bg-black text-white" : ""
           }`}
         >
           Manufacturer
@@ -125,18 +135,14 @@ export default function SignupForm() {
           type="button"
           onClick={() => setRole("distributor")}
           className={`flex-1 border py-2 rounded ${
-            role === "distributor"
-              ? "bg-black text-white"
-              : ""
+            role === "distributor" ? "bg-black text-white" : ""
           }`}
         >
           Distributor
         </button>
-
       </div>
 
       {/* NAME */}
-
       <input
         type="text"
         placeholder={
@@ -150,8 +156,21 @@ export default function SignupForm() {
         required
       />
 
-      {/* SLUG (ONLY MANUFACTURER) */}
+      {/* ✅ GST FIELD (FOR BOTH) */}
+      <input
+        type="text"
+        placeholder="GSTIN (optional)"
+        value={gstin}
+        onChange={(e) => setGstin(e.target.value.toUpperCase())}
+        onBlur={() => {
+          if (gstin.length === 15) {
+            fetchGSTDetails(gstin)
+          }
+        }}
+        className="w-full border px-3 py-2 rounded"
+      />
 
+      {/* SLUG (ONLY MANUFACTURER) */}
       {role === "manufacturer" && (
         <input
           type="text"
@@ -171,7 +190,6 @@ export default function SignupForm() {
       )}
 
       {/* PHONE (ONLY DISTRIBUTOR) */}
-
       {role === "distributor" && (
         <input
           type="text"
@@ -183,7 +201,6 @@ export default function SignupForm() {
       )}
 
       {/* EMAIL */}
-
       <input
         type="email"
         placeholder="Email"
@@ -194,7 +211,6 @@ export default function SignupForm() {
       />
 
       {/* PASSWORD */}
-
       <input
         type="password"
         placeholder="Password"
@@ -205,7 +221,6 @@ export default function SignupForm() {
       />
 
       {/* SUBMIT */}
-
       <button
         type="submit"
         disabled={loading}
