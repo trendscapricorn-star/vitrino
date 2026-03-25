@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-  // ✅ FULL BLEED PAGE (NO MARGINS)
+  // ✅ FULL BLEED PAGE
   const pageWidth = 595
   const pageHeight = 380
 
@@ -36,17 +36,16 @@ export async function POST(req: Request) {
 
       let drawWidth = columnWidth
       let drawHeight = 200
-
       let imageX = x
 
-      // 🖼️ IMAGE LOAD
+      // 🖼️ LOAD IMAGE ONCE
+      let img
       try {
         if (p.product_images?.[0]?.image_url) {
-
           const res = await fetch(p.product_images[0].image_url)
           const imgBytes = await res.arrayBuffer()
 
-          const img = await pdfDoc.embedJpg(imgBytes).catch(() =>
+          img = await pdfDoc.embedJpg(imgBytes).catch(() =>
             pdfDoc.embedPng(imgBytes)
           )
 
@@ -65,103 +64,107 @@ export async function POST(req: Request) {
         }
       } catch {}
 
-      // 🧠 CALCULATE TEXT HEIGHT
+      // 🧠 TEXT CALCULATION
       let estimatedTextHeight = 0
 
-      if (config?.includeName) estimatedTextHeight += 14
+      const design = p.design_no || p.name || ''
+      const priceText = `Rs. ${p.base_price ?? '-'}`
 
-      let attrLines = 0
+      estimatedTextHeight += 13 + 14 // design + price
+
       let values: string[] = []
-
       if (config?.includeAttributes && p.product_attribute_values?.length) {
         values = p.product_attribute_values
           .map((av: any) => av.attribute_options?.value)
           .filter(Boolean)
 
-        attrLines = Math.ceil(values.length / 3)
-        estimatedTextHeight += attrLines * 11
+        estimatedTextHeight += Math.ceil(values.length / 3) * 11
       }
 
-      if (config?.includePrice) estimatedTextHeight += 13
+      if (config?.includeName) estimatedTextHeight += 14
 
       const totalBlockHeight = drawHeight + 6 + estimatedTextHeight
 
-      // 🔥 PERFECT VERTICAL CENTERING
+      // ✅ PERFECT CENTER
       let y = contentBottom + (contentHeight + totalBlockHeight) / 2
 
       // 🖼️ DRAW IMAGE
-      try {
-        if (p.product_images?.[0]?.image_url) {
-          const res = await fetch(p.product_images[0].image_url)
-          const imgBytes = await res.arrayBuffer()
+      if (img) {
+        page.drawImage(img, {
+          x: imageX,
+          y: y - drawHeight,
+          width: drawWidth,
+          height: drawHeight,
+        })
+      }
 
-          const img = await pdfDoc.embedJpg(imgBytes).catch(() =>
-            pdfDoc.embedPng(imgBytes)
-          )
-
-          page.drawImage(img, {
-            x: imageX,
-            y: y - drawHeight,
-            width: drawWidth,
-            height: drawHeight,
-          })
-        }
-      } catch {}
-
-      // ✍️ TEXT START
       let textY = y - drawHeight - 6
-      const centerX = x + columnWidth / 2
+
+      // 🔥 DESIGN NO (TRUE CENTER)
+      const designWidth = boldFont.widthOfTextAtSize(design, 11)
+      page.drawText(design, {
+        x: x + (columnWidth - designWidth) / 2,
+        y: textY,
+        size: 11,
+        font: boldFont,
+      })
+
+      textY -= 13
+
+      // 🔥 PRICE (TRUE CENTER)
+      const priceWidth = boldFont.widthOfTextAtSize(priceText, 11)
+      page.drawText(priceText, {
+        x: x + (columnWidth - priceWidth) / 2,
+        y: textY,
+        size: 11,
+        font: boldFont,
+      })
+
+      textY -= 14
 
       // 🏷️ NAME
       if (config?.includeName) {
-        page.drawText(p.name || '', {
-          x: centerX,
+        const name = p.name || ''
+        const nameWidth = boldFont.widthOfTextAtSize(name, 12)
+
+        page.drawText(name, {
+          x: x + (columnWidth - nameWidth) / 2,
           y: textY,
           size: 12,
           font: boldFont,
-          maxWidth: columnWidth,
-          align: 'center',
         })
+
         textY -= 14
       }
 
-      // 🧾 ATTRIBUTES (3 PER LINE)
-      if (config?.includeAttributes && values.length) {
-
+      // 🧾 ATTRIBUTES
+      if (values.length) {
         for (let k = 0; k < values.length; k += 3) {
 
           const line = values.slice(k, k + 3).join(' | ')
+          const lineWidth = font.widthOfTextAtSize(line, 9)
 
           page.drawText(line, {
-            x: centerX,
+            x: x + (columnWidth - lineWidth) / 2,
             y: textY,
             size: 9,
             font,
-            maxWidth: columnWidth,
-            align: 'center',
           })
 
           textY -= 11
         }
       }
 
-      // 💰 PRICE
-      if (config?.includePrice) {
-        page.drawText(`Rs. ${p.base_price ?? '-'}`, {
-          x: centerX,
-          y: textY,
-          size: 12,
-          font: boldFont,
-        })
-      }
-
       // ➡️ NEXT COLUMN
       x = columnWidth
     }
 
-    // 🔢 PAGE NUMBER (very bottom center)
-    page.drawText(`${pageIndex} / ${totalPages}`, {
-      x: pageWidth / 2 - 15,
+    // 🔢 PAGE NUMBER
+    const pageText = `${pageIndex} / ${totalPages}`
+    const pageTextWidth = font.widthOfTextAtSize(pageText, 9)
+
+    page.drawText(pageText, {
+      x: (pageWidth - pageTextWidth) / 2,
       y: 4,
       size: 9,
       font,
