@@ -2,25 +2,60 @@
 
 import { useState } from "react"
 
-export default function DistributorClient({ distributor, companies }) {
-  const [products, setProducts] = useState([])
-  const [selectedCompany, setSelectedCompany] = useState(null)
+/* ---------------- TYPES ---------------- */
+
+type Distributor = {
+  id: string
+  name: string
+}
+
+type Company = {
+  id: string
+  display_name: string
+  logo_url: string | null
+}
+
+type Product = {
+  id: string
+  name: string
+  base_price: number
+  product_images?: { image_url: string }[]
+}
+
+/* ---------------- COMPONENT ---------------- */
+
+export default function DistributorClient({
+  distributor,
+  companies,
+}: {
+  distributor: Distributor
+  companies: Company[]
+}) {
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  async function loadProducts(companyId) {
+  async function loadProducts(companyId: string) {
     setSelectedCompany(companyId)
     setLoading(true)
 
-    const res = await fetch(`/api/products?company_id=${companyId}`)
-    const data = await res.json()
+    try {
+      const res = await fetch(`/api/products?company_id=${companyId}`)
+      const data = await res.json()
 
-    setProducts(data)
+      setProducts(data || [])
+    } catch (err) {
+      console.error("Failed to load products", err)
+      setProducts([])
+    }
+
     setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-zinc-50 p-8">
 
+      {/* HEADER */}
       <h1 className="text-2xl font-semibold mb-6">
         {distributor.name}
       </h1>
@@ -36,7 +71,7 @@ export default function DistributorClient({ distributor, companies }) {
           <div
             key={c.id}
             onClick={() => loadProducts(c.id)}
-            className={`border rounded-lg p-4 text-center cursor-pointer hover:shadow ${
+            className={`border rounded-lg p-4 text-center cursor-pointer hover:shadow transition ${
               selectedCompany === c.id ? "border-black" : ""
             }`}
           >
@@ -48,7 +83,9 @@ export default function DistributorClient({ distributor, companies }) {
                   className="max-h-full object-contain"
                 />
               ) : (
-                <span className="text-zinc-400 text-sm">No Logo</span>
+                <span className="text-zinc-400 text-sm">
+                  No Logo
+                </span>
               )}
             </div>
 
@@ -69,18 +106,24 @@ export default function DistributorClient({ distributor, companies }) {
           </h2>
 
           {loading ? (
-            <p>Loading...</p>
+            <p className="text-sm text-zinc-500">Loading...</p>
+          ) : products.length === 0 ? (
+            <p className="text-sm text-zinc-500">
+              No products found
+            </p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
 
               {products.map((p) => (
                 <div key={p.id} className="border rounded p-3">
 
-                  <div className="h-40 bg-zinc-100 mb-2 flex items-center justify-center">
+                  {/* IMAGE */}
+                  <div className="h-40 bg-zinc-100 mb-2 flex items-center justify-center overflow-hidden">
                     {p.product_images?.[0]?.image_url ? (
                       <img
                         src={p.product_images[0].image_url}
-                        className="h-full object-cover"
+                        alt={p.name}
+                        className="h-full w-full object-cover"
                       />
                     ) : (
                       <span className="text-xs text-zinc-400">
@@ -89,10 +132,12 @@ export default function DistributorClient({ distributor, companies }) {
                     )}
                   </div>
 
+                  {/* NAME */}
                   <p className="text-sm font-medium">
                     {p.name}
                   </p>
 
+                  {/* PRICE */}
                   <p className="text-sm text-zinc-500">
                     ₹ {p.base_price}
                   </p>
