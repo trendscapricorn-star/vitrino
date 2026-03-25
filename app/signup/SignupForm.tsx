@@ -17,7 +17,6 @@ export default function SignupForm() {
   const [phone, setPhone] = useState("")
   const [gstin, setGstin] = useState("")
 
-  // 🔥 NEW FIELDS
   const [address, setAddress] = useState("")
   const [city, setCity] = useState("")
   const [state, setState] = useState("")
@@ -26,40 +25,35 @@ export default function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  /* 🔹 GST FETCH (WITH BUTTON) */
-async function fetchGSTDetails() {
-  if (gstin.length !== 15) return
+  /* GST FETCH */
+  async function fetchGSTDetails() {
+    if (gstin.length !== 15) return
 
-  setGstLoading(true)
+    setGstLoading(true)
 
-  try {
-    const res = await fetch(`/api/gst?gstin=${gstin}`)
-    const data = await res.json()
+    try {
+      const res = await fetch(`/api/gst?gstin=${gstin}`)
+      const data = await res.json()
 
-    const info = data?.taxpayerInfo
+      const info = data?.taxpayerInfo
 
-    if (info) {
-      // ✅ BUSINESS NAME
-      setDisplayName(info.tradeNam || info.lgnm || "")
+      if (info) {
+        setDisplayName(info.tradeNam || info.lgnm || "")
 
-      // ✅ ADDRESS
-      const addr = info.pradr?.addr
+        const addr = info.pradr?.addr
 
-      if (addr) {
-        setAddress(
-          `${addr.bno || ""} ${addr.st || ""}`.trim()
-        )
-
-        setCity(addr.dst || "")
-        setState(addr.stcd || "")
+        if (addr) {
+          setAddress(`${addr.bno || ""} ${addr.st || ""}`.trim())
+          setCity(addr.dst || "")
+          setState(addr.stcd || "")
+        }
       }
+    } catch (err) {
+      console.error("GST fetch failed", err)
     }
-  } catch (err) {
-    console.error("GST fetch failed", err)
-  }
 
-  setGstLoading(false)
-}
+    setGstLoading(false)
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -82,28 +76,23 @@ async function fetchGSTDetails() {
     const user = authData.user
 
     /* ---------- MANUFACTURER ---------- */
-
     if (role === "manufacturer") {
+      const { error: companyError } = await supabase
+        .from("companies")
+        .insert({
+          auth_user_id: user.id,
+          display_name: displayName.trim(),
+          slug: slug.toLowerCase().trim(),
+          email,
+          gstin: gstin || null,
+          address,
+          city,
+          state,
+          subscription_status: "trial",
+        })
 
-      const { data: company, error: companyError } =
-        await supabase
-          .from("companies")
-          .insert({
-            auth_user_id: user.id,
-            display_name: displayName.trim(),
-            slug: slug.toLowerCase().trim(),
-            email,
-            gstin: gstin || null,
-            address,
-            city,
-            state,
-            subscription_status: "trial",
-          })
-          .select()
-          .single()
-
-      if (companyError || !company) {
-        setError(companyError?.message || "Company creation failed")
+      if (companyError) {
+        setError(companyError.message)
         setLoading(false)
         return
       }
@@ -111,26 +100,24 @@ async function fetchGSTDetails() {
       await fetch("/api/create-trial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyId: company.id }),
+        body: JSON.stringify({ companyId: user.id }),
       })
     }
 
     /* ---------- DISTRIBUTOR ---------- */
-
     if (role === "distributor") {
-
-      const { error: distributorError } =
-        await supabase
-          .from("distributors")
-          .insert({
-            auth_user_id: user.id,
-            name: displayName,
-            phone,
-            gstin: gstin || null,
-            address,
-            city,
-            state,
-          })
+      const { error: distributorError } = await supabase
+        .from("distributors")
+        .insert({
+          auth_user_id: user.id,
+          name: displayName,
+          phone,
+          slug: slug.toLowerCase().trim(),
+          gstin: gstin || null,
+          address,
+          city,
+          state,
+        })
 
       if (distributorError) {
         setError(distributorError.message)
@@ -169,7 +156,7 @@ async function fetchGSTDetails() {
         </button>
       </div>
 
-      {/* GST + BUTTON */}
+      {/* GST */}
       <div className="flex gap-2">
         <input
           type="text"
@@ -226,24 +213,42 @@ async function fetchGSTDetails() {
         />
       </div>
 
-      {/* SLUG */}
-      {role === "manufacturer" && (
-        <input
-          type="text"
-          placeholder="Company Slug"
-          value={slug}
-          onChange={(e) =>
-            setSlug(
-              e.target.value
-                .toLowerCase()
-                .replace(/\s+/g, "-")
-                .replace(/[^a-z0-9-]/g, "")
-            )
-          }
-          className="w-full border px-3 py-2 rounded"
-          required
-        />
-      )}
+      {/* SLUG (FOR BOTH) */}
+      <div className="space-y-1">
+        <label className="text-xs text-zinc-500">
+          Your public page
+        </label>
+
+        <div className="flex items-center border rounded px-2">
+          <span className="text-zinc-400 text-sm">
+            www.vitrino.in/
+          </span>
+
+          <input
+            type="text"
+            placeholder={
+              role === "manufacturer"
+                ? "your-brand"
+                : "your-name"
+            }
+            value={slug}
+            onChange={(e) =>
+              setSlug(
+                e.target.value
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+                  .replace(/[^a-z0-9-]/g, "")
+              )
+            }
+            className="flex-1 px-2 py-2 outline-none"
+            required
+          />
+        </div>
+
+        <p className="text-xs text-zinc-400">
+          This will be your public page URL
+        </p>
+      </div>
 
       {/* PHONE */}
       {role === "distributor" && (
