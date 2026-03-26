@@ -5,14 +5,14 @@ import ProductForm from '../ProductForm'
 export default async function NewProductPage() {
   const supabase = await createSupabaseServerClient()
 
-  // 🔐 Auth check
+  // 🔐 Auth
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
-  // 🏢 Get company
+  // 🏢 Company
   const { data: company } = await supabase
     .from('companies')
     .select('id')
@@ -46,10 +46,9 @@ export default async function NewProductPage() {
 
       <ProductForm
         product={null}
-        categories={categories || []}
-        attributes={attributes || []}
+        categories={categories ?? []}
+        attributes={attributes ?? []}
         companyId={company.id}
-        onClose={() => {}}
       />
     </div>
   )

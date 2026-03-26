@@ -62,10 +62,9 @@ export default async function EditProductPage({
 
       <ProductForm
         product={product}
-        categories={categories || []}
-        attributes={attributes || []}
+        categories={categories ?? []}
+        attributes={attributes ?? []}
         companyId={company.id}
-        onClose={() => {}}
       />
     </div>
   )
