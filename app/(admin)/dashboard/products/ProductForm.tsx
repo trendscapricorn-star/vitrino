@@ -192,14 +192,19 @@ export default function ProductForm({
       return
     }
 
-    let currentProduct = draftProduct
+let currentProduct = draftProduct
 
-    if (!currentProduct) {
-      const newDraft = await createDraftProduct(name, categoryId)
-      if (!newDraft) return
-      setDraftProduct(newDraft)
-      currentProduct = newDraft
-    }
+if (!currentProduct) {
+  const newDraft = await createDraftProduct(name, categoryId)
+
+  if (!newDraft) return
+
+  setDraftProduct(newDraft)
+  currentProduct = newDraft
+}
+
+// ✅ Tell TypeScript it's safe now
+if (!currentProduct) return
 
     const fileExt = file.name.split(".").pop()
     const fileName = `${currentProduct.id}/${Date.now()}.${fileExt}`
