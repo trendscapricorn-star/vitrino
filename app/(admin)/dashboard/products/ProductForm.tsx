@@ -21,7 +21,7 @@ interface ProductFormProps {
   categories: Category[]
   attributes: Attribute[]
   companyId: string
-  onClose: () => void
+  onClose?: () => void
 }
 
 type AttributeValueMap = {
