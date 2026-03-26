@@ -20,13 +20,13 @@ export default function FilterWrapper(props: any) {
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <div className="hidden md:block md:col-span-3">
+      <div className="hidden md:block">
         <FilterSidebar {...props} />
       </div>
 
       {/* MOBILE DRAWER */}
       {showFilters && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex">
+        <div className="fixed inset-0 z-50 bg-black/40 flex touch-auto">
 
           <div className="w-4/5 max-w-sm bg-white h-full p-4 overflow-y-auto">
 

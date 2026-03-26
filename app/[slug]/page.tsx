@@ -9,14 +9,10 @@ import DistributorClient from "./DistributorClient"
 
 const PAGE_SIZE = 12
 
-/* ---------------- TYPES ---------------- */
-
 type Company = {
   id: string
   display_name: string
 }
-
-/* ---------------- PAGE ---------------- */
 
 export default async function PublicCatalog(props: any) {
   const params = await props.params
@@ -27,10 +23,6 @@ export default async function PublicCatalog(props: any) {
   const slug = params.slug
   if (!slug) notFound()
 
-  /* ===============================
-     🔹 1. CHECK MANUFACTURER
-  =============================== */
-
   const { data: companyData } = await supabase
     .rpc("get_company_by_slug", { p_slug: slug })
     .single()
@@ -38,8 +30,6 @@ export default async function PublicCatalog(props: any) {
   const company = companyData as Company | null
 
   if (company) {
-
-    /* ---------------- SUBSCRIPTION ---------------- */
 
     const { data: subscription } = await supabase
       .from("subscriptions")
@@ -60,18 +50,8 @@ export default async function PublicCatalog(props: any) {
       new Date(subscription.current_period_end) > now
 
     if (!isTrialValid && !isActiveValid) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-          <div className="bg-white p-10 rounded-xl shadow max-w-xl">
-            <div className="text-xl font-semibold text-red-600">
-              Account Suspended
-            </div>
-          </div>
-        </div>
-      )
+      return <div className="p-10">Account Suspended</div>
     }
-
-    /* ---------------- CATEGORIES ---------------- */
 
     const { data: categories } = await supabase
       .from("categories")
@@ -103,8 +83,6 @@ export default async function PublicCatalog(props: any) {
         ? Number(searchParams.page)
         : 1
 
-    /* ---------------- ATTRIBUTES ---------------- */
-
     const { data: attributes } = await supabase
       .from("attributes")
       .select(`
@@ -117,8 +95,6 @@ export default async function PublicCatalog(props: any) {
       `)
       .eq("category_id", selectedCategory)
       .order("sort_order", { ascending: true })
-
-    /* ---------------- PRODUCTS ---------------- */
 
     let query = supabase
       .from("products")
@@ -159,26 +135,10 @@ export default async function PublicCatalog(props: any) {
           : query.in("id", ["00000000-0000-0000-0000-000000000000"])
     }
 
-    if (sort === "price_asc")
-      query = query.order("base_price", { ascending: true })
-    else if (sort === "price_desc")
-      query = query.order("base_price", { ascending: false })
-    else if (sort === "name_asc")
-      query = query.order("name", { ascending: true })
-    else if (sort === "name_desc")
-      query = query.order("name", { ascending: false })
-    else
-      query = query.order("sort_order", { ascending: true })
-
     const from = (page - 1) * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
 
     const { data: products, count } = await query.range(from, to)
-
-    const selectedCategoryName =
-      categories.find(c => c.id === selectedCategory)?.name || ""
-
-    /* ---------------- UI ---------------- */
 
     return (
       <VisitorGate companyId={company.id}>
@@ -187,30 +147,29 @@ export default async function PublicCatalog(props: any) {
         <div className="bg-zinc-50">
           <div className="max-w-7xl mx-auto px-6 py-8">
 
-            <div className="text-sm text-gray-500 mb-6">
-              {company.display_name} / {selectedCategoryName}
-            </div>
+            {/* ✅ FIXED GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-            <div className="grid grid-cols-12 gap-8">
+              {/* FILTER */}
+              <div className="md:col-span-3">
+                <FilterWrapper
+                  slug={slug}
+                  categories={categories}
+                  attributes={attributes}
+                  selectedCategory={selectedCategory}
+                  selectedOptions={selectedOptions}
+                  sort={sort}
+                  totalProducts={count || 0}
+                />
+              </div>
 
-              <FilterWrapper
-                slug={slug}
-                categories={categories}
-                attributes={attributes}
-                selectedCategory={selectedCategory}
-                selectedOptions={selectedOptions}
-                sort={sort}
-                totalProducts={count || 0}
-              />
-
-              <div className="col-span-9">
-
+              {/* CONTENT */}
+              <div className="md:col-span-9">
                 <PdfControls
                   products={products}
                   attributes={attributes}
                   slug={slug}
                 />
-
               </div>
 
             </div>
@@ -223,50 +182,5 @@ export default async function PublicCatalog(props: any) {
     )
   }
 
-  /* ===============================
-     🔹 2. DISTRIBUTOR FLOW
-  =============================== */
-
-  const { data: distributor } = await supabase
-    .from("distributors")
-    .select("*")
-    .eq("slug", slug)
-    .single()
-
-  if (!distributor) notFound()
-
-  const { data: access } = await supabase
-    .from("distributor_company_access")
-    .select("company_id")
-    .eq("distributor_id", distributor.id)
-    .eq("status", "approved")
-
-  const companyIds = access?.map(a => a.company_id) || []
-
-  if (companyIds.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold mb-2">
-            {distributor.name}
-          </h1>
-          <p className="text-zinc-500">
-            No brands available yet
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  const { data: companies } = await supabase
-    .from("companies")
-    .select("id, display_name, logo_url")
-    .in("id", companyIds)
-
-  return (
-    <DistributorClient
-      distributor={distributor}
-      companies={companies || []}
-    />
-  )
+  return <div>No data</div>
 }
