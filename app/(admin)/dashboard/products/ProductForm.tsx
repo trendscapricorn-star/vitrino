@@ -43,12 +43,11 @@ export default function ProductForm({
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
   const [attributeValues, setAttributeValues] = useState<AttributeValueMap>({})
+  const [draftProduct, setDraftProduct] = useState<Product | null>(product)
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved'>('saved')
 
   const [images, setImages] = useState<any[]>([])
-  const [pendingImages, setPendingImages] = useState<File[]>([])
-
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
 
   const [aiFilled, setAiFilled] = useState<Record<string, boolean>>({})
   const [aiStep, setAiStep] = useState("")
@@ -57,10 +56,10 @@ export default function ProductForm({
     (attr) => attr.category_id === categoryId
   )
 
+  // INIT
   useEffect(() => {
-
     if (product) {
-
+      setDraftProduct(product)
       setName(product.name)
       setCategoryId(product.category_id)
       setPrice(product.base_price?.toString() || '')
@@ -69,25 +68,20 @@ export default function ProductForm({
       loadExistingAttributes(product.id)
       loadImages(product.id)
 
-      setPendingImages([])
       setAiFilled({})
-
     } else {
-
+      setDraftProduct(null)
       setName('')
       setCategoryId('')
       setPrice('')
       setDescription('')
       setAttributeValues({})
       setImages([])
-      setPendingImages([])
       setAiFilled({})
     }
-
   }, [product])
 
   async function loadExistingAttributes(productId: string) {
-
     const { data } = await supabase
       .from('product_attribute_values')
       .select('attribute_id, option_id')
@@ -102,8 +96,27 @@ export default function ProductForm({
     setAttributeValues(map)
   }
 
-  async function loadImages(productId: string) {
+  async function createDraftProduct(initialName?: string, initialCategory?: string) {
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        company_id: companyId,
+        name: initialName || "Untitled Product",
+        category_id: initialCategory || null,
+        has_variants: false,
+      })
+      .select()
+      .single()
 
+    if (error) {
+      alert("Failed to create product")
+      return null
+    }
+
+    return data
+  }
+
+  async function loadImages(productId: string) {
     const { data } = await supabase
       .from('product_images')
       .select('*')
@@ -113,173 +126,12 @@ export default function ProductForm({
     setImages(data || [])
   }
 
-  async function handleImageUpload(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  // AUTO SAVE BASIC
+  useEffect(() => {
+    if (!draftProduct?.id) return
 
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (images.length + pendingImages.length >= 4) {
-      alert("Maximum 4 images allowed")
-      return
-    }
-
-    const exists = pendingImages.find(f => f.name === file.name)
-
-    if (exists) {
-      alert("This image is already selected")
-      return
-    }
-
-    setPendingImages(prev => [...prev, file])
-  }
-
-  async function deleteImage(imageId: string) {
-
-    if (!product?.id) return
-
-    await supabase
-      .from("product_images")
-      .delete()
-      .eq("id", imageId)
-
-    loadImages(product.id)
-  }
-
-  async function handleAutoFill() {
-console.log("AUTO FILL CLICKED")
-console.log("categoryId:", categoryId)
-  console.log("categoryAttributes:", categoryAttributes)
-console.log("images:", images)
-console.log("pendingImages:", pendingImages)
-
-    if (loading) return
-
-
-    if (!categoryId) {
-      alert("Select category first")
-      return
-    }
-
-    setLoading(true)
-    setAiStep("Analyzing product description...")
-
-    try {
-
-      const firstImage =
-        images[0]?.image_url ||
-        URL.createObjectURL(pendingImages[0])
-
-      setAiStep("Preparing attributes...")
-
-const structuredAttributes = await Promise.all(
-  categoryAttributes.map(async (attr) => {
-
-    console.log("FETCHING OPTIONS FOR:", attr.name)
-
-    const { data: options, error } = await supabase
-      .from("attribute_options")
-      .select("id, value")
-      .eq("attribute_id", attr.id)
-
-    if (error) {
-      console.error("OPTIONS ERROR:", error)
-    }
-
-    console.log("OPTIONS:", options)
-
-    return {
-      id: attr.id,
-      name: attr.name,
-      options: options || [],
-    }
-
-  })
-)
-
-      setAiStep("Matching attributes with AI...")
-
-      const categoryName =
-        categories.find(c => c.id === categoryId)?.name || ""
-
-console.log("STRUCTURED ATTRIBUTES:", structuredAttributes)
-console.log("CALLING AI API...")
-console.log("REQUEST BODY:", {
-  categoryName,
-  structuredAttributes
-})
-
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "product_autofill",
-          category: categoryName,
-          existingAttributes: structuredAttributes,
-          imageUrl: firstImage,
-          productName: name,
-          description,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("AI request failed")
-      }
-
-      const data = await response.json()
-console.log("AI RESPONSE:", data)
-
-      const updatedValues: AttributeValueMap = { ...attributeValues }
-      const updatedAiFilled = { ...aiFilled };
-
-const matches = data.matched_attributes ?? []
-
-for (const match of matches) {
-
-  const attr = structuredAttributes.find(
-    (a) => a.id === match.attribute_id
-  )
-
-  if (!attr) continue
-
-  const option = attr.options.find(
-    (o: any) => o.value === match.selected_option
-  )
-
-  if (option) {
-    updatedValues[attr.id] = option.id
-    updatedAiFilled[attr.id] = true
-  }
-}
-
-
-      setAttributeValues(updatedValues)
-      setAiFilled(updatedAiFilled)
-
-    } catch (err) {
-
-      console.error("Auto Fill Error:", err)
-      alert("AI processing failed")
-
-    }
-
-    setLoading(false)
-    setAiStep("")
-  }
-
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
-
-    e.preventDefault()
-    if (loading) return
-
-    setLoading(true)
-
-    let productId: string
-
-    if (product) {
+    const timeout = setTimeout(async () => {
+      setSaveStatus('saving')
 
       await supabase
         .from("products")
@@ -289,269 +141,177 @@ for (const match of matches) {
           base_price: price ? Number(price) : null,
           description,
         })
-        .eq("id", product.id)
+        .eq("id", draftProduct.id)
 
-      productId = product.id
+      setSaveStatus('saved')
+    }, 600)
+
+    return () => clearTimeout(timeout)
+  }, [name, categoryId, price, description, draftProduct?.id])
+
+  // AUTO SAVE ATTRIBUTES
+  useEffect(() => {
+    if (!draftProduct?.id) return
+
+    const timeout = setTimeout(async () => {
+      setSaveStatus('saving')
+
+      const productId = draftProduct.id
 
       await supabase
         .from("product_attribute_values")
         .delete()
         .eq("product_id", productId)
 
-    } else {
-
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-
-      const { data: newProduct } = await supabase
-        .from("products")
-        .insert({
-          company_id: companyId,
-          category_id: categoryId,
-          name,
-          slug,
-          base_price: price ? Number(price) : null,
-          description,
-          has_variants: false,
-        })
-        .select()
-        .single()
-
-      if (!newProduct) return
-
-      productId = newProduct.id
-    }
-
-    const attributeRows = Object.entries(attributeValues)
-      .filter(([_, optionId]) => optionId)
-      .map(([attrId, optionId]) => ({
-        product_id: productId,
-        attribute_id: attrId,
-        option_id: optionId,
-      }))
-
-    if (attributeRows.length) {
-      await supabase
-        .from("product_attribute_values")
-        .insert(attributeRows)
-    }
-
-    let imageIndex = 0
-
-    for (const file of pendingImages) {
-
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${productId}/${Date.now()}_${imageIndex}.${fileExt}`
-
-      const { error } = await supabase.storage
-        .from("product-images")
-        .upload(fileName, file)
-
-      if (error) continue
-
-      const { data } = supabase.storage
-        .from("product-images")
-        .getPublicUrl(fileName)
-
-      await supabase
-        .from("product_images")
-        .insert({
+      const attributeRows = Object.entries(attributeValues)
+        .filter(([_, optionId]) => optionId)
+        .map(([attrId, optionId]) => ({
           product_id: productId,
-          image_url: data.publicUrl,
-          sort_order: imageIndex,
-        })
+          attribute_id: attrId,
+          option_id: optionId,
+        }))
 
-      imageIndex++
+      if (attributeRows.length) {
+        await supabase
+          .from("product_attribute_values")
+          .insert(attributeRows)
+      }
+
+      setSaveStatus('saved')
+    }, 600)
+
+    return () => clearTimeout(timeout)
+  }, [attributeValues, draftProduct?.id])
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (images.length >= 4) {
+      alert("Maximum 4 images allowed")
+      return
     }
 
-setPendingImages([])
-setLoading(false)
+    let currentProduct = draftProduct
 
-onClose()
-window.location.reload()
+    if (!currentProduct) {
+      const newDraft = await createDraftProduct(name, categoryId)
+      if (!newDraft) return
+      setDraftProduct(newDraft)
+      currentProduct = newDraft
+    }
+
+    const fileExt = file.name.split(".").pop()
+    const fileName = `${currentProduct.id}/${Date.now()}.${fileExt}`
+
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file)
+
+    if (error) {
+      alert("Upload failed")
+      return
+    }
+
+    const { data } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(fileName)
+
+    await supabase
+      .from("product_images")
+      .insert({
+        product_id: currentProduct.id,
+        image_url: data.publicUrl,
+        sort_order: images.length,
+      })
+
+    loadImages(currentProduct.id)
   }
 
   return (
+    <form className="border p-5 rounded bg-white max-w-6xl">
 
-<form
-  onSubmit={handleSubmit}
-  className="border p-5 rounded bg-white max-w-6xl"
->
+      {/* STATUS */}
+      <div className="text-xs text-gray-500 mb-2">
+        Changes are saved automatically
+      </div>
 
-<div className="space-y-6">
+      <div className="text-xs mb-4">
+        {saveStatus === 'saving' && <span>Saving...</span>}
+        {saveStatus === 'saved' && <span className="text-green-600">✓ Saved</span>}
+      </div>
 
-{/* BASIC DETAILS */}
+      <div className="grid grid-cols-2 gap-4">
 
-<div className="grid grid-cols-2 gap-4">
+        <input
+          required
+          value={name}
+          onChange={async (e) => {
+            const value = e.target.value
+            setName(value)
 
-<input
-required
-value={name}
-onChange={(e) => setName(e.target.value)}
-placeholder="Design name"
-className="border px-3 py-2 w-full"
-/>
+            if (!draftProduct && value.length > 2) {
+              const newDraft = await createDraftProduct(value, categoryId)
+              if (newDraft) setDraftProduct(newDraft)
+            }
+          }}
+          placeholder="Design name"
+          className="border px-3 py-2 w-full"
+        />
 
-<select
-required
-value={categoryId}
-onChange={(e) => setCategoryId(e.target.value)}
-className="border px-3 py-2 w-full"
->
-<option value="">Select Category</option>
+        <select
+          required
+          value={categoryId}
+          onChange={async (e) => {
+            const value = e.target.value
+            setCategoryId(value)
 
-{categories.map((cat) => (
-<option key={cat.id} value={cat.id}>
-{cat.name}
-</option>
-))}
+            if (!draftProduct) {
+              const newDraft = await createDraftProduct(name, value)
+              if (newDraft) setDraftProduct(newDraft)
+            }
+          }}
+          className="border px-3 py-2 w-full"
+        >
+          <option value="">Select Category</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
 
-</select>
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Base Price"
+          className="border px-3 py-2 w-full"
+        />
 
-<input
-type="number"
-value={price}
-onChange={(e) => setPrice(e.target.value)}
-placeholder="Base Price"
-className="border px-3 py-2 w-full"
-/>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          className="border px-3 py-2 w-full"
+        />
 
-<textarea
-value={description}
-onChange={(e) => setDescription(e.target.value)}
-placeholder="e.g. Red floral cotton kurti with 3/4 sleeve and round neck"
-className="border px-3 py-2 w-full"
-/>
+      </div>
 
-<div className="text-xs text-gray-500 mt-1">
-🤖 AI Tip: Describe color, fabric, pattern, sleeve, etc. for best results
-</div>
+      {/* IMAGES */}
+      <div className="mt-6">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          disabled={!draftProduct}
+        />
 
-</div>
+        <div className="grid grid-cols-4 gap-4 mt-4">
+          {images.map(img => (
+            <img key={img.id} src={img.image_url} />
+          ))}
+        </div>
+      </div>
 
-{/* ATTRIBUTES + IMAGES */}
-
-<div className="grid grid-cols-3 gap-6">
-
-{/* ATTRIBUTES */}
-
-<div className="col-span-2">
-
-{loading && (
-<div className="bg-blue-50 text-blue-700 text-sm px-3 py-2 rounded mb-3">
-🤖 {aiStep}
-</div>
-)}
-
-<div className="grid grid-cols-2 gap-4">
-
-{categoryAttributes.map((attr) => (
-
-<div key={attr.id}>
-
-<label className="block mb-1 text-sm font-medium flex items-center gap-2">
-
-{attr.name}
-
-{aiFilled[attr.id] && (
-<span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-AI
-</span>
-)}
-
-</label>
-
-<AttributeSelect
-attributeId={attr.id}
-value={attributeValues[attr.id] || ''}
-disabled={loading}
-onChange={(value) => {
-
-setAttributeValues(prev => ({
-...prev,
-[attr.id]: value
-}))
-
-setAiFilled(prev => ({
-...prev,
-[attr.id]: false
-}))
-
-}}
-/>
-
-</div>
-
-))}
-
-</div>
-</div>
-
-{/* IMAGES */}
-
-<div>
-
-<label className="block mb-2 font-medium">
-Product Images (Max 4)
-</label>
-
-<input
-type="file"
-accept="image/*"
-onChange={handleImageUpload}
-/>
-
-<div className="grid grid-cols-4 gap-4 mt-4">
-
-{images.map(img => (
-<img key={img.id} src={img.image_url} />
-))}
-
-</div>
-
-</div>
-
-</div>
-
-{/* AI BUTTON */}
-
-{categoryId && (
-<button
-type="button"
-onClick={handleAutoFill}
-className="bg-blue-600 text-white px-4 py-2 rounded"
->
-Auto Fill Attributes (AI)
-</button>
-
-)}
-
-{/* BUTTONS */}
-
-<div className="flex gap-3 pt-6">
-
-<button
-type="submit"
-className="bg-black text-white px-6 py-2 rounded"
->
-{product ? "Update" : "Save"}
-</button>
-
-<button
-type="button"
-onClick={onClose}
-className="border px-6 py-2 rounded"
->
-Cancel
-</button>
-
-</div>
-
-</div>
-
-</form>
-
+    </form>
   )
 }

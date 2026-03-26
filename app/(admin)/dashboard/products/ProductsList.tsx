@@ -44,11 +44,7 @@ export default function ProductsList({
   const [localProducts, setLocalProducts] =
     useState<Product[]>(products)
 
-  const [showForm, setShowForm] =
-    useState<boolean>(false)
 
-  const [editProduct, setEditProduct] =
-    useState<Product | null>(null)
 
   async function toggleProduct(product: Product) {
     const newStatus = !product.is_active
@@ -86,32 +82,15 @@ export default function ProductsList({
           Products
         </h1>
 
-        <button
-          onClick={() => {
-            setEditProduct(null)
-            setShowForm(true)
-          }}
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          Add Product
-        </button>
+       <button
+  onClick={() => router.push('/dashboard/products/new')}
+  className="bg-black text-white px-4 py-2 rounded"
+>
+  Add Product
+</button>
       </div>
 
-      {/* FORM */}
-      {showForm && (
-        <div className="mb-8">
-          <ProductForm
-            product={editProduct}
-            categories={categories}
-            attributes={attributes}
-            companyId={companyId}
-            onClose={() => {
-              setShowForm(false)
-              setEditProduct(null)
-            }}
-          />
-        </div>
-      )}
+      
 
       {/* TABLE */}
       <div className="border rounded bg-white overflow-hidden">
@@ -208,10 +187,7 @@ export default function ProductsList({
 
                   <td className="p-3 text-right">
                     <button
-                      onClick={() => {
-                        setEditProduct(p)
-                        setShowForm(true)
-                      }}
+                    onClick={() => router.push(`/dashboard/products/${p.id}`)}
                       className="text-blue-600 hover:underline"
                     >
                       Edit
