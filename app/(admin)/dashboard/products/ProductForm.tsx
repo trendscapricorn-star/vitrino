@@ -109,7 +109,7 @@ export default function ProductForm({
       .single()
 
     if (error) {
-      alert("Failed to create product")
+      alert(error.message)
       return null
     }
 
