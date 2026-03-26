@@ -21,7 +21,6 @@ interface ProductFormProps {
   categories: Category[]
   attributes: Attribute[]
   companyId: string
-  onClose?: () => void
 }
 
 type AttributeValueMap = {
@@ -33,7 +32,6 @@ export default function ProductForm({
   categories,
   attributes,
   companyId,
-  onClose,
 }: ProductFormProps) {
 
   const supabase = supabaseBrowser
@@ -49,12 +47,11 @@ export default function ProductForm({
   const [images, setImages] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  const [aiFilled, setAiFilled] = useState<Record<string, boolean>>({})
-  const [aiStep, setAiStep] = useState("")
-
   const categoryAttributes = attributes.filter(
     (attr) => attr.category_id === categoryId
   )
+
+  const isReady = !!categoryId
 
   // INIT
   useEffect(() => {
@@ -67,8 +64,6 @@ export default function ProductForm({
 
       loadExistingAttributes(product.id)
       loadImages(product.id)
-
-      setAiFilled({})
     } else {
       setDraftProduct(null)
       setName('')
@@ -77,7 +72,6 @@ export default function ProductForm({
       setDescription('')
       setAttributeValues({})
       setImages([])
-      setAiFilled({})
     }
   }, [product])
 
@@ -102,7 +96,7 @@ export default function ProductForm({
       .insert({
         company_id: companyId,
         name: initialName || "Untitled Product",
-        category_id: initialCategory || null,
+        category_id: initialCategory,
         has_variants: false,
       })
       .select()
@@ -192,19 +186,16 @@ export default function ProductForm({
       return
     }
 
-let currentProduct = draftProduct
+    let currentProduct = draftProduct
 
-if (!currentProduct) {
-  const newDraft = await createDraftProduct(name, categoryId)
+    if (!currentProduct) {
+      const newDraft = await createDraftProduct(name, categoryId)
+      if (!newDraft) return
+      setDraftProduct(newDraft)
+      currentProduct = newDraft
+    }
 
-  if (!newDraft) return
-
-  setDraftProduct(newDraft)
-  currentProduct = newDraft
-}
-
-// ✅ Tell TypeScript it's safe now
-if (!currentProduct) return
+    if (!currentProduct) return
 
     const fileExt = file.name.split(".").pop()
     const fileName = `${currentProduct.id}/${Date.now()}.${fileExt}`
@@ -233,10 +224,34 @@ if (!currentProduct) return
     loadImages(currentProduct.id)
   }
 
+  async function deleteImage(id: string, imageUrl: string) {
+    if (!draftProduct?.id) return
+
+    await supabase
+      .from("product_images")
+      .delete()
+      .eq("id", id)
+
+    const path = imageUrl.split("/product-images/")[1]
+
+    if (path) {
+      await supabase.storage
+        .from("product-images")
+        .remove([path])
+    }
+
+    loadImages(draftProduct.id)
+  }
+
   return (
     <form className="border p-5 rounded bg-white max-w-6xl">
 
-      {/* STATUS */}
+      {!categoryId && (
+        <div className="text-sm text-gray-500 mb-3">
+          Select category first to start creating product
+        </div>
+      )}
+
       <div className="text-xs text-gray-500 mb-2">
         Changes are saved automatically
       </div>
@@ -251,17 +266,10 @@ if (!currentProduct) return
         <input
           required
           value={name}
-          onChange={async (e) => {
-            const value = e.target.value
-            setName(value)
-
-            if (!draftProduct && value.length > 2) {
-              const newDraft = await createDraftProduct(value, categoryId)
-              if (newDraft) setDraftProduct(newDraft)
-            }
-          }}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Design name"
           className="border px-3 py-2 w-full"
+          disabled={!isReady}
         />
 
         <select
@@ -290,6 +298,7 @@ if (!currentProduct) return
           onChange={(e) => setPrice(e.target.value)}
           placeholder="Base Price"
           className="border px-3 py-2 w-full"
+          disabled={!isReady}
         />
 
         <textarea
@@ -297,12 +306,14 @@ if (!currentProduct) return
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description"
           className="border px-3 py-2 w-full"
+          disabled={!isReady}
         />
 
       </div>
 
       {/* IMAGES */}
       <div className="mt-6">
+
         <input
           type="file"
           accept="image/*"
@@ -310,11 +321,35 @@ if (!currentProduct) return
           disabled={!draftProduct}
         />
 
+        {images.length >= 4 && (
+          <div className="text-xs text-gray-500 mt-2">
+            Maximum 4 images reached
+          </div>
+        )}
+
         <div className="grid grid-cols-4 gap-4 mt-4">
-          {images.map(img => (
-            <img key={img.id} src={img.image_url} />
+
+          {images.map((img) => (
+            <div key={img.id} className="relative group">
+
+              <img
+                src={img.image_url}
+                className="w-full h-24 object-cover rounded border"
+              />
+
+              <button
+                type="button"
+                onClick={() => deleteImage(img.id, img.image_url)}
+                className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100"
+              >
+                ✕
+              </button>
+
+            </div>
           ))}
+
         </div>
+
       </div>
 
     </form>
