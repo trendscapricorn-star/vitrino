@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation' // ✅ ADDED
+import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import ProductForm from './ProductForm'
 import type { Product } from '@/types/product'
-
-/* ---------------- TYPES ---------------- */
+import Image from 'next/image' // ✅ ADDED
 
 type Category = {
   id: string
@@ -26,15 +25,13 @@ interface ProductsListProps {
   companyId: string
 }
 
-/* ---------------- COMPONENT ---------------- */
-
 export default function ProductsList({
   products,
   categories,
   attributes,
   companyId,
 }: ProductsListProps) {
-  const router = useRouter() // ✅ ADDED
+  const router = useRouter()
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,12 +41,9 @@ export default function ProductsList({
   const [localProducts, setLocalProducts] =
     useState<Product[]>(products)
 
-
-
   async function toggleProduct(product: Product) {
     const newStatus = !product.is_active
 
-    // ✅ FIX: capture error
     const { error } = await supabase
       .from('products')
       .update({ is_active: newStatus })
@@ -69,30 +63,25 @@ export default function ProductsList({
       )
     )
 
-    // ✅ CRITICAL FIX: refresh server data
     router.refresh()
   }
 
   return (
     <div className="p-6">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">
           Products
         </h1>
 
-       <button
-  onClick={() => router.push('/dashboard/products/new')}
-  className="bg-black text-white px-4 py-2 rounded"
->
-  Add Product
-</button>
+        <button
+          onClick={() => router.push('/dashboard/products/new')}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Add Product
+        </button>
       </div>
 
-      
-
-      {/* TABLE */}
       <div className="border rounded bg-white overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
@@ -129,8 +118,11 @@ export default function ProductsList({
                 >
                   <td className="p-3">
                     {primaryImage ? (
-                      <img
+                      <Image
                         src={primaryImage}
+                        alt="product"
+                        width={48}
+                        height={48}
                         className="w-12 h-12 object-cover rounded"
                       />
                     ) : (
@@ -187,7 +179,7 @@ export default function ProductsList({
 
                   <td className="p-3 text-right">
                     <button
-                    onClick={() => router.push(`/dashboard/products/${p.id}`)}
+                      onClick={() => router.push(`/dashboard/products/${p.id}`)}
                       className="text-blue-600 hover:underline"
                     >
                       Edit

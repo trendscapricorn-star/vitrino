@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image' // ✅ ADDED
 
 export default function ImageSlider({
   images,
@@ -33,8 +34,11 @@ export default function ImageSlider({
     <div className="relative">
 
       {/* Main Image */}
-      <img
+      <Image
         src={images[current]}
+        alt="product"
+        width={800}
+        height={500}
         className="w-full h-[500px] object-contain bg-white border rounded-lg"
       />
 

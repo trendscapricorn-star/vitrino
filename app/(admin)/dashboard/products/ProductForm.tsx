@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import AttributeSelect from './AttributeSelect'
 import type { Product } from '@/types/product'
+import Image from 'next/image' // ✅ ADDED
 
 type Category = {
   id: string
@@ -53,7 +54,6 @@ export default function ProductForm({
 
   const isReady = !!categoryId
 
-  // INIT
   useEffect(() => {
     if (product) {
       setDraftProduct(product)
@@ -120,7 +120,6 @@ export default function ProductForm({
     setImages(data || [])
   }
 
-  // AUTO SAVE BASIC
   useEffect(() => {
     if (!draftProduct?.id) return
 
@@ -143,7 +142,6 @@ export default function ProductForm({
     return () => clearTimeout(timeout)
   }, [name, categoryId, price, description, draftProduct?.id])
 
-  // AUTO SAVE ATTRIBUTES
   useEffect(() => {
     if (!draftProduct?.id) return
 
@@ -311,7 +309,6 @@ export default function ProductForm({
 
       </div>
 
-      {/* IMAGES */}
       <div className="mt-6">
 
         <input
@@ -332,8 +329,12 @@ export default function ProductForm({
           {images.map((img) => (
             <div key={img.id} className="relative group">
 
-              <img
+              {/* ✅ ONLY CHANGE */}
+              <Image
                 src={img.image_url}
+                alt="product"
+                width={200}
+                height={100}
                 className="w-full h-24 object-cover rounded border"
               />
 

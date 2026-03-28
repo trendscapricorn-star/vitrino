@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image' // ✅ ADDED
 
 export default function PdfControls({
   products,
@@ -45,37 +46,35 @@ export default function PdfControls({
       }
 
       const res = await fetch('/api/pdf', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    products: sorted,
-    config,
-    attributes: selectedAttributes
-  })
-})
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          products: sorted,
+          config,
+          attributes: selectedAttributes
+        })
+      })
 
-if (!res.ok) {
-  alert('Server error')
-  return
-}
+      if (!res.ok) {
+        alert('Server error')
+        return
+      }
 
-const blob = await res.blob()
+      const blob = await res.blob()
 
-console.log('blob size:', blob.size)
+      if (blob.size < 100) {
+        alert('PDF failed (invalid file)')
+        return
+      }
 
-if (blob.size < 100) {
-  alert('PDF failed (invalid file)')
-  return
-}
+      const url = URL.createObjectURL(blob)
 
-const url = URL.createObjectURL(blob)
-
-const a = document.createElement('a')
-a.href = url
-a.download = 'catalog.pdf'
-document.body.appendChild(a)
-a.click()
-a.remove()
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'catalog.pdf'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
 
     } catch (err) {
       alert('Something went wrong')
@@ -87,24 +86,14 @@ a.remove()
   return (
     <div>
 
-      {/* 🔒 FULL SCREEN LOADER */}
       {loading && (
         <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 text-white">
-
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent mb-4"></div>
-
-          <div className="text-lg font-medium">
-            Generating PDF...
-          </div>
-
-          <div className="text-sm opacity-80 mt-1">
-            Please wait, do not close
-          </div>
-
+          <div className="text-lg font-medium">Generating PDF...</div>
+          <div className="text-sm opacity-80 mt-1">Please wait, do not close</div>
         </div>
       )}
 
-      {/* TOP BAR */}
       <div className="mb-4 space-y-3">
 
         <div className="flex flex-wrap gap-3 items-center">
@@ -155,48 +144,29 @@ a.remove()
 
       </div>
 
-      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40">
-
           <div className="bg-white p-6 rounded-lg w-80 space-y-4">
 
-            <div className="font-semibold text-lg">
-              PDF Settings
-            </div>
+            <div className="font-semibold text-lg">PDF Settings</div>
 
             <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={includeName}
-                onChange={() => setIncludeName(!includeName)}
-              />
+              <input type="checkbox" checked={includeName} onChange={() => setIncludeName(!includeName)} />
               Show Name
             </label>
 
             <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={includePrice}
-                onChange={() => setIncludePrice(!includePrice)}
-              />
+              <input type="checkbox" checked={includePrice} onChange={() => setIncludePrice(!includePrice)} />
               Show Price
             </label>
 
             <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={includeAttributes}
-                onChange={() => setIncludeAttributes(!includeAttributes)}
-              />
+              <input type="checkbox" checked={includeAttributes} onChange={() => setIncludeAttributes(!includeAttributes)} />
               Show Attributes
             </label>
 
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-3 py-1 border rounded"
-              >
+              <button onClick={() => setShowModal(false)} className="px-3 py-1 border rounded">
                 Cancel
               </button>
 
@@ -217,11 +187,9 @@ a.remove()
             </div>
 
           </div>
-
         </div>
       )}
 
-      {/* PRODUCT GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
         {products?.map((p:any)=>{
@@ -251,8 +219,11 @@ a.remove()
 
                 <div className="h-64 flex items-center justify-center bg-gray-50">
                   {primaryImage && (
-                    <img
+                    <Image
                       src={primaryImage}
+                      alt="product"
+                      width={400}
+                      height={400}
                       className="max-h-full object-contain"
                     />
                   )}
