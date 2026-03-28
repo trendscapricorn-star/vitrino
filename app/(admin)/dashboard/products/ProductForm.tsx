@@ -4,7 +4,38 @@ import { useState, useEffect } from 'react'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 import AttributeSelect from './AttributeSelect'
 import type { Product } from '@/types/product'
-import Image from 'next/image' // ✅ ADDED
+import Image from 'next/image'
+
+// ✅ ADD THIS (compression function)
+async function compressImage(file: File) {
+  const img = await createImageBitmap(file)
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')!
+
+  const MAX_WIDTH = 800
+
+  const scale = MAX_WIDTH / img.width
+
+  canvas.width = MAX_WIDTH
+  canvas.height = img.height * scale
+
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+  return new Promise<File>((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve(
+          new File([blob!], file.name, {
+            type: 'image/jpeg',
+          })
+        )
+      },
+      'image/jpeg',
+      0.7
+    )
+  })
+}
 
 type Category = {
   id: string
@@ -198,9 +229,12 @@ export default function ProductForm({
     const fileExt = file.name.split(".").pop()
     const fileName = `${currentProduct.id}/${Date.now()}.${fileExt}`
 
+    // ✅ APPLY COMPRESSION HERE
+    const compressed = await compressImage(file)
+
     const { error } = await supabase.storage
       .from("product-images")
-      .upload(fileName, file)
+      .upload(fileName, compressed)
 
     if (error) {
       alert("Upload failed")
@@ -329,7 +363,6 @@ export default function ProductForm({
           {images.map((img) => (
             <div key={img.id} className="relative group">
 
-              {/* ✅ ONLY CHANGE */}
               <Image
                 src={img.image_url}
                 alt="product"
